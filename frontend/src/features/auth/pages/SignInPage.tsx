@@ -5,18 +5,18 @@ import Input from "@/shared/components/ui/Input"
 import Button from "@/shared/components/ui/Button"
 
 import AuthForm from "../components/AuthForm"
-import { useAuth } from "../hooks/useAuth"
+import useAuth from "../hooks/useAuth"
 
 export default function SignInPage() {
   const navigate = useNavigate()
-  const { login, loading } = useAuth()
+  const { loginUser, loading } = useAuth()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await login({ email, password })
+    await loginUser({ email, password })
     navigate("/dashboard")
   }
 
@@ -46,9 +46,9 @@ export default function SignInPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-[var(--fg-muted)]">
+      <p className="text-center text-sm text-(--fg-muted)">
         Don't have an account?{" "}
-        <Link to="/signup" className="text-[var(--accent)] hover:text-[var(--accent-hover)]">
+        <Link to="/signup" className="text-(--accent) hover:text-(--accent-hover)">
           Sign up
         </Link>
       </p>

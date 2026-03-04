@@ -5,11 +5,11 @@ import Input from "@/shared/components/ui/Input"
 import Button from "@/shared/components/ui/Button"
 
 import AuthForm from "../components/AuthForm"
-import { useAuth } from "../hooks/useAuth"
+import useAuth from "../hooks/useAuth"
 
 export default function SignUpPage() {
   const navigate = useNavigate()
-  const { register, loading } = useAuth()
+  const { registerUser, loading } = useAuth()
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -17,7 +17,7 @@ export default function SignUpPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await register({ name, email, password })
+    await registerUser({ name, email, password })
     navigate("/dashboard")
   }
 
@@ -55,7 +55,7 @@ export default function SignUpPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-[var(--fg-muted)">
+      <p className="text-center text-sm text-(--fg-muted)">
         Already have an account?{" "}
         <Link to="/signin" className="text-(--accent) hover:text-(--accent-hover)">
           Sign in
