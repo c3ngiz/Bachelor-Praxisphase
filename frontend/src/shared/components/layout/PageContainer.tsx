@@ -1,25 +1,15 @@
 import type { ReactNode } from "react";
 
 type Props = {
-  children: ReactNode;
   title?: string;
+  children: ReactNode;
 };
 
-export default function PageContainer({
-  children,
-  title,
-}: Props) {
+export default function PageContainer({ title, children }: Props) {
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
-      {title && (
-        <h1 className="text-2xl font-bold mb-6">
-          {title}
-        </h1>
-      )}
-
-      <div className="flex flex-col gap-4">
-        {children}
-      </div>
-    </div>
+    <section className="mx-auto w-full max-w-6xl px-4 py-6">
+      {title ? <h1 className="mb-6 text-2xl font-bold text-(--fg)">{title}</h1> : null}
+      <div className="space-y-6">{children}</div>
+    </section>
   );
 }

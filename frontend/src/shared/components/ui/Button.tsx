@@ -1,29 +1,37 @@
-import type { ButtonHTMLAttributes } from "react";
-import clsx from "clsx";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "secondary";
+type ButtonVariant = "primary" | "secondary" | "ghost";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: Variant;
+  children: ReactNode;
+  variant?: ButtonVariant;
+};
+
+const variantClasses: Record<ButtonVariant, string> = {
+  primary:
+    "bg-[var(--accent)] text-[var(--accent-contrast)] border-[var(--accent)] hover:bg-[var(--accent-hover)]",
+  secondary:
+    "bg-[var(--bg-elevated)] text-[var(--fg)] border-[var(--border)] hover:border-[var(--accent)]",
+  ghost:
+    "bg-transparent text-[var(--fg)] border-transparent hover:border-[var(--border)]",
 };
 
 export default function Button({
-  variant = "primary",
-  className,
   children,
+  className = "",
+  variant = "primary",
+  type = "button",
   ...props
 }: Props) {
-  const base =
-    "px-4 py-2 rounded-md text-sm font-medium transition";
-
-  const variants = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700",
-    secondary: "bg-gray-200 hover:bg-gray-300",
-  };
-
   return (
     <button
-      className={clsx(base, variants[variant], className)}
+      type={type}
+      className={[
+        "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium border transition-colors",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        variantClasses[variant],
+        className,
+      ].join(" ")}
       {...props}
     >
       {children}

@@ -5,25 +5,29 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
   error?: string;
 };
 
-export default function Input({ label, error, ...props }: Props) {
+export default function Input({ label, error, className = "", id, ...props }: Props) {
+  const inputId = id ?? props.name;
+
   return (
-    <div className="flex flex-col gap-1">
-      {label && (
-        <label className="text-sm font-medium">
+    <div className="w-full space-y-1.5">
+      {label ? (
+        <label htmlFor={inputId} className="block text-sm font-medium text-(--fg)">
           {label}
         </label>
-      )}
+      ) : null}
 
       <input
-        className="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        id={inputId}
+        className={[
+          "w-full rounded-lg border bg-(--bg-elevated) px-3 py-2 text-sm text-(--fg)",
+          "placeholder:text-(--fg-muted)",
+          "border-(--border) focus:border-(--accent) focus:outline-none",
+          className,
+        ].join(" ")}
         {...props}
       />
 
-      {error && (
-        <span className="text-sm text-red-500">
-          {error}
-        </span>
-      )}
+      {error ? <p className="text-xs text-red-500">{error}</p> : null}
     </div>
   );
 }
