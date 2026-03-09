@@ -6,6 +6,7 @@ import AppLayout from "@/shared/components/layout/AppLayout"
 import SignInPage from "@/features/auth/pages/SignInPage"
 import SignUpPage from "@/features/auth/pages/SignUpPage"
 import DashboardPage from "@/features/documents/pages/DashboardPage"
+import EditorPage from "@/features/editor/pages/EditorPage"
 
 import ProtectedRoute from "@/features/auth/components/ProtectedRoute"
 
@@ -30,6 +31,7 @@ export function AppRouter() {
           }
         >
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/document/:id" element={<EditorPage />} />
         </Route>
 
       </Routes>

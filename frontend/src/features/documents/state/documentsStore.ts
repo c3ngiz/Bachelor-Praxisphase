@@ -30,7 +30,8 @@ export function useDocumentsStore() {
     const newDoc: Document = {
       id: crypto.randomUUID(),
       title,
-      updatedAt: new Date().toISOString().slice(0, 10),
+      content: "",
+      updatedAt: new Date().toISOString(),
     };
 
     const updated = [newDoc, ...documents];
@@ -39,6 +40,10 @@ export function useDocumentsStore() {
     saveDocuments(updated);
 
     return newDoc;
+  }
+
+  function getDocumentById(id: string): Document | undefined {
+    return documents.find((doc) => doc.id === id);
   }
 
   function updateDocument(updatedDoc: Document) {
@@ -60,6 +65,7 @@ export function useDocumentsStore() {
   return {
     documents,
     createDocument,
+    getDocumentById,
     updateDocument,
     deleteDocument,
   };
