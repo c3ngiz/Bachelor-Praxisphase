@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Document } from "../types";
 
 const STORAGE_KEY = "documents";
@@ -20,11 +20,7 @@ function saveDocuments(documents: Document[]) {
 }
 
 export function useDocumentsStore() {
-  const [documents, setDocuments] = useState<Document[]>([]);
-
-  useEffect(() => {
-    setDocuments(loadDocuments());
-  }, []);
+  const [documents, setDocuments] = useState<Document[]>(() => loadDocuments());
 
   function createDocument(title: string): Document {
     const newDoc: Document = {

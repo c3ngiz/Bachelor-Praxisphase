@@ -1,77 +1,91 @@
-import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
+import { useEffect, useMemo, useRef } from "react"
+
+import { useEditor } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import Color from "@tiptap/extension-color"
+import { TextStyle } from "@tiptap/extension-text-style"
 
 import EditorToolbar from "../components/EditorToolbar"
 import EditorArea from "../components/EditorArea"
+import PresenceBar from "../components/PresenceBar"
+import EditorTitleBar from "../components/EditorTitleBar"
 
 import { useDocumentsStore } from "@/features/documents/state/documentsStore"
-import type { Document } from "@/features/documents/types"
 
 export default function EditorPage() {
     const { id } = useParams()
 
-    const { getDocumentById, updateDocument } = useDocumentsStore()
+    const { documents, updateDocument } = useDocumentsStore()
 
-    const [document, setDocument] = useState<Document | null>(null)
+    const titleRef = useRef("")
+    const idRef = useRef(id)
 
     useEffect(() => {
-        if (!id) return
+        idRef.current = id
+    }, [id])
 
-        const doc = getDocumentById(id)
+    const currentDocument = useMemo(() => {
+        if (!id) return undefined
 
-        if (doc) {
-            setDocument(doc)
+        return documents.find((doc) => doc.id === id)
+    }, [documents, id])
+
+    useEffect(() => {
+        titleRef.current = currentDocument?.title ?? ""
+    }, [currentDocument?.title])
+
+    const editor = useEditor({
+        extensions: [StarterKit, TextStyle, Color],
+        content: "",
+
+        onUpdate({ editor }) {
+            const html = editor.getHTML()
+
+            if (!idRef.current) return
+
+            updateDocument({
+                id: idRef.current,
+                title: titleRef.current,
+                content: html,
+                updatedAt: new Date().toISOString(),
+            })
+        },
+    })
+
+    useEffect(() => {
+        if (!currentDocument) return
+
+        // TipTap only uses `content` during init, so set document contents explicitly.
+        if (editor && editor.getHTML() !== currentDocument.content) {
+            editor.commands.setContent(currentDocument.content, { emitUpdate: false })
         }
-    }, [id, getDocumentById])
-
-    function updateTitle(title: string) {
-        if (!document) return
-
-        const updated = {
-            ...document,
-            title,
-            updatedAt: new Date().toISOString(),
-        }
-
-        setDocument(updated)
-        updateDocument(updated)
-    }
-
-    function updateContent(content: string) {
-        if (!document) return
-
-        const updated = {
-            ...document,
-            content,
-            updatedAt: new Date().toISOString(),
-        }
-
-        setDocument(updated)
-        updateDocument(updated)
-    }
-
-    if (!document) {
-        return (
-            <div className="p-8 text-[var(--fg-muted)]">
-                Document not found
-            </div>
-        )
-    }
+    }, [currentDocument, editor])
 
     return (
         <div className="flex flex-col h-screen">
 
-            <EditorToolbar
-                title={document.title}
-                onTitleChange={updateTitle}
+            <EditorTitleBar
+                title={currentDocument?.title ?? ""}
+                onTitleChange={(value) => {
+                    if (!id) return
+
+                    const currentContent = editor?.getHTML() ?? currentDocument?.content ?? ""
+
+                    updateDocument({
+                        id,
+                        title: value,
+                        content: currentContent,
+                        updatedAt: new Date().toISOString(),
+                    })
+                }}
             />
 
-            <div className="flex-1 p-8">
-                <EditorArea
-                    content={document.content}
-                    onChange={updateContent}
-                />
-            </div>
+            <EditorToolbar editor={editor} />
+
+            <EditorArea editor={editor} />
+
+            <PresenceBar />
 
         </div>
     )

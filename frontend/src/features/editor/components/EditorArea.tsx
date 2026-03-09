@@ -1,15 +1,21 @@
+import { EditorContent, Editor } from "@tiptap/react"
+
 type Props = {
-    content: string
-    onChange: (value: string) => void
+    editor: Editor | null
 }
 
-export default function EditorArea({ content, onChange }: Props) {
+export default function EditorArea({ editor }: Props) {
+    if (!editor) return null
+
     return (
-        <textarea
-            value={content}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Start writing..."
-            className="w-full h-full resize-none outline-none text-[var(--fg)] bg-transparent"
-        />
+        <div className="flex flex-1 justify-center overflow-y-auto bg-[#f1f3f4] py-10">
+
+            <div className="w-212.5 min-h-275 bg-white border border-gray-200 shadow-sm p-16">
+
+                <EditorContent editor={editor} />
+
+            </div>
+
+        </div>
     )
 }

@@ -31,8 +31,9 @@ export function AppRouter() {
           }
         >
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/document/:id" element={<EditorPage />} />
         </Route>
+
+        <Route path="/document/:id" element={<EditorPage />} />
 
       </Routes>
     </BrowserRouter>
