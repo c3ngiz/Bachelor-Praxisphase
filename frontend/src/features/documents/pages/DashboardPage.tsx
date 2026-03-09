@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 import PageContainer from "@/shared/components/layout/PageContainer"
 import Button from "@/shared/components/ui/Button"
@@ -12,21 +13,35 @@ import DocumentsTable from "../components/DocumentsTable"
 import DocumentSkeleton from "../components/DocumentSkeleton"
 import DocumentsEmptyState from "../components/DocumentsEmptyState"
 
-import { useDocuments } from "../hooks/useDocuments"
+import { useDocumentsStore } from "../state/documentsStore"
 
 export default function DashboardPage() {
-  const { documents, loading } = useDocuments()
+  const navigate = useNavigate()
+
+  const { documents, createDocument } = useDocumentsStore()
+
+  const [loading, setLoading] = useState(true)
 
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [search, setSearch] = useState("")
   const [view, setView] = useState<"grid" | "list">("grid")
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   function handleCreateDocument() {
-    console.log("Create document:", title)
+    const doc = createDocument(title)
 
     setTitle("")
     setOpen(false)
+
+    navigate(`/document/${doc.id}`)
   }
 
   const filtered = documents.filter((doc) =>
@@ -36,7 +51,6 @@ export default function DashboardPage() {
   return (
     <>
       <PageContainer title="Dashboard">
-
         <DashboardHeader
           onCreate={() => setOpen(true)}
           search={search}
@@ -53,13 +67,15 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <section className="space-y-5">
-              <h2 className="text-lg font-semibold text-(--fg)">
-                Recent Documents
-              </h2>
+            {documents.length > 0 && (
+              <section className="space-y-5">
+                <h2 className="text-lg font-semibold text-(--fg)">
+                  Recent Documents
+                </h2>
 
-              <RecentDocuments documents={documents} />
-            </section>
+                <RecentDocuments documents={documents} />
+              </section>
+            )}
 
             <section className="space-y-5">
               <h2 className="text-lg font-semibold text-(--fg)">
@@ -76,7 +92,6 @@ export default function DashboardPage() {
             </section>
           </>
         )}
-
       </PageContainer>
 
       <Modal
@@ -91,7 +106,6 @@ export default function DashboardPage() {
         />
 
         <div className="flex justify-end gap-2">
-
           <Button
             variant="secondary"
             onClick={() => setOpen(false)}
@@ -105,7 +119,6 @@ export default function DashboardPage() {
           >
             Create
           </Button>
-
         </div>
       </Modal>
     </>
