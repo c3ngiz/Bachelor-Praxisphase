@@ -11,7 +11,15 @@ import {
     Redo,
 } from "lucide-react"
 
-import ColorPicker from "@/features/editor/components/ColorPicker"
+import ToolbarButton from "./toolbar/ToolbarButton"
+import ToolbarDivider from "./toolbar/ToolbarDivider"
+import FontSelector from "./toolbar/FontSelector"
+import FontSizeSelector from "./toolbar/FontSizeSelector"
+import TextAlignSelector from "./toolbar/TextAlignSelector"
+import LinkButton from "./toolbar/LinkButton"
+import ImageUploadButton from "./toolbar/ImageUploadButton"
+import HighlightPicker from "./toolbar/HighlightPicker"
+import ColorPicker from "./toolbar/ColorPicker"
 
 type Props = {
     editor: Editor | null
@@ -23,65 +31,58 @@ export default function EditorToolbar({ editor }: Props) {
     return (
         <div className="flex items-center gap-2 border-b border-(--border) bg-(--bg-elevated) px-4 py-2">
 
-            <button
-                onClick={() => editor.chain().focus().undo().run()}
-                className="toolbar-btn"
-            >
+            <ToolbarButton onClick={() => editor.chain().focus().undo().run()}>
                 <Undo size={18} />
-            </button>
+            </ToolbarButton>
 
-            <button
-                onClick={() => editor.chain().focus().redo().run()}
-                className="toolbar-btn"
-            >
+            <ToolbarButton onClick={() => editor.chain().focus().redo().run()}>
                 <Redo size={18} />
-            </button>
+            </ToolbarButton>
 
-            <div className="mx-2 h-6 w-px bg-(--border)" />
+            <ToolbarDivider />
 
-            <button
-                onClick={() => editor.chain().focus().toggleBold().run()}
-                className="toolbar-btn"
-            >
+            <FontSelector editor={editor} />
+            <FontSizeSelector editor={editor} />
+
+            <ToolbarDivider />
+
+            <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()}>
                 <Bold size={18} />
-            </button>
+            </ToolbarButton>
 
-            <button
-                onClick={() => editor.chain().focus().toggleItalic().run()}
-                className="toolbar-btn"
-            >
+            <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()}>
                 <Italic size={18} />
-            </button>
+            </ToolbarButton>
 
-            <button
-                onClick={() => editor.chain().focus().toggleStrike().run()}
-                className="toolbar-btn"
-            >
+            <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()}>
                 <Strikethrough size={18} />
-            </button>
+            </ToolbarButton>
 
-            <button
-                onClick={() =>
-                    editor.chain().focus().toggleHeading({ level: 2 }).run()
-                }
-                className="toolbar-btn"
-            >
+            <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
                 <Heading2 size={18} />
-            </button>
+            </ToolbarButton>
 
-            <button
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className="toolbar-btn"
-            >
+            <ToolbarDivider />
+
+            <TextAlignSelector editor={editor} />
+
+            <ToolbarDivider />
+
+            <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()}>
                 <List size={18} />
-            </button>
+            </ToolbarButton>
 
-            <button
-                onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                className="toolbar-btn"
-            >
+            <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()}>
                 <ListOrdered size={18} />
-            </button>
+            </ToolbarButton>
+
+            <ToolbarDivider />
+
+            <LinkButton editor={editor} />
+
+            <ImageUploadButton editor={editor} />
+
+            <HighlightPicker editor={editor} />
 
             <ColorPicker editor={editor} />
 

@@ -3,8 +3,14 @@ import { useEffect, useMemo, useRef } from "react"
 
 import { useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
+
 import Color from "@tiptap/extension-color"
 import { TextStyle } from "@tiptap/extension-text-style"
+import Highlight from "@tiptap/extension-highlight"
+import Image from "@tiptap/extension-image"
+import TextAlign from "@tiptap/extension-text-align"
+import Link from "@tiptap/extension-link"
+import FontFamily from "@tiptap/extension-font-family"
 
 import EditorToolbar from "../components/EditorToolbar"
 import EditorArea from "../components/EditorArea"
@@ -27,7 +33,6 @@ export default function EditorPage() {
 
     const currentDocument = useMemo(() => {
         if (!id) return undefined
-
         return documents.find((doc) => doc.id === id)
     }, [documents, id])
 
@@ -36,7 +41,27 @@ export default function EditorPage() {
     }, [currentDocument?.title])
 
     const editor = useEditor({
-        extensions: [StarterKit, TextStyle, Color],
+        extensions: [
+            StarterKit,
+
+            TextStyle,
+            Color,
+
+            Highlight,
+
+            Image,
+
+            Link.configure({
+                openOnClick: false,
+            }),
+
+            FontFamily,
+
+            TextAlign.configure({
+                types: ["heading", "paragraph"],
+            }),
+        ],
+
         content: "",
 
         onUpdate({ editor }) {
@@ -56,9 +81,10 @@ export default function EditorPage() {
     useEffect(() => {
         if (!currentDocument) return
 
-        // TipTap only uses `content` during init, so set document contents explicitly.
         if (editor && editor.getHTML() !== currentDocument.content) {
-            editor.commands.setContent(currentDocument.content, { emitUpdate: false })
+            editor.commands.setContent(currentDocument.content, {
+                emitUpdate: false,
+            })
         }
     }, [currentDocument, editor])
 
@@ -70,7 +96,10 @@ export default function EditorPage() {
                 onTitleChange={(value) => {
                     if (!id) return
 
-                    const currentContent = editor?.getHTML() ?? currentDocument?.content ?? ""
+                    const currentContent =
+                        editor?.getHTML() ??
+                        currentDocument?.content ??
+                        ""
 
                     updateDocument({
                         id,
