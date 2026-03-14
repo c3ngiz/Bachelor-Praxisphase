@@ -42,9 +42,9 @@ export default function HighlightColorPicker({ editor }: Props) {
             paletteColors={PALETTE_COLORS}
             onSelectColor={applyColor}
             triggerContent={
-                <span className="flex flex-col items-center leading-none">
+                <span className="relative flex h-5 w-5 items-center justify-center">
                     <Highlighter className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
-                    <span className="mt-0.5 h-0.5 w-4 rounded-sm" style={{ backgroundColor: selectedColor }} />
+                    <span className="absolute bottom-0 h-0.5 w-4 rounded-sm" style={{ backgroundColor: selectedColor }} />
                 </span>
             }
         />
