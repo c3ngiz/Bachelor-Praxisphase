@@ -12,6 +12,7 @@ import Image from "@tiptap/extension-image"
 import TextAlign from "@tiptap/extension-text-align"
 import Link from "@tiptap/extension-link"
 import FontFamily from "@tiptap/extension-font-family"
+import Underline from "@tiptap/extension-underline"
 
 import EditorToolbar from "../components/EditorToolbar"
 import EditorArea from "../components/EditorArea"
@@ -55,6 +56,8 @@ export default function EditorPage() {
             Link.configure({
                 openOnClick: false,
             }),
+
+            Underline,
 
             FontFamily,
             FontSize,
