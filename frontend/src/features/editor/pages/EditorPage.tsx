@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit"
 
 import Color from "@tiptap/extension-color"
 import { TextStyle } from "@tiptap/extension-text-style"
+import FontSize from "@tiptap/extension-text-style/font-size"
 import Highlight from "@tiptap/extension-highlight"
 import Image from "@tiptap/extension-image"
 import TextAlign from "@tiptap/extension-text-align"
@@ -56,6 +57,7 @@ export default function EditorPage() {
             }),
 
             FontFamily,
+            FontSize,
 
             TextAlign.configure({
                 types: ["heading", "paragraph"],
