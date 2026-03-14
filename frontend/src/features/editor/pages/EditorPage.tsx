@@ -49,7 +49,9 @@ export default function EditorPage() {
             TextStyle,
             Color,
 
-            Highlight,
+            Highlight.configure({
+                multicolor: true,
+            }),
 
             Image,
 
