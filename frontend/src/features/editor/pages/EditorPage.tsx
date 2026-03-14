@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef } from "react"
 
 import { useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
+import BulletList from "@tiptap/extension-bullet-list"
+import OrderedList from "@tiptap/extension-ordered-list"
 
 import Color from "@tiptap/extension-color"
 import { TextStyle } from "@tiptap/extension-text-style"
@@ -44,7 +46,20 @@ export default function EditorPage() {
 
     const editor = useEditor({
         extensions: [
-            StarterKit,
+            StarterKit.configure({
+                bulletList: false,
+                orderedList: false,
+            }),
+
+            BulletList.configure({
+                keepMarks: true,
+                keepAttributes: false,
+            }),
+
+            OrderedList.configure({
+                keepMarks: true,
+                keepAttributes: false,
+            }),
 
             TextStyle,
             Color,

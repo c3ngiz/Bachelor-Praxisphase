@@ -1,5 +1,5 @@
 import { Editor } from "@tiptap/react"
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Italic, Underline } from "lucide-react"
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Italic, Underline, List, ListOrdered } from "lucide-react"
 import Divider from "@/shared/components/ui/Divider"
 import FontFamilyDropdown from "./toolbar/FontFamilyDropdown"
 import FontSizeDropdown from "./toolbar/FontSizeDropdown"
@@ -59,6 +59,24 @@ export default function EditorToolbar({ editor }: Props) {
 
                         <TextColorPicker editor={editor} />
                         <HighlightColorPicker editor={editor} />
+                    </div>
+
+                    <Divider vertical className="h-8 shrink-0" />
+
+                    <div className="flex items-center gap-1">
+                        <ToolbarIconButton
+                            label="Aufzaehlung"
+                            isActive={editor.isActive("bulletList")}
+                            onPress={() => editor.chain().focus().toggleBulletList().run()}
+                            icon={List}
+                        />
+
+                        <ToolbarIconButton
+                            label="Nummerierte Liste"
+                            isActive={editor.isActive("orderedList")}
+                            onPress={() => editor.chain().focus().toggleOrderedList().run()}
+                            icon={ListOrdered}
+                        />
                     </div>
 
                     <Divider vertical className="h-8 shrink-0" />

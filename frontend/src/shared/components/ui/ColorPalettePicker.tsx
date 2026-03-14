@@ -85,7 +85,7 @@ export default function ColorPalettePicker({
                     setIsOpen((prev) => !prev)
                 }}
                 onKeyDown={onTriggerKeyDown}
-                className="h-9 w-9 rounded-md border border-(--border) px-0 py-0 text-(--fg-muted)"
+                className="h-8 w-8 rounded-md border border-(--border) px-0 py-0 text-(--fg-muted)"
             >
                 {triggerContent}
             </Button>

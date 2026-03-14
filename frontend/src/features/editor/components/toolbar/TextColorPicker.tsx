@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import type { Editor } from "@tiptap/react"
-import ColorPalettePicker from "../../../../shared/components/ui/ColorPalettePicker"
-import { normalizeColor, PALETTE_COLORS } from "../../../../shared/utils/colorPickerUtils"
+import ColorPalettePicker from "@/shared/components/ui/ColorPalettePicker"
+import { normalizeColor, PALETTE_COLORS } from "@/shared/utils/colorPickerUtils"
 
 type Props = {
     editor: Editor
