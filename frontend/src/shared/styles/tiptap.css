@@ -3,18 +3,30 @@
 .ProseMirror {
   min-height: 70vh;
   outline: none;
+
+  --textstyle-normal-size: 1rem;
+  --textstyle-title-size: 2rem;
+  --textstyle-subtitle-size: 1.5rem;
+  --textstyle-h1-size: 2rem;
+  --textstyle-h2-size: 1.5rem;
+  --textstyle-h3-size: 1.25rem;
 }
 
 .ProseMirror p {
   margin: 0.5rem 0;
+  font-size: var(--textstyle-normal-size);
 }
 
 .ProseMirror h1 {
-  font-size: 1.8rem;
+  font-size: var(--textstyle-h1-size);
 }
 
 .ProseMirror h2 {
-  font-size: 1.4rem;
+  font-size: var(--textstyle-h2-size);
+}
+
+.ProseMirror h3 {
+  font-size: var(--textstyle-h3-size);
 }
 
 .ProseMirror ul {

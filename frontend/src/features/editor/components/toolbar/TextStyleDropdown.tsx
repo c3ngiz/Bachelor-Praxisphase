@@ -8,8 +8,8 @@ type Props = {
 
 type TextStyleOption = "normal" | "title" | "subtitle" | "h1" | "h2" | "h3";
 
-const TITLE_STYLE = { fontSize: "2rem", fontWeight: "700" };
-const SUBTITLE_STYLE = { fontSize: "1.5rem", fontWeight: "600" };
+const TITLE_STYLE = { fontSize: "var(--textstyle-title-size)", fontWeight: "700" };
+const SUBTITLE_STYLE = { fontSize: "var(--textstyle-subtitle-size)", fontWeight: "600" };
 
 const options: { value: TextStyleOption; label: string }[] = [
 	{ value: "normal", label: "Normaler Text" },
