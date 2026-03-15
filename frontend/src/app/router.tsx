@@ -5,7 +5,7 @@ import AppLayout from "@/shared/components/layout/AppLayout"
 
 import SignInPage from "@/features/auth/pages/SignInPage"
 import SignUpPage from "@/features/auth/pages/SignUpPage"
-import DashboardPage from "@/features/documents/pages/DashboardPage"
+import DashboardPage from "@/features/dashboard/pages/DashboardPage"
 import EditorPage from "@/features/editor/pages/EditorPage"
 
 import ProtectedRoute from "@/features/auth/components/ProtectedRoute"
