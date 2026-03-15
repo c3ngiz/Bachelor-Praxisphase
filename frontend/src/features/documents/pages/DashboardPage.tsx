@@ -13,12 +13,13 @@ import DocumentsTable from "../components/DocumentsTable"
 import DocumentSkeleton from "../components/DocumentSkeleton"
 import DocumentsEmptyState from "../components/DocumentsEmptyState"
 
+import type { Document } from "../types"
 import { useDocumentsStore } from "../state/documentsStore"
 
 export default function DashboardPage() {
   const navigate = useNavigate()
 
-  const { documents, createDocument } = useDocumentsStore()
+  const { documents, createDocument, updateDocument, deleteDocument } = useDocumentsStore()
 
   const [loading, setLoading] = useState(true)
 
@@ -42,6 +43,31 @@ export default function DashboardPage() {
     setOpen(false)
 
     navigate(`/document/${doc.id}`)
+  }
+
+  function handleRenameDocument(document: Document) {
+    const nextTitle = window.prompt("Rename document", document.title)
+
+    if (nextTitle === null) return
+
+    const trimmed = nextTitle.trim()
+    if (!trimmed || trimmed === document.title) return
+
+    updateDocument({
+      ...document,
+      title: trimmed,
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  function handleDeleteDocument(document: Document) {
+    const shouldDelete = window.confirm(
+      `Delete \"${document.title}\"? This action cannot be undone.`,
+    )
+
+    if (!shouldDelete) return
+
+    deleteDocument(document.id)
   }
 
   const filtered = documents.filter((doc) =>
@@ -73,7 +99,11 @@ export default function DashboardPage() {
                   Recent Documents
                 </h2>
 
-                <RecentDocuments documents={documents} />
+                <RecentDocuments
+                  documents={documents}
+                  onRename={handleRenameDocument}
+                  onDelete={handleDeleteDocument}
+                />
               </section>
             )}
 
@@ -85,7 +115,11 @@ export default function DashboardPage() {
               {filtered.length === 0 ? (
                 <DocumentsEmptyState onCreate={() => setOpen(true)} />
               ) : view === "grid" ? (
-                <DocumentsGrid documents={filtered} />
+                <DocumentsGrid
+                  documents={filtered}
+                  onRename={handleRenameDocument}
+                  onDelete={handleDeleteDocument}
+                />
               ) : (
                 <DocumentsTable documents={filtered} />
               )}

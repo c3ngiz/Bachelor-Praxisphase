@@ -7,7 +7,7 @@ export class CollaborationService {
     console.log("Sending operation", operation);
   }
 
-  onRemoteOperation(callback: (op: unknown) => void) {
+  onRemoteOperation(_callback: (op: unknown) => void) {
     console.log("Register remote op handler");
   }
 }
