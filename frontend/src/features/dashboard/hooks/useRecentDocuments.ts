@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { useDashboardStore } from "../store/dashboardStore";
+import { useDocumentsStore } from "../store/documentsStore";
 import type { Document } from "../types/document.types";
 
 export function useRecentDocuments(): Document[] {
-  const documents = useDashboardStore((s) => s.documents);
+  const documents = useDocumentsStore((s) => s.documents);
 
   const recentDocuments = useMemo(() => {
     return [...documents]

@@ -1,112 +1,62 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import DashboardHeader from "../components/DashboardHeader";
 import RecentDocuments from "../components/RecentDocuments";
 import DocumentsContainer from "../components/DocumentsContainer";
+import DocumentsEmptyState from "../components/DocumentsEmptyState";
 
-import { useDashboardStore } from "../store/dashboardStore";
-import type { Document } from "../types/document.types";
-
-/**
- * Temporary mock data until backend exists
- */
-function createMockDocuments(): Document[] {
-    const now = new Date().toISOString();
-
-    return [
-        {
-            id: "1",
-            title: "Project Proposal",
-            author: "Alice",
-            createdAt: now,
-            updatedAt: now,
-            lastOpenedAt: now,
-            content: {
-                type: "doc",
-                content: [
-                    {
-                        type: "paragraph",
-                        content: [{ type: "text", text: "Project proposal draft..." }],
-                    },
-                ],
-            },
-        },
-        {
-            id: "2",
-            title: "Meeting Notes",
-            author: "Bob",
-            createdAt: now,
-            updatedAt: now,
-            lastOpenedAt: now,
-            content: {
-                type: "doc",
-                content: [
-                    {
-                        type: "paragraph",
-                        content: [{ type: "text", text: "Meeting notes from yesterday." }],
-                    },
-                ],
-            },
-        },
-        {
-            id: "3",
-            title: "Research Document",
-            author: "Charlie",
-            createdAt: now,
-            updatedAt: now,
-            content: {
-                type: "doc",
-                content: [
-                    {
-                        type: "paragraph",
-                        content: [{ type: "text", text: "Initial research ideas." }],
-                    },
-                ],
-            },
-        },
-    ];
-}
+import { useDocumentsStore } from "../store/documentsStore";
 
 export default function DashboardPage() {
-    const setDocuments = useDashboardStore((s) => s.setDocuments);
-    const documents = useDashboardStore((s) => s.documents);
+    const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(true);
+    const {
+        documents,
+        createDocument,
+        deleteDocument,
+        updateDocument,
+    } = useDocumentsStore();
 
-    /**
-     * Simulate document loading
-     */
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            const docs = createMockDocuments();
-            setDocuments(docs);
-            setLoading(false);
-        }, 600);
+    const [loading] = useState(false);
 
-        return () => clearTimeout(timeout);
-    }, [setDocuments]);
+    function handleCreateDocument() {
+        const newDoc = createDocument("Untitled Document");
 
-    /**
-     * Document actions
-     */
+        console.log("Created:", newDoc.id);
+    }
+
     function handleOpenDocument(id: string) {
-        console.log("Open document:", id);
+        const doc = documents.find((d) => d.id === id);
+        if (!doc) return;
 
-        // Later:
-        // navigate(`/documents/${id}`)
+        updateDocument({
+            ...doc,
+            lastOpenedAt: new Date().toISOString(),
+        });
+
+        navigate(`/document/${id}`);
     }
 
     function handleRenameDocument(id: string) {
-        console.log("Rename document:", id);
+        const doc = documents.find((d) => d.id === id);
+        if (!doc) return;
+
+        const newTitle = prompt("New title", doc.title);
+        if (!newTitle) return;
+
+        updateDocument({
+            ...doc,
+            title: newTitle,
+            updatedAt: new Date().toISOString(),
+        });
     }
 
     function handleDeleteDocument(id: string) {
-        console.log("Delete document:", id);
+        deleteDocument(id);
     }
 
-    function handleCreateDocument() {
-        console.log("Create new document");
-    }
+    const isEmpty = documents.length === 0;
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -114,12 +64,17 @@ export default function DashboardPage() {
 
             <RecentDocuments onOpenDocument={handleOpenDocument} />
 
-            <DocumentsContainer
-                loading={loading}
-                onOpen={handleOpenDocument}
-                onRename={handleRenameDocument}
-                onDelete={handleDeleteDocument}
-            />
+            {isEmpty ? (
+                <DocumentsEmptyState onCreateDocument={handleCreateDocument} />
+            ) : (
+                <DocumentsContainer
+                    documents={documents}
+                    loading={loading}
+                    onOpen={handleOpenDocument}
+                    onRename={handleRenameDocument}
+                    onDelete={handleDeleteDocument}
+                />
+            )}
         </div>
     );
 }

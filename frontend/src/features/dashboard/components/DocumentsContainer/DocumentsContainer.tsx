@@ -8,7 +8,10 @@ import DocumentsEmptyState from "../DocumentsEmptyState";
 import DocumentSkeletonGrid from "../DocumentSkeleton/DocumentSkeletonGrid";
 import DocumentSkeletonList from "../DocumentSkeleton/DocumentSkeletonList";
 
+import type { Document } from "../../types/document.types";
+
 type Props = {
+    documents: Document[];
     loading?: boolean;
 
     onOpen?: (id: string) => void;
@@ -17,23 +20,21 @@ type Props = {
 };
 
 export default function DocumentsContainer({
+    documents,
     loading,
     onOpen,
     onRename,
     onDelete,
 }: Props) {
-    const documents = useDashboardStore((s) => s.documents);
     const query = useDashboardStore((s) => s.searchQuery);
     const viewMode = useDashboardStore((s) => s.viewMode);
 
     const filteredDocuments = useDocumentSearch(documents, query);
 
     if (loading) {
-        return viewMode === "grid" ? (
-            <DocumentSkeletonGrid />
-        ) : (
-            <DocumentSkeletonList />
-        );
+        return viewMode === "grid"
+            ? <DocumentSkeletonGrid />
+            : <DocumentSkeletonList />;
     }
 
     if (filteredDocuments.length === 0) {
@@ -44,6 +45,9 @@ export default function DocumentsContainer({
         return (
             <DocumentsGrid
                 documents={filteredDocuments}
+                onOpen={onOpen}
+                onRename={onRename}
+                onDelete={onDelete}
             />
         );
     }
