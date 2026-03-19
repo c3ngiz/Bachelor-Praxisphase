@@ -1,4 +1,113 @@
 {
+  // ========================
+  // Editor Behavior
+  // ========================
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "editor.wordWrap": "on",
+  "editor.minimap.enabled": false,
+  "editor.renderWhitespace": "selection",
+  "editor.guides.bracketPairs": true,
+
+  // ========================
+  // Explorer
+  // ========================
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "index.ts": "*.ts,*.tsx",
+    "*.tsx": "${capture}.styles.ts,${capture}.test.tsx",
+    "*.ts": "${capture}.test.ts"
+  },
+
+  // ========================
+  // Prettier
+  // ========================
+  "prettier.singleQuote": true,
+  "prettier.semi": true,
+  "prettier.trailingComma": "all",
+  "prettier.printWidth": 100,
+  "prettier.tabWidth": 2,
+
+  // ========================
+  // ESLint
+  // ========================
+  "eslint.enable": true,
+  "eslint.run": "onSave",
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+
+  // ========================
+  // TypeScript / JavaScript
+  // ========================
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "js/ts.preferences.importModuleSpecifier": "relative",
+
+  // ========================
+  // React Specific
+  // ========================
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+
+  // ========================
+  // Auto Imports & IntelliSense
+  // ========================
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "editor.suggestSelection": "first",
+  "editor.inlineSuggest.enabled": true,
+
+  // ========================
+  // Files & Imports
+  // ========================
+  "files.autoSave": "onFocusChange",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true
+  },
+
+  // ========================
+  // Terminal
+  // ========================
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.fontSize": 13,
+
+  // ========================
+  // Git
+  // ========================
+  "git.autofetch": true,
+  "git.confirmSync": false,
+
+  // ========================
+  // Performance
+  // ========================
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true
+  },
+
+  // ========================
+  // Tailwind (if used)
+  // ========================
+  "tailwindCSS.emmetCompletions": true,
+  "tailwindCSS.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+
+  // ========================
+  // Misc
+  // ========================
+  "breadcrumbs.enabled": true,
+  "workbench.startupEditor": "none"
 }
