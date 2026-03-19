@@ -1,4 +1,5 @@
-import { Modal, Button } from "@/shared/components/ui";
+import { useEffect, useState } from "react";
+import { Modal, Button, Input } from "@/shared/components/ui";
 
 type Props = {
   isOpen: boolean;
@@ -13,32 +14,72 @@ export default function DeleteConfirmationModal({
   onConfirm,
   documentTitle,
 }: Props) {
+  const [confirmationText, setConfirmationText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const expectedText = documentTitle ?? "";
+
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmationText("");
+      setError(null);
+    }
+  }, [isOpen]);
+
+  const isMatch = confirmationText === expectedText;
+
   function handleConfirm() {
+    if (!isMatch) {
+      setError("Document name does not match.");
+      return;
+    }
+
     onConfirm();
     onClose();
   }
 
+  function handleClose() {
+    setConfirmationText("");
+    setError(null);
+    onClose();
+  }
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Delete Document">
-      <div className="text-sm text-(--fg)">
-        Are you sure you want to delete{" "}
-        <span className="font-medium">
-          {documentTitle || "this document"}
-        </span>
-        ?
+    <Modal isOpen={isOpen} onClose={handleClose} title="Delete Document">
+      <div className="space-y-2 text-sm text-(--fg)">
+        <p>
+          This action <span className="font-semibold text-red-600">cannot</span>{" "}
+          be undone.
+        </p>
+
+        <p>
+          To confirm, type{" "}
+          <span className="font-medium bg-(--bg) px-1 rounded">
+            {expectedText || "the document name"}
+          </span>{" "}
+          below:
+        </p>
       </div>
 
-      <p className="text-xs text-(--fg-muted)">
-        This action cannot be undone.
-      </p>
+      <Input
+        label="Document Name"
+        value={confirmationText}
+        onChange={(e) => {
+          setConfirmationText(e.target.value);
+          if (error) setError(null);
+        }}
+        error={error ?? undefined}
+        autoFocus
+      />
 
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>
+        <Button variant="ghost" onClick={handleClose}>
           Cancel
         </Button>
         <Button
           variant="danger"
           onClick={handleConfirm}
+          disabled={!isMatch}
         >
           Delete
         </Button>
