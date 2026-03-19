@@ -8,6 +8,7 @@ interface DocumentsState {
   createDocument: (title: string) => Document;
   updateDocument: (doc: Document) => void;
   deleteDocument: (id: string) => void;
+  deleteDocuments: (ids: string[]) => void;
   getDocumentById: (id: string) => Document | undefined;
 
   setDocuments: (docs: Document[]) => void;
@@ -56,6 +57,13 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
 
   deleteDocument: (id) => {
     const updated = get().documents.filter((doc) => doc.id !== id);
+
+    set({ documents: updated });
+    saveDocuments(updated);
+  },
+
+  deleteDocuments: (ids) => {
+    const updated = get().documents.filter((doc) => !ids.includes(doc.id));
 
     set({ documents: updated });
     saveDocuments(updated);

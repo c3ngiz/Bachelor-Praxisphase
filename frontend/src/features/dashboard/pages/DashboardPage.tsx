@@ -9,8 +9,10 @@ import RecentDocuments from "../components/RecentDocuments";
 import CreateDocumentModal from "../components/modals/CreateDocumentModal";
 import RenameDocumentModal from "../components/modals/RenameDocumentModal";
 import DeleteConfirmationModal from "../components/modals/DeleteConfirmationModal";
+import MultiSelectToolbar from "../components/MultiSelectToolbar";
 
 import { useDocumentsStore } from "../store/documentsStore";
+import { useDocumentSelection } from "../hooks/useDocumentSelection";
 
 export default function DashboardPage() {
     const navigate = useNavigate();
@@ -19,8 +21,15 @@ export default function DashboardPage() {
         documents,
         createDocument,
         deleteDocument,
+        deleteDocuments,
         updateDocument,
     } = useDocumentsStore();
+
+    const {
+        selectedDocuments,
+        selectedCount,
+        clearSelection,
+    } = useDocumentSelection();
 
     const [loading] = useState(false);
 
@@ -35,6 +44,8 @@ export default function DashboardPage() {
     const selectedDocument = documents.find(
         (doc) => doc.id === selectedDocumentId
     );
+
+    const isBulkDelete = selectedCount > 0;
 
     // --- Handlers ---
     function handleOpenCreateModal() {
@@ -73,15 +84,21 @@ export default function DashboardPage() {
         });
     }
 
-    function handleOpenDeleteModal(id: string) {
-        setSelectedDocumentId(id);
+    function handleOpenDeleteModal(id?: string) {
+        if (id) {
+            setSelectedDocumentId(id);
+        }
         setIsDeleteOpen(true);
     }
 
     function handleConfirmDelete() {
-        if (!selectedDocumentId) return;
+        if (isBulkDelete) {
+            deleteDocuments(Array.from(selectedDocuments));
+            clearSelection();
+        } else if (selectedDocumentId) {
+            deleteDocument(selectedDocumentId);
+        }
 
-        deleteDocument(selectedDocumentId);
         setSelectedDocumentId(null);
     }
 
@@ -101,8 +118,17 @@ export default function DashboardPage() {
                     loading={loading}
                     onOpen={handleOpenDocument}
                     onRename={handleOpenRenameModal}
-                    onDelete={handleOpenDeleteModal}
+                    onDelete={(id) => handleOpenDeleteModal(id)}
                     onCreate={handleOpenCreateModal}
+                />
+            )}
+
+            {/* --- Multi Select Toolbar --- */}
+            {selectedCount > 0 && (
+                <MultiSelectToolbar
+                    count={selectedCount}
+                    onClear={clearSelection}
+                    onDelete={() => handleOpenDeleteModal()}
                 />
             )}
 
@@ -125,7 +151,11 @@ export default function DashboardPage() {
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
                 onConfirm={handleConfirmDelete}
-                documentTitle={selectedDocument?.title}
+                documentTitle={
+                    isBulkDelete
+                        ? `${selectedCount} documents`
+                        : selectedDocument?.title
+                }
             />
         </div>
     );
