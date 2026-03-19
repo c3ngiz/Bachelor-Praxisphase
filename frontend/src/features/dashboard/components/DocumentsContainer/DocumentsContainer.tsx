@@ -1,22 +1,20 @@
-import { useDashboardStore } from "../../store/dashboardStore";
 import { useDocumentSearch } from "../../hooks/useDocumentSearch";
+import { useDashboardStore } from "../../store/dashboardStore";
+import type { Document } from "../../types/document.types";
 
-import DocumentsGrid from "../DocumentsGrid";
-import DocumentsTable from "../DocumentsTable";
 import DocumentsEmptyState from "../DocumentsEmptyState";
-
+import DocumentsGrid from "../DocumentsGrid";
 import DocumentSkeletonGrid from "../DocumentSkeleton/DocumentSkeletonGrid";
 import DocumentSkeletonList from "../DocumentSkeleton/DocumentSkeletonList";
-
-import type { Document } from "../../types/document.types";
+import DocumentsTable from "../DocumentsTable";
 
 type Props = {
     documents: Document[];
     loading?: boolean;
-
     onOpen?: (id: string) => void;
     onRename?: (id: string) => void;
     onDelete?: (id: string) => void;
+    onCreate?: () => void;
 };
 
 export default function DocumentsContainer({
@@ -25,20 +23,23 @@ export default function DocumentsContainer({
     onOpen,
     onRename,
     onDelete,
+    onCreate,
 }: Props) {
-    const query = useDashboardStore((s) => s.searchQuery);
-    const viewMode = useDashboardStore((s) => s.viewMode);
+    const query = useDashboardStore((state) => state.searchQuery);
+    const viewMode = useDashboardStore((state) => state.viewMode);
 
     const filteredDocuments = useDocumentSearch(documents, query);
 
     if (loading) {
-        return viewMode === "grid"
-            ? <DocumentSkeletonGrid />
-            : <DocumentSkeletonList />;
+        return viewMode === "grid" ? (
+            <DocumentSkeletonGrid />
+        ) : (
+            <DocumentSkeletonList />
+        );
     }
 
     if (filteredDocuments.length === 0) {
-        return <DocumentsEmptyState />;
+        return <DocumentsEmptyState onCreateDocument={onCreate} />;
     }
 
     if (viewMode === "grid") {
@@ -48,6 +49,7 @@ export default function DocumentsContainer({
                 onOpen={onOpen}
                 onRename={onRename}
                 onDelete={onDelete}
+                onCreate={onCreate}
             />
         );
     }

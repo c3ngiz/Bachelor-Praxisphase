@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import DashboardHeader from "../components/DashboardHeader";
-import RecentDocuments from "../components/RecentDocuments";
 import DocumentsContainer from "../components/DocumentsContainer";
 import DocumentsEmptyState from "../components/DocumentsEmptyState";
+import RecentDocuments from "../components/RecentDocuments";
 
 import { useDocumentsStore } from "../store/documentsStore";
 
@@ -22,12 +22,11 @@ export default function DashboardPage() {
 
     function handleCreateDocument() {
         const newDoc = createDocument("Untitled Document");
-
-        console.log("Created:", newDoc.id);
+        navigate(`/document/${newDoc.id}`);
     }
 
     function handleOpenDocument(id: string) {
-        const doc = documents.find((d) => d.id === id);
+        const doc = documents.find((document) => document.id === id);
         if (!doc) return;
 
         updateDocument({
@@ -39,15 +38,15 @@ export default function DashboardPage() {
     }
 
     function handleRenameDocument(id: string) {
-        const doc = documents.find((d) => d.id === id);
+        const doc = documents.find((document) => document.id === id);
         if (!doc) return;
 
         const newTitle = prompt("New title", doc.title);
-        if (!newTitle) return;
+        if (!newTitle?.trim()) return;
 
         updateDocument({
             ...doc,
-            title: newTitle,
+            title: newTitle.trim(),
             updatedAt: new Date().toISOString(),
         });
     }
@@ -73,6 +72,7 @@ export default function DashboardPage() {
                     onOpen={handleOpenDocument}
                     onRename={handleRenameDocument}
                     onDelete={handleDeleteDocument}
+                    onCreate={handleCreateDocument}
                 />
             )}
         </div>
