@@ -6,6 +6,9 @@ import DocumentsContainer from "../components/DocumentsContainer";
 import DocumentsEmptyState from "../components/DocumentsEmptyState";
 import RecentDocuments from "../components/RecentDocuments";
 
+import CreateDocumentModal from "../components/modals/CreateDocumentModal";
+import RenameDocumentModal from "../components/modals/RenameDocumentModal";
+
 import { useDocumentsStore } from "../store/documentsStore";
 
 export default function DashboardPage() {
@@ -20,8 +23,23 @@ export default function DashboardPage() {
 
     const [loading] = useState(false);
 
-    function handleCreateDocument() {
-        const newDoc = createDocument("Untitled Document");
+    // --- Modal State ---
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isRenameOpen, setIsRenameOpen] = useState(false);
+    const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+
+    // --- Derived ---
+    const selectedDocument = documents.find(
+        (doc) => doc.id === selectedDocumentId
+    );
+
+    // --- Handlers ---
+    function handleOpenCreateModal() {
+        setIsCreateOpen(true);
+    }
+
+    function handleCreateDocument(name: string) {
+        const newDoc = createDocument(name);
         navigate(`/document/${newDoc.id}`);
     }
 
@@ -37,16 +55,17 @@ export default function DashboardPage() {
         navigate(`/document/${id}`);
     }
 
-    function handleRenameDocument(id: string) {
-        const doc = documents.find((document) => document.id === id);
-        if (!doc) return;
+    function handleOpenRenameModal(id: string) {
+        setSelectedDocumentId(id);
+        setIsRenameOpen(true);
+    }
 
-        const newTitle = prompt("New title", doc.title);
-        if (!newTitle?.trim()) return;
+    function handleRenameDocument(newName: string) {
+        if (!selectedDocument) return;
 
         updateDocument({
-            ...doc,
-            title: newTitle.trim(),
+            ...selectedDocument,
+            title: newName,
             updatedAt: new Date().toISOString(),
         });
     }
@@ -64,17 +83,32 @@ export default function DashboardPage() {
             <RecentDocuments onOpenDocument={handleOpenDocument} />
 
             {isEmpty ? (
-                <DocumentsEmptyState onCreateDocument={handleCreateDocument} />
+                <DocumentsEmptyState onCreateDocument={handleOpenCreateModal} />
             ) : (
                 <DocumentsContainer
                     documents={documents}
                     loading={loading}
                     onOpen={handleOpenDocument}
-                    onRename={handleRenameDocument}
+                    onRename={handleOpenRenameModal}
                     onDelete={handleDeleteDocument}
-                    onCreate={handleCreateDocument}
+                    onCreate={handleOpenCreateModal}
                 />
             )}
+
+            {/* --- Modals --- */}
+
+            <CreateDocumentModal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                onCreate={handleCreateDocument}
+            />
+
+            <RenameDocumentModal
+                isOpen={isRenameOpen}
+                onClose={() => setIsRenameOpen(false)}
+                currentName={selectedDocument?.title ?? ""}
+                onRename={handleRenameDocument}
+            />
         </div>
     );
 }
