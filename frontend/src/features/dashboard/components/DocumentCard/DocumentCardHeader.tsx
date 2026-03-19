@@ -15,21 +15,24 @@ export default function DocumentCardHeader({ document }: Props) {
         <div className="flex items-start justify-between gap-2">
             <h3
                 className="
-        text-sm
-        font-semibold
-        text-(--fg)
-        line-clamp-2
-      "
+          text-sm
+          font-semibold
+          text-(--fg)
+          line-clamp-2
+        "
             >
                 {document.title}
             </h3>
 
-            <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => toggleSelection(document.id)}
-                className="mt-1 h-4 w-4 cursor-pointer accent-[var(--accent)]"
-            />
+            <div onClick={(event) => event.stopPropagation()}>
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelection(document.id)}
+                    className="mt-1 h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                    aria-label={`Select document ${document.title}`}
+                />
+            </div>
         </div>
     );
 }

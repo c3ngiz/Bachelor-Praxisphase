@@ -4,7 +4,6 @@ import Button from "@/shared/components/ui/Button";
 
 type Props = {
     document: Document;
-
     onOpen?: (id: string) => void;
     onRename?: (id: string) => void;
     onDelete?: (id: string) => void;
@@ -24,46 +23,46 @@ export default function DocumentRow({
     const toggleSelection = useDashboardStore((s) => s.toggleSelection);
 
     const isSelected = selectedDocuments.has(document.id);
+    const isSelectionMode = selectedDocuments.size > 0;
 
     return (
-        <tr className="border-b border-(--border) hover:bg-(--bg)">
-            {/* Checkbox */}
+        <tr
+            className={[
+                "border-b border-(--border) hover:bg-(--bg)",
+                isSelected ? "bg-[color:var(--accent)/0.10]" : "",
+            ].join(" ")}
+        >
             <td className="px-4 py-3">
-                <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleSelection(document.id)}
-                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
-                />
+                <div onClick={(event) => event.stopPropagation()}>
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelection(document.id)}
+                        className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                        aria-label={`Select document ${document.title}`}
+                    />
+                </div>
             </td>
 
-            {/* Title */}
-            <td className="px-4 py-3 font-medium text-(--fg)">
-                {document.title}
-            </td>
+            <td className="px-4 py-3 font-medium text-(--fg)">{document.title}</td>
 
-            {/* Author */}
-            <td className="px-4 py-3 text-(--fg-muted)">
-                {document.author}
-            </td>
+            <td className="px-4 py-3 text-(--fg-muted)">{document.author}</td>
 
-            {/* Created */}
             <td className="px-4 py-3 text-(--fg-muted)">
                 {formatDate(document.createdAt)}
             </td>
 
-            {/* Updated */}
             <td className="px-4 py-3 text-(--fg-muted)">
                 {formatDate(document.updatedAt)}
             </td>
 
-            {/* Controls */}
             <td className="px-4 py-3">
                 <div className="flex gap-2">
                     <Button
                         variant="primary"
                         className="px-3 py-1 text-xs"
                         onClick={() => onOpen?.(document.id)}
+                        disabled={isSelectionMode}
                     >
                         Open
                     </Button>
@@ -72,6 +71,7 @@ export default function DocumentRow({
                         variant="secondary"
                         className="px-3 py-1 text-xs"
                         onClick={() => onRename?.(document.id)}
+                        disabled={isSelectionMode}
                     >
                         Rename
                     </Button>
@@ -80,6 +80,7 @@ export default function DocumentRow({
                         variant="ghost"
                         className="px-3 py-1 text-xs text-red-500"
                         onClick={() => onDelete?.(document.id)}
+                        disabled={isSelectionMode}
                     >
                         Delete
                     </Button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal, Button, Input } from "@/shared/components/ui";
 
 type Props = {
@@ -6,6 +6,7 @@ type Props = {
   onClose: () => void;
   onConfirm: () => void;
   documentTitle?: string;
+  bulkCount?: number;
 };
 
 export default function DeleteConfirmationModal({
@@ -13,11 +14,16 @@ export default function DeleteConfirmationModal({
   onClose,
   onConfirm,
   documentTitle,
+  bulkCount = 0,
 }: Props) {
   const [confirmationText, setConfirmationText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const expectedText = documentTitle ?? "";
+  const isBulkDelete = bulkCount > 1;
+
+  const expectedText = useMemo(() => {
+    return documentTitle ?? "";
+  }, [documentTitle]);
 
   useEffect(() => {
     if (isOpen) {
@@ -26,10 +32,10 @@ export default function DeleteConfirmationModal({
     }
   }, [isOpen]);
 
-  const isMatch = confirmationText === expectedText;
+  const isMatch = isBulkDelete ? true : confirmationText === expectedText;
 
   function handleConfirm() {
-    if (!isMatch) {
+    if (!isBulkDelete && !isMatch) {
       setError("Document name does not match.");
       return;
     }
@@ -45,42 +51,58 @@ export default function DeleteConfirmationModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Delete Document">
-      <div className="space-y-2 text-sm text-(--fg)">
-        <p>
-          This action <span className="font-semibold text-red-600">cannot</span>{" "}
-          be undone.
-        </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={isBulkDelete ? "Delete Documents" : "Delete Document"}
+    >
+      {isBulkDelete ? (
+        <div className="space-y-2 text-sm text-(--fg)">
+          <p>
+            This action <span className="font-semibold text-red-600">cannot</span>{" "}
+            be undone.
+          </p>
 
-        <p>
-          To confirm, type{" "}
-          <span className="font-medium bg-(--bg) px-1 rounded">
-            {expectedText || "the document name"}
-          </span>{" "}
-          below:
-        </p>
-      </div>
+          <p>
+            Are you sure you want to permanently delete{" "}
+            <span className="font-medium">{bulkCount} documents</span>?
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2 text-sm text-(--fg)">
+            <p>
+              This action <span className="font-semibold text-red-600">cannot</span>{" "}
+              be undone.
+            </p>
 
-      <Input
-        label="Document Name"
-        value={confirmationText}
-        onChange={(e) => {
-          setConfirmationText(e.target.value);
-          if (error) setError(null);
-        }}
-        error={error ?? undefined}
-        autoFocus
-      />
+            <p>
+              To confirm, type{" "}
+              <span className="rounded bg-(--bg) px-1 font-medium">
+                {expectedText || "the document name"}
+              </span>{" "}
+              below:
+            </p>
+          </div>
+
+          <Input
+            label="Document Name"
+            value={confirmationText}
+            onChange={(e) => {
+              setConfirmationText(e.target.value);
+              if (error) setError(null);
+            }}
+            error={error ?? undefined}
+            autoFocus
+          />
+        </>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={handleClose}>
           Cancel
         </Button>
-        <Button
-          variant="danger"
-          onClick={handleConfirm}
-          disabled={!isMatch}
-        >
+        <Button variant="danger" onClick={handleConfirm} disabled={!isMatch}>
           Delete
         </Button>
       </div>

@@ -25,29 +25,22 @@ export default function DashboardPage() {
         updateDocument,
     } = useDocumentsStore();
 
-    const {
-        selectedDocuments,
-        selectedCount,
-        clearSelection,
-    } = useDocumentSelection();
+    const { selectedDocuments, selectedCount, clearSelection } =
+        useDocumentSelection();
 
     const [loading] = useState(false);
 
-    // --- Modal State ---
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-    const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
-
-    // --- Derived ---
-    const selectedDocument = documents.find(
-        (doc) => doc.id === selectedDocumentId
+    const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
+        null,
     );
 
+    const selectedDocument = documents.find((doc) => doc.id === selectedDocumentId);
     const isBulkDelete = selectedCount > 0;
 
-    // --- Handlers ---
     function handleOpenCreateModal() {
         setIsCreateOpen(true);
     }
@@ -60,6 +53,8 @@ export default function DashboardPage() {
     function handleOpenDocument(id: string) {
         const doc = documents.find((document) => document.id === id);
         if (!doc) return;
+
+        clearSelection();
 
         updateDocument({
             ...doc,
@@ -87,7 +82,10 @@ export default function DashboardPage() {
     function handleOpenDeleteModal(id?: string) {
         if (id) {
             setSelectedDocumentId(id);
+        } else {
+            setSelectedDocumentId(null);
         }
+
         setIsDeleteOpen(true);
     }
 
@@ -123,7 +121,6 @@ export default function DashboardPage() {
                 />
             )}
 
-            {/* --- Multi Select Toolbar --- */}
             {selectedCount > 0 && (
                 <MultiSelectToolbar
                     count={selectedCount}
@@ -131,8 +128,6 @@ export default function DashboardPage() {
                     onDelete={() => handleOpenDeleteModal()}
                 />
             )}
-
-            {/* --- Modals --- */}
 
             <CreateDocumentModal
                 isOpen={isCreateOpen}
@@ -151,11 +146,8 @@ export default function DashboardPage() {
                 isOpen={isDeleteOpen}
                 onClose={() => setIsDeleteOpen(false)}
                 onConfirm={handleConfirmDelete}
-                documentTitle={
-                    isBulkDelete
-                        ? `${selectedCount} documents`
-                        : selectedDocument?.title
-                }
+                documentTitle={selectedDocument?.title}
+                bulkCount={isBulkDelete ? selectedCount : 0}
             />
         </div>
     );
