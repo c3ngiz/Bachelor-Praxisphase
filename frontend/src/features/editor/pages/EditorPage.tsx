@@ -21,7 +21,7 @@ import EditorArea from "../components/EditorArea"
 import PresenceBar from "../components/PresenceBar"
 import EditorTitleBar from "../components/EditorTitleBar"
 
-import { useDocumentsStore } from "@/features/documents/state/documentsStore"
+import { useDocumentsStore } from "@/features/dashboard/store/documentsStore"
 
 export default function EditorPage() {
     const { id } = useParams()
