@@ -8,6 +8,7 @@ import RecentDocuments from "../components/RecentDocuments";
 
 import CreateDocumentModal from "../components/modals/CreateDocumentModal";
 import RenameDocumentModal from "../components/modals/RenameDocumentModal";
+import DeleteConfirmationModal from "../components/modals/DeleteConfirmationModal";
 
 import { useDocumentsStore } from "../store/documentsStore";
 
@@ -26,6 +27,8 @@ export default function DashboardPage() {
     // --- Modal State ---
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isRenameOpen, setIsRenameOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
     const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
     // --- Derived ---
@@ -70,8 +73,16 @@ export default function DashboardPage() {
         });
     }
 
-    function handleDeleteDocument(id: string) {
-        deleteDocument(id);
+    function handleOpenDeleteModal(id: string) {
+        setSelectedDocumentId(id);
+        setIsDeleteOpen(true);
+    }
+
+    function handleConfirmDelete() {
+        if (!selectedDocumentId) return;
+
+        deleteDocument(selectedDocumentId);
+        setSelectedDocumentId(null);
     }
 
     const isEmpty = documents.length === 0;
@@ -90,7 +101,7 @@ export default function DashboardPage() {
                     loading={loading}
                     onOpen={handleOpenDocument}
                     onRename={handleOpenRenameModal}
-                    onDelete={handleDeleteDocument}
+                    onDelete={handleOpenDeleteModal}
                     onCreate={handleOpenCreateModal}
                 />
             )}
@@ -108,6 +119,13 @@ export default function DashboardPage() {
                 onClose={() => setIsRenameOpen(false)}
                 currentName={selectedDocument?.title ?? ""}
                 onRename={handleRenameDocument}
+            />
+
+            <DeleteConfirmationModal
+                isOpen={isDeleteOpen}
+                onClose={() => setIsDeleteOpen(false)}
+                onConfirm={handleConfirmDelete}
+                documentTitle={selectedDocument?.title}
             />
         </div>
     );
