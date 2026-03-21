@@ -1,8 +1,11 @@
 import type { Document } from "../types/document.types";
 import { useDashboardStore } from "../store/dashboardStore";
 import Card from "@/shared/components/ui/Card";
-import Button from "@/shared/components/ui/Button";
+import Popover from "@/shared/components/ui/Popover";
+
 import { generateDocumentPreview } from "../utils/generateDocumentPreview";
+import { MoreVertical, FileText, Pencil, Trash, ExternalLink } from "lucide-react";
+import DocumentCardPreview from "./DocumentCardPreview";
 
 type Props = {
     document: Document;
@@ -29,78 +32,106 @@ export default function DocumentCard({
 
     const isSelected = selectedDocuments.has(document.id);
 
-    const preview = generateDocumentPreview(document.content);
+    const previewLines = generateDocumentPreview(document.content);
 
     return (
-        <Card selectable selected={isSelected}>
+        <Card
+            selectable
+            selected={isSelected}
+            interactive
+            onClick={() => onOpen?.(document.id)}
+            className="overflow-hidden"
+        >
+            {/* CHECKBOX */}
+            <Card.Actions className="left-2 right-auto">
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                        e.stopPropagation();
+                        toggleSelection(document.id);
+                    }}
+                    className="h-4 w-4 cursor-pointer accent-(--accent)"
+                />
+            </Card.Actions>
 
-            {/* HEADER */}
-            <Card.Header>
-                <h3 className="text-sm font-semibold text-(--fg) line-clamp-2">
-                    {document.title}
-                </h3>
+            {/* MENU */}
+            {!isSelectionMode && (
+                <Card.Actions>
+                    <Popover
+                        align="right"
+                        offset={8}
+                        trigger={({ toggle }) => (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggle();
+                                }}
+                                className="rounded-md p-1 hover:bg-(--bg)"
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+                        )}
+                    >
+                        {({ close }) => (
+                            <div className="w-48 py-1">
+                                <button
+                                    onClick={() => {
+                                        onRename?.(document.id);
+                                        close();
+                                    }}
+                                    className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
+                                >
+                                    <Pencil size={14} />
+                                    Umbenennen
+                                </button>
 
-                <div onClick={(e) => e.stopPropagation()}>
-                    <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelection(document.id)}
-                        className="mt-1 h-4 w-4 cursor-pointer accent-(--accent)"
-                    />
-                </div>
-            </Card.Header>
+                                <button
+                                    onClick={() => {
+                                        onDelete?.(document.id);
+                                        close();
+                                    }}
+                                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-(--bg)"
+                                >
+                                    <Trash size={14} />
+                                    Entfernen
+                                </button>
 
-            {/* CONTENT */}
-            <Card.Content>
+                                <button
+                                    onClick={() => {
+                                        window.open(`/document/${document.id}`, "_blank");
+                                        close();
+                                    }}
+                                    className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
+                                >
+                                    <ExternalLink size={14} />
+                                    In neuem Tab öffnen
+                                </button>
+                            </div>
+                        )}
+                    </Popover>
+                </Card.Actions>
+            )}
 
-                {/* Preview */}
-                <div className="text-sm text-(--fg-muted) line-clamp-4 leading-relaxed min-h-18">
-                    {preview || "Empty document"}
-                </div>
-
-                {/* Meta */}
-                <div className="flex flex-col text-xs text-(--fg-muted) gap-1">
-                    <span>Author: {document.author}</span>
-                    <span>Created: {formatDate(document.createdAt)}</span>
-                    <span>Updated: {formatDate(document.updatedAt)}</span>
-                </div>
-
-            </Card.Content>
+            {/* 📄 REAL PAGE PREVIEW */}
+            <DocumentCardPreview document={document} />
 
             {/* FOOTER */}
-            <Card.Footer>
-                <div className="flex items-center justify-between gap-2">
+            <Card.Content padding="sm">
+                <div className="flex items-center gap-2 min-w-0">
+                    <FileText size={16} className="text-blue-500 shrink-0" />
 
-                    <Button
-                        variant="primary"
-                        className="flex-1"
-                        onClick={() => onOpen?.(document.id)}
-                        disabled={isSelectionMode}
-                    >
-                        Open
-                    </Button>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium truncate">
+                            {document.title}
+                        </span>
 
-                    <Button
-                        variant="secondary"
-                        className="px-3"
-                        onClick={() => onRename?.(document.id)}
-                        disabled={isSelectionMode}
-                    >
-                        Rename
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        className="px-3 text-red-500"
-                        onClick={() => onDelete?.(document.id)}
-                        disabled={isSelectionMode}
-                    >
-                        Delete
-                    </Button>
-
+                        <span className="text-xs text-(--fg-muted)">
+                            Geöffnet {formatDate(document.updatedAt)}
+                        </span>
+                    </div>
                 </div>
-            </Card.Footer>
-
+            </Card.Content>
         </Card>
     );
 }

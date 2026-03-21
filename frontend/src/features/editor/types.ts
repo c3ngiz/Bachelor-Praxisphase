@@ -1,4 +1,4 @@
-export type EditorContent = string;
+export type EditorContent = any;
 
 export interface EditorDocument {
   id: string;

@@ -1,48 +1,48 @@
-import { useParams } from "react-router-dom"
-import { useEffect, useMemo, useRef } from "react"
+import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef } from "react";
 
-import { useEditor } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import BulletList from "@tiptap/extension-bullet-list"
-import OrderedList from "@tiptap/extension-ordered-list"
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import BulletList from "@tiptap/extension-bullet-list";
+import OrderedList from "@tiptap/extension-ordered-list";
 
-import Color from "@tiptap/extension-color"
-import { TextStyle } from "@tiptap/extension-text-style"
-import FontSize from "@tiptap/extension-text-style/font-size"
-import Highlight from "@tiptap/extension-highlight"
-import Image from "@tiptap/extension-image"
-import TextAlign from "@tiptap/extension-text-align"
-import Link from "@tiptap/extension-link"
-import FontFamily from "@tiptap/extension-font-family"
-import Underline from "@tiptap/extension-underline"
+import Color from "@tiptap/extension-color";
+import { TextStyle } from "@tiptap/extension-text-style";
+import FontSize from "@tiptap/extension-text-style/font-size";
+import Highlight from "@tiptap/extension-highlight";
+import Image from "@tiptap/extension-image";
+import TextAlign from "@tiptap/extension-text-align";
+import Link from "@tiptap/extension-link";
+import FontFamily from "@tiptap/extension-font-family";
+import Underline from "@tiptap/extension-underline";
 
-import EditorToolbar from "../components/EditorToolbar"
-import EditorArea from "../components/EditorArea"
-import PresenceBar from "../components/PresenceBar"
-import EditorTitleBar from "../components/EditorTitleBar"
+import EditorToolbar from "../components/EditorToolbar";
+import EditorArea from "../components/EditorArea";
+import PresenceBar from "../components/PresenceBar";
+import EditorTitleBar from "../components/EditorTitleBar";
 
-import { useDocumentsStore } from "@/features/dashboard/store/documentsStore"
+import { useDocumentsStore } from "@/features/dashboard/store/documentsStore";
 
 export default function EditorPage() {
-    const { id } = useParams()
+    const { id } = useParams();
 
-    const { documents, updateDocument } = useDocumentsStore()
+    const { documents, updateDocument } = useDocumentsStore();
 
-    const titleRef = useRef("")
-    const idRef = useRef(id)
+    const titleRef = useRef("");
+    const idRef = useRef(id);
 
     useEffect(() => {
-        idRef.current = id
-    }, [id])
+        idRef.current = id;
+    }, [id]);
 
     const currentDocument = useMemo(() => {
-        if (!id) return undefined
-        return documents.find((doc) => doc.id === id)
-    }, [documents, id])
+        if (!id) return undefined;
+        return documents.find((doc) => doc.id === id);
+    }, [documents, id]);
 
     useEffect(() => {
-        titleRef.current = currentDocument?.title ?? ""
-    }, [currentDocument?.title])
+        titleRef.current = currentDocument?.title ?? "";
+    }, [currentDocument?.title]);
 
     const editor = useEditor({
         extensions: [
@@ -87,48 +87,57 @@ export default function EditorPage() {
         content: "",
 
         onUpdate({ editor }) {
-            const html = editor.getHTML()
+            const json = editor.getJSON();
 
-            if (!idRef.current) return
+            if (!idRef.current) return;
 
             updateDocument({
                 id: idRef.current,
                 title: titleRef.current,
-                content: html,
+                content: json,
                 updatedAt: new Date().toISOString(),
-            })
+            });
         },
-    })
+    });
 
     useEffect(() => {
-        if (!currentDocument) return
+        if (!currentDocument) return;
+        if (!editor) return;
 
-        if (editor && editor.getHTML() !== currentDocument.content) {
-            editor.commands.setContent(currentDocument.content, {
+        const currentJSON = currentDocument.content ?? {
+            type: "doc",
+            content: [],
+        };
+
+        const editorJSON = editor.getJSON();
+
+        if (JSON.stringify(editorJSON) !== JSON.stringify(currentJSON)) {
+            editor.commands.setContent(currentJSON, {
                 emitUpdate: false,
-            })
+            });
         }
-    }, [currentDocument, editor])
+    }, [currentDocument, editor]);
 
     return (
         <div className="flex flex-col h-screen">
-
             <EditorTitleBar
                 title={currentDocument?.title ?? ""}
                 onTitleChange={(value) => {
-                    if (!id) return
+                    if (!id) return;
 
                     const currentContent =
-                        editor?.getHTML() ??
-                        currentDocument?.content ??
-                        ""
+                        editor?.getJSON() ??
+                        currentDocument?.content ?? {
+                            type: "doc",
+                            content: [],
+                        };
 
                     updateDocument({
                         id,
                         title: value,
                         content: currentContent,
                         updatedAt: new Date().toISOString(),
-                    })
+                    });
                 }}
             />
 
@@ -137,7 +146,6 @@ export default function EditorPage() {
             <EditorArea editor={editor} />
 
             <PresenceBar />
-
         </div>
-    )
+    );
 }

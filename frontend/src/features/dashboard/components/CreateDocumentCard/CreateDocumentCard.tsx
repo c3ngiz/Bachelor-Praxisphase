@@ -8,19 +8,23 @@ type Props = {
 export default function CreateDocumentCard({ onCreate }: Props) {
   return (
     <Card
-      hoverable
+      variant="outline"
+      interactive
       onClick={onCreate}
       className="
-        min-h-[260px]
-        cursor-pointer
+        min-h-65
         border-2 border-dashed
         items-center justify-center text-center
         hover:border-(--accent)
         hover:bg-(--bg)
       "
     >
-      <Card.Content className="items-center justify-center py-6">
-
+      {/* CONTENT */}
+      <Card.Content
+        padding="lg"
+        className="items-center justify-center text-center gap-4"
+      >
+        {/* Icon */}
         <div
           className="
             flex h-12 w-12 items-center justify-center
@@ -34,6 +38,7 @@ export default function CreateDocumentCard({ onCreate }: Props) {
           +
         </div>
 
+        {/* Text */}
         <div className="space-y-1">
           <div className="text-base font-semibold text-(--fg)">
             New Document
@@ -42,7 +47,13 @@ export default function CreateDocumentCard({ onCreate }: Props) {
             Create a new document and start writing.
           </p>
         </div>
+      </Card.Content>
 
+      {/* FOOTER */}
+      <Card.Footer
+        padding="sm"
+        className="flex justify-center border-none pt-0"
+      >
         <Button
           variant="primary"
           className="px-3 py-1 text-xs"
@@ -53,8 +64,7 @@ export default function CreateDocumentCard({ onCreate }: Props) {
         >
           Create
         </Button>
-
-      </Card.Content>
+      </Card.Footer>
     </Card>
   );
 }

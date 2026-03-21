@@ -20,13 +20,10 @@ export default function DocumentsGrid({
     return (
         <div
             className="
-        grid
-        grid-cols-1
-        gap-5
-        sm:grid-cols-2
-        md:grid-cols-3
-        lg:grid-cols-4
-      "
+                grid
+                grid-cols-[repeat(auto-fill,minmax(220px,1fr))]
+                gap-6
+            "
         >
             {documents.map((doc) => (
                 <DocumentCard
