@@ -1,5 +1,5 @@
 import Button from "@/shared/components/ui/Button";
-import { useDashboardStore } from "../store/dashboardStore";
+import { useDashboardStore } from "../../store/dashboardStore";
 
 export default function ViewToggle() {
     const viewMode = useDashboardStore((s) => s.viewMode);
