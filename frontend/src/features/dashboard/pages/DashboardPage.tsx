@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import PageContainer from "@/shared/components/layout/PageContainer";
+import Section from "@/shared/components/layout/Section";
+import SectionHeader from "@/shared/components/layout/SectionHeader";
 
 import DocumentsContainer from "../components/DocumentsContainer";
 import DocumentsEmptyState from "../components/DocumentsEmptyState";
@@ -120,22 +122,41 @@ export default function DashboardPage() {
     return (
         <>
             <PageContainer title="Documents">
+
+                {/* Toolbar */}
                 <DashboardToolbar onCreate={handleOpenCreateModal} />
 
-                <RecentDocuments onOpenDocument={handleOpenDocument} />
-
-                {isEmpty ? (
-                    <DocumentsEmptyState onCreateDocument={handleOpenCreateModal} />
-                ) : (
-                    <DocumentsContainer
-                        documents={processedDocuments}
-                        loading={loading}
-                        onOpen={handleOpenDocument}
-                        onRename={handleOpenRenameModal}
-                        onDelete={(id) => handleOpenDeleteModal(id)}
-                        onCreate={handleOpenCreateModal}
+                {/* Recent Section */}
+                <Section>
+                    <SectionHeader
+                        title="Recent Documents"
+                        description="Documents you recently opened"
                     />
-                )}
+
+                    <RecentDocuments onOpenDocument={handleOpenDocument} />
+                </Section>
+
+                {/* All Documents Section */}
+                <Section>
+                    <SectionHeader
+                        title="All Documents"
+                        description="Browse and manage your documents"
+                    />
+
+                    {isEmpty ? (
+                        <DocumentsEmptyState onCreateDocument={handleOpenCreateModal} />
+                    ) : (
+                        <DocumentsContainer
+                            documents={processedDocuments}
+                            loading={loading}
+                            onOpen={handleOpenDocument}
+                            onRename={handleOpenRenameModal}
+                            onDelete={(id) => handleOpenDeleteModal(id)}
+                            onCreate={handleOpenCreateModal}
+                        />
+                    )}
+                </Section>
+
             </PageContainer>
 
             {selectedCount > 0 && (

@@ -14,19 +14,13 @@ export default function RecentDocuments({ onOpenDocument }: Props) {
     }
 
     return (
-        <section className="px-6 pt-6">
-            <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-(--fg-muted)">
-                    Recent Documents
-                </h2>
-            </div>
-
+        <div>
             <div className="flex flex-wrap gap-3">
                 {recentDocuments.map((doc) => (
                     <Button
                         key={doc.id}
                         variant="secondary"
-                        className="max-w-[220px] truncate"
+                        className="max-w-55 truncate"
                         onClick={() => onOpenDocument?.(doc.id)}
                     >
                         {doc.title}
@@ -35,6 +29,6 @@ export default function RecentDocuments({ onOpenDocument }: Props) {
             </div>
 
             <Divider className="mt-6" />
-        </section>
+        </div>
     );
 }
