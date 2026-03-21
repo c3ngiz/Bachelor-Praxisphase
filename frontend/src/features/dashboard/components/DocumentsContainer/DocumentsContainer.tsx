@@ -26,9 +26,10 @@ export default function DocumentsContainer({
     onCreate,
 }: Props) {
     const query = useDashboardStore((state) => state.searchQuery);
+    const filters = useDashboardStore((state) => state.filters);
     const viewMode = useDashboardStore((state) => state.viewMode);
 
-    const filteredDocuments = useDocumentSearch(documents, query);
+    const filteredDocuments = useDocumentSearch(documents, query, filters);
 
     if (loading) {
         return viewMode === "grid" ? (

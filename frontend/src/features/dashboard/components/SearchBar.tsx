@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Input from "@/shared/components/ui/Input";
-import { useDashboardStore } from "../../store/dashboardStore";
+import { useDashboardStore } from "../store/dashboardStore";
 
 const DEBOUNCE_MS = 300;
 

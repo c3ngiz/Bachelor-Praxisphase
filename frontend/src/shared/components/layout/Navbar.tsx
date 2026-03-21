@@ -1,24 +1,32 @@
-import { Link } from "react-router-dom"
-import useAuthContext from "@/features/auth/hooks/useAuthContext"
-import Button from "@/shared/components/ui/Button"
+import type { ReactNode } from "react";
 
-export default function Navbar() {
-  const { logout } = useAuthContext()
+type Props = {
+  left?: ReactNode;
+  center?: ReactNode;
+  right?: ReactNode;
+};
 
+export default function Navbar({ left, center, right }: Props) {
   return (
-    <header className="border-b border-(--border) bg-(--bg-elevated)">
-      <nav className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
-        <Link
-          to="/dashboard"
-          className="text-lg font-semibold text-(--fg) transition-colors hover:text-(--accent-hover)"
-        >
-          CollabDocs
-        </Link>
+    <header className="w-full border-b border-(--border) bg-(--bg-elevated)">
+      <nav className="flex h-14 w-full items-center justify-between px-6">
 
-        <Button variant="ghost" onClick={logout} className="text-sm">
-          Logout
-        </Button>
+        {/* LEFT */}
+        <div className="flex items-center gap-3">
+          {left}
+        </div>
+
+        {/* CENTER */}
+        <div className="flex items-center justify-center flex-1">
+          {center}
+        </div>
+
+        {/* RIGHT */}
+        <div className="flex items-center gap-3">
+          {right}
+        </div>
+
       </nav>
-  </header>
-  )
+    </header>
+  );
 }

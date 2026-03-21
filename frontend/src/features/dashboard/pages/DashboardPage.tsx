@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import DashboardHeader from "../components/DashboardHeader";
+import PageContainer from "@/shared/components/layout/PageContainer";
+
 import DocumentsContainer from "../components/DocumentsContainer";
 import DocumentsEmptyState from "../components/DocumentsEmptyState";
 import RecentDocuments from "../components/RecentDocuments";
+import DashboardToolbar from "../components/DashboardToolbar";
 
 import CreateDocumentModal from "../components/modals/CreateDocumentModal";
 import RenameDocumentModal from "../components/modals/RenameDocumentModal";
@@ -13,6 +15,10 @@ import MultiSelectToolbar from "../components/MultiSelectToolbar";
 
 import { useDocumentsStore } from "../store/documentsStore";
 import { useDocumentSelection } from "../hooks/useDocumentSelection";
+
+import { useDashboardStore } from "../store/dashboardStore";
+import { filterDocuments } from "../utils/filterDocuments";
+import { sortDocuments } from "../utils/sortDocuments";
 
 export default function DashboardPage() {
     const navigate = useNavigate();
@@ -28,6 +34,10 @@ export default function DashboardPage() {
     const { selectedDocuments, selectedCount, clearSelection } =
         useDocumentSelection();
 
+    const searchQuery = useDashboardStore((s) => s.searchQuery);
+    const sortBy = useDashboardStore((s) => s.sortBy);
+    const filters = useDashboardStore((s) => s.filters);
+
     const [loading] = useState(false);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -40,6 +50,11 @@ export default function DashboardPage() {
 
     const selectedDocument = documents.find((doc) => doc.id === selectedDocumentId);
     const isBulkDelete = selectedCount > 0;
+
+    const processedDocuments = useMemo(() => {
+        const filtered = filterDocuments(documents, searchQuery, filters);
+        return sortDocuments(filtered, sortBy);
+    }, [documents, searchQuery, filters, sortBy]);
 
     function handleOpenCreateModal() {
         setIsCreateOpen(true);
@@ -100,26 +115,28 @@ export default function DashboardPage() {
         setSelectedDocumentId(null);
     }
 
-    const isEmpty = documents.length === 0;
+    const isEmpty = processedDocuments.length === 0;
 
     return (
-        <div className="flex min-h-screen flex-col">
-            <DashboardHeader />
+        <>
+            <PageContainer title="Documents">
+                <DashboardToolbar onCreate={handleOpenCreateModal} />
 
-            <RecentDocuments onOpenDocument={handleOpenDocument} />
+                <RecentDocuments onOpenDocument={handleOpenDocument} />
 
-            {isEmpty ? (
-                <DocumentsEmptyState onCreateDocument={handleOpenCreateModal} />
-            ) : (
-                <DocumentsContainer
-                    documents={documents}
-                    loading={loading}
-                    onOpen={handleOpenDocument}
-                    onRename={handleOpenRenameModal}
-                    onDelete={(id) => handleOpenDeleteModal(id)}
-                    onCreate={handleOpenCreateModal}
-                />
-            )}
+                {isEmpty ? (
+                    <DocumentsEmptyState onCreateDocument={handleOpenCreateModal} />
+                ) : (
+                    <DocumentsContainer
+                        documents={processedDocuments}
+                        loading={loading}
+                        onOpen={handleOpenDocument}
+                        onRename={handleOpenRenameModal}
+                        onDelete={(id) => handleOpenDeleteModal(id)}
+                        onCreate={handleOpenCreateModal}
+                    />
+                )}
+            </PageContainer>
 
             {selectedCount > 0 && (
                 <MultiSelectToolbar
@@ -149,6 +166,6 @@ export default function DashboardPage() {
                 documentTitle={selectedDocument?.title}
                 bulkCount={isBulkDelete ? selectedCount : 0}
             />
-        </div>
+        </>
     );
 }
