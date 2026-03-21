@@ -1,5 +1,5 @@
-import type { Document } from "../../types/document.types";
-import { generateDocumentPreview } from "../../utils/generateDocumentPreview";
+import type { Document } from "../types/document.types";
+import { generateDocumentPreview } from "../utils/generateDocumentPreview";
 
 type Props = {
     document: Document;
