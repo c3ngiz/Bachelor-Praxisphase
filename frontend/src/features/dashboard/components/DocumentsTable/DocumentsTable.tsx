@@ -16,7 +16,7 @@ export default function DocumentsTable({
     onDelete,
 }: Props) {
     return (
-        <div className="">
+        <div className="w-full">
             <div className="overflow-hidden rounded-xl border border-(--border) bg-(--bg-elevated)">
                 <table className="w-full text-sm">
                     <thead className="border-b border-(--border) text-left text-(--fg-muted)">

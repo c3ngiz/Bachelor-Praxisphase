@@ -22,7 +22,8 @@ export default function DocumentsGrid({
             className="
                 grid
                 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]
-                gap-6
+                gap-x-6 gap-y-8
+                items-start
             "
         >
             {documents.map((doc) => (

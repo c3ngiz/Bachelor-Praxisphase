@@ -122,11 +122,8 @@ export default function DashboardPage() {
     return (
         <>
             <PageContainer title="Documents">
-
-                {/* Toolbar */}
                 <DashboardToolbar onCreate={handleOpenCreateModal} />
 
-                {/* Recent Section */}
                 <Section>
                     <SectionHeader
                         title="Recent Documents"
@@ -136,7 +133,6 @@ export default function DashboardPage() {
                     <RecentDocuments onOpenDocument={handleOpenDocument} />
                 </Section>
 
-                {/* All Documents Section */}
                 <Section>
                     <SectionHeader
                         title="All Documents"
@@ -156,7 +152,6 @@ export default function DashboardPage() {
                         />
                     )}
                 </Section>
-
             </PageContainer>
 
             {selectedCount > 0 && (
