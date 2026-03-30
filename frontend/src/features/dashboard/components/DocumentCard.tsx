@@ -8,6 +8,7 @@ import {
     Pencil,
     Trash,
     ExternalLink,
+    FolderOpen,
 } from "lucide-react";
 import DocumentCardPreview from "./DocumentCardPreview";
 
@@ -32,9 +33,6 @@ export default function DocumentCard({
     const selectedDocuments = useDashboardStore((s) => s.selectedDocuments);
     const toggleSelection = useDashboardStore((s) => s.toggleSelection);
 
-    const selectedCount = useDashboardStore((s) => s.selectedDocuments.size);
-    const isSelectionMode = selectedCount > 0;
-
     const isSelected = selectedDocuments.has(document.id);
     const openedDate = formatDate(document.lastOpenedAt ?? document.updatedAt);
 
@@ -43,24 +41,30 @@ export default function DocumentCard({
             selectable
             selected={isSelected}
             interactive
-            onClick={() => onOpen?.(document.id)}
-            className="group overflow-hidden"
+            onClick={() => toggleSelection(document.id)}
+            onDoubleClick={() => onOpen?.(document.id)}
+            className="group"
         >
-            <Card.Actions className="left-2 right-auto">
-                <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={(e) => {
-                        e.stopPropagation();
-                        toggleSelection(document.id);
-                    }}
-                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
-                    aria-label={`Select document ${document.title}`}
-                />
-            </Card.Actions>
+            <div className="overflow-hidden rounded-t-xl">
+                <DocumentCardPreview document={document} />
+            </div>
 
-            {!isSelectionMode && (
-                <Card.Actions>
+            <Card.Content padding="sm">
+                <div className="flex items-center justify-between gap-3 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={16} className="shrink-0 text-blue-500" />
+
+                        <div className="flex min-w-0 flex-col">
+                            <span className="truncate text-sm font-medium">
+                                {document.title}
+                            </span>
+
+                            <span className="text-xs text-(--fg-muted)">
+                                Geöffnet {openedDate}
+                            </span>
+                        </div>
+                    </div>
+
                     <Popover
                         align="right"
                         offset={8}
@@ -70,7 +74,7 @@ export default function DocumentCard({
                                     e.stopPropagation();
                                     toggle();
                                 }}
-                                className="rounded-md p-1 hover:bg-(--bg)"
+                                className="shrink-0 rounded-md p-1 text-(--fg-muted) hover:bg-(--bg)"
                                 aria-label={`Open menu for ${document.title}`}
                             >
                                 <MoreVertical size={16} />
@@ -79,6 +83,17 @@ export default function DocumentCard({
                     >
                         {({ close }) => (
                             <div className="w-48 py-1">
+                                <button
+                                    onClick={() => {
+                                        onOpen?.(document.id);
+                                        close();
+                                    }}
+                                    className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
+                                >
+                                    <FolderOpen size={14} />
+                                    Öffnen
+                                </button>
+
                                 <button
                                     onClick={() => {
                                         onRename?.(document.id);
@@ -114,22 +129,6 @@ export default function DocumentCard({
                             </div>
                         )}
                     </Popover>
-                </Card.Actions>
-            )}
-
-            <DocumentCardPreview document={document} />
-
-            <Card.Content padding="sm">
-                <div className="flex items-center gap-2 min-w-0">
-                    <FileText size={16} className="shrink-0 text-blue-500" />
-
-                    <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-medium">{document.title}</span>
-
-                        <span className="text-xs text-(--fg-muted)">
-                            Geöffnet {openedDate}
-                        </span>
-                    </div>
                 </div>
             </Card.Content>
         </Card>
