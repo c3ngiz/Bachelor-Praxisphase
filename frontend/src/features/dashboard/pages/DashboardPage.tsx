@@ -8,7 +8,6 @@ import SectionHeader from "@/shared/components/layout/SectionHeader";
 import DocumentsContainer from "../components/DocumentsContainer";
 import DocumentsEmptyState from "../components/DocumentsEmptyState";
 import RecentDocuments from "../components/RecentDocuments";
-import DashboardToolbar from "../components/DashboardToolbar";
 
 import CreateDocumentModal from "../components/modals/CreateDocumentModal";
 import RenameDocumentModal from "../components/modals/RenameDocumentModal";
@@ -21,6 +20,11 @@ import { useDocumentSelection } from "../hooks/useDocumentSelection";
 import { useDashboardStore } from "../store/dashboardStore";
 import { filterDocuments } from "../utils/filterDocuments";
 import { sortDocuments } from "../utils/sortDocuments";
+
+import SearchBar from "../components/toolbar/SearchBar";
+import SortDropdown from "../components/toolbar/SortDropdown";
+import FilterDropdown from "../components/toolbar/FilterDropdown";
+import ViewDropdown from "../components/toolbar/ViewDropdown";
 
 export default function DashboardPage() {
     const navigate = useNavigate();
@@ -122,8 +126,6 @@ export default function DashboardPage() {
     return (
         <>
             <PageContainer title="Documents">
-                <DashboardToolbar onCreate={handleOpenCreateModal} />
-
                 <Section>
                     <SectionHeader
                         title="Recent Documents"
@@ -137,6 +139,18 @@ export default function DashboardPage() {
                     <SectionHeader
                         title="All Documents"
                         description="Browse and manage your documents"
+                        center={
+                            <div className="w-full max-w-2xl">
+                                <SearchBar />
+                            </div>
+                        }
+                        right={
+                            <>
+                                <SortDropdown />
+                                <FilterDropdown />
+                                <ViewDropdown />
+                            </>
+                        }
                     />
 
                     {isEmpty ? (

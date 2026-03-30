@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+
 import Input from "@/shared/components/ui/Input";
 import { useDashboardStore } from "../../store/dashboardStore";
 
@@ -11,6 +13,10 @@ export default function SearchBar() {
     const [localValue, setLocalValue] = useState(query);
 
     useEffect(() => {
+        setLocalValue(query);
+    }, [query]);
+
+    useEffect(() => {
         const timeout = setTimeout(() => {
             setSearchQuery(localValue);
         }, DEBOUNCE_MS);
@@ -19,11 +25,17 @@ export default function SearchBar() {
     }, [localValue, setSearchQuery]);
 
     return (
-        <div className="w-full">
+        <div className="relative w-full">
+            <Search
+                size={18}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-(--fg-muted)"
+            />
+
             <Input
                 placeholder="Search documents..."
                 value={localValue}
                 onChange={(e) => setLocalValue(e.target.value)}
+                className="h-12 rounded-full border-(--border) bg-(--bg-elevated) pl-11 pr-4 shadow-sm focus-visible:ring-2 focus-visible:ring-(--focus-ring)"
             />
         </div>
     );
