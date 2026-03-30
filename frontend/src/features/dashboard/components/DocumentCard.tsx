@@ -2,8 +2,6 @@ import type { Document } from "../types/document.types";
 import { useDashboardStore } from "../store/dashboardStore";
 import Card from "@/shared/components/ui/Card";
 import Popover from "@/shared/components/ui/Popover";
-
-import { generateDocumentPreview } from "../utils/generateDocumentPreview";
 import { MoreVertical, FileText, Pencil, Trash, ExternalLink } from "lucide-react";
 import DocumentCardPreview from "./DocumentCardPreview";
 
@@ -32,8 +30,6 @@ export default function DocumentCard({
 
     const isSelected = selectedDocuments.has(document.id);
 
-    const previewLines = generateDocumentPreview(document.content);
-
     return (
         <Card
             selectable
@@ -42,7 +38,6 @@ export default function DocumentCard({
             onClick={() => onOpen?.(document.id)}
             className="overflow-hidden"
         >
-            {/* CHECKBOX */}
             <Card.Actions className="left-2 right-auto">
                 <input
                     type="checkbox"
@@ -51,11 +46,11 @@ export default function DocumentCard({
                         e.stopPropagation();
                         toggleSelection(document.id);
                     }}
-                    className="h-4 w-4 cursor-pointer accent-(--accent)"
+                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                    aria-label={`Select document ${document.title}`}
                 />
             </Card.Actions>
 
-            {/* MENU */}
             {!isSelectionMode && (
                 <Card.Actions>
                     <Popover
@@ -68,6 +63,7 @@ export default function DocumentCard({
                                     toggle();
                                 }}
                                 className="rounded-md p-1 hover:bg-(--bg)"
+                                aria-label={`Open menu for ${document.title}`}
                             >
                                 <MoreVertical size={16} />
                             </button>
@@ -113,10 +109,8 @@ export default function DocumentCard({
                 </Card.Actions>
             )}
 
-            {/* 📄 REAL PAGE PREVIEW */}
             <DocumentCardPreview document={document} />
 
-            {/* FOOTER */}
             <Card.Content padding="sm">
                 <div className="flex items-center gap-2 min-w-0">
                     <FileText size={16} className="text-blue-500 shrink-0" />

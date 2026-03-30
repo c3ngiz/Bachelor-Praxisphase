@@ -1,72 +1,214 @@
-export function generateDocumentPreview(content: any): any[] {
-  if (!content) return [];
+export type PreviewMarkStyles = {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  color?: string;
+  highlight?: string;
+};
 
-  const blocks: any[] = [];
+export type PreviewSegment = {
+  text: string;
+  styles: PreviewMarkStyles;
+};
 
-  function extract(node: any) {
-    if (!node) return;
+export type PreviewBlock =
+  | {
+      type: "paragraph";
+      segments: PreviewSegment[];
+    }
+  | {
+      type: "heading";
+      level: number;
+      segments: PreviewSegment[];
+    }
+  | {
+      type: "list-item";
+      ordered?: boolean;
+      index?: number;
+      segments: PreviewSegment[];
+    };
 
-    // 🟢 TEXT NODE (this is the key!)
-    if (node.type === "text" && node.text?.trim()) {
-      blocks.push({
-        type: "text",
-        text: node.text,
+function getMarkStyles(
+  marks?: Array<{ type?: string; attrs?: Record<string, any> }>,
+): PreviewMarkStyles {
+  const styles: PreviewMarkStyles = {};
+
+  if (!marks) return styles;
+
+  for (const mark of marks) {
+    if (!mark?.type) continue;
+
+    switch (mark.type) {
+      case "bold":
+        styles.bold = true;
+        break;
+      case "italic":
+        styles.italic = true;
+        break;
+      case "underline":
+        styles.underline = true;
+        break;
+      case "textStyle":
+        if (mark.attrs?.color) {
+          styles.color = mark.attrs.color;
+        }
+        break;
+      case "highlight":
+        if (mark.attrs?.color) {
+          styles.highlight = mark.attrs.color;
+        } else {
+          styles.highlight = "#fff59d";
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  return styles;
+}
+
+function stylesEqual(a: PreviewMarkStyles, b: PreviewMarkStyles): boolean {
+  return (
+    a.bold === b.bold &&
+    a.italic === b.italic &&
+    a.underline === b.underline &&
+    a.color === b.color &&
+    a.highlight === b.highlight
+  );
+}
+
+function mergeAdjacentSegments(segments: PreviewSegment[]): PreviewSegment[] {
+  const merged: PreviewSegment[] = [];
+
+  for (const segment of segments) {
+    if (!segment.text) continue;
+
+    const previous = merged[merged.length - 1];
+
+    if (previous && stylesEqual(previous.styles, segment.styles)) {
+      previous.text += segment.text;
+    } else {
+      merged.push({
+        text: segment.text,
+        styles: { ...segment.styles },
       });
     }
+  }
 
-    // 🟢 HEADING
-    if (node.type === "heading") {
-      const text = getText(node);
-      if (text) {
-        blocks.push({
+  return merged;
+}
+
+function extractSegments(node: any): PreviewSegment[] {
+  if (!node) return [];
+
+  if (node.type === "text") {
+    const text = typeof node.text === "string" ? node.text : "";
+    if (!text) return [];
+
+    return [
+      {
+        text,
+        styles: getMarkStyles(node.marks),
+      },
+    ];
+  }
+
+  if (!Array.isArray(node.content)) {
+    return [];
+  }
+
+  const segments = node.content.flatMap((child: any) => extractSegments(child));
+  return mergeAdjacentSegments(segments);
+}
+
+function hasVisibleText(segments: PreviewSegment[]): boolean {
+  return segments.some((segment) => segment.text.trim().length > 0);
+}
+
+function extractListItemSegments(node: any): PreviewSegment[] {
+  if (!node || node.type !== "listItem" || !Array.isArray(node.content)) {
+    return [];
+  }
+
+  const segments = node.content.flatMap((child: any) => extractSegments(child));
+  return mergeAdjacentSegments(segments);
+}
+
+function extractBlocksFromNode(node: any): PreviewBlock[] {
+  if (!node) return [];
+
+  switch (node.type) {
+    case "doc":
+      return Array.isArray(node.content)
+        ? node.content.flatMap((child: any) => extractBlocksFromNode(child))
+        : [];
+
+    case "heading": {
+      const segments = extractSegments(node);
+      if (!hasVisibleText(segments)) return [];
+
+      return [
+        {
           type: "heading",
-          level: node.attrs?.level || 1,
-          text,
-        });
-      }
+          level: Number(node.attrs?.level) || 1,
+          segments,
+        },
+      ];
     }
 
-    // 🟢 PARAGRAPH
-    if (node.type === "paragraph") {
-      const text = getText(node);
-      if (text) {
-        blocks.push({
+    case "paragraph": {
+      const segments = extractSegments(node);
+      if (!hasVisibleText(segments)) return [];
+
+      return [
+        {
           type: "paragraph",
-          text,
-        });
-      }
+          segments,
+        },
+      ];
     }
 
-    // 🟢 LIST ITEMS (IMPORTANT FIX)
-    if (node.type === "listItem") {
-      const text = getText(node);
-      if (text) {
-        blocks.push({
-          type: "list-item",
-          text,
-        });
-      }
+    case "bulletList": {
+      if (!Array.isArray(node.content)) return [];
+
+      return node.content
+        .map((item: any) => extractListItemSegments(item))
+        .filter(hasVisibleText)
+        .map((segments) => ({
+          type: "list-item" as const,
+          segments,
+        }));
     }
 
-    // 🔁 ALWAYS recurse
-    if (Array.isArray(node.content)) {
-      node.content.forEach(extract);
+    case "orderedList": {
+      if (!Array.isArray(node.content)) return [];
+
+      return node.content
+        .map((item: any, index: number) => ({
+          segments: extractListItemSegments(item),
+          index,
+        }))
+        .filter(({ segments }) => hasVisibleText(segments))
+        .map(({ segments, index }) => ({
+          type: "list-item" as const,
+          ordered: true,
+          index: index + 1,
+          segments,
+        }));
     }
+
+    default:
+      return Array.isArray(node.content)
+        ? node.content.flatMap((child: any) => extractBlocksFromNode(child))
+        : [];
   }
+}
 
-  function getText(node: any): string {
-    if (!node) return "";
+export function generateDocumentPreview(content: any): PreviewBlock[] {
+  if (!content || typeof content !== "object") return [];
 
-    if (node.type === "text") return node.text || "";
-
-    if (Array.isArray(node.content)) {
-      return node.content.map(getText).join("");
-    }
-
-    return "";
-  }
-
-  extract(content);
+  const blocks = extractBlocksFromNode(content);
 
   return blocks.slice(0, 12);
 }
