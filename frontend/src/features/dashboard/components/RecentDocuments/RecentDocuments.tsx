@@ -1,5 +1,4 @@
 import { useRecentDocuments } from "../../hooks/useRecentDocuments";
-import Divider from "@/shared/components/ui/Divider";
 import Button from "@/shared/components/ui/Button";
 
 type Props = {
@@ -27,8 +26,6 @@ export default function RecentDocuments({ onOpenDocument }: Props) {
                     </Button>
                 ))}
             </div>
-
-            <Divider className="mt-6" />
         </div>
     );
 }

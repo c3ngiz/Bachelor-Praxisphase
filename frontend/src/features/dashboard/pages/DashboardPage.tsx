@@ -135,7 +135,7 @@ export default function DashboardPage() {
                     <RecentDocuments onOpenDocument={handleOpenDocument} />
                 </Section>
 
-                <Section>
+                <Section variant="subtle" fullBleed>
                     <SectionHeader
                         title="All Documents"
                         description="Browse and manage your documents"

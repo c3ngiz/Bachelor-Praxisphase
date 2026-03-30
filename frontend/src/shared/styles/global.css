@@ -5,8 +5,9 @@
 :root {
   color-scheme: light;
 
-  --bg: #f1f3f4;
+  --bg: #eef1f4;
   --bg-elevated: #ffffff;
+  --bg-subtle: #f6f8fa;
   --fg: #202124;
   --fg-muted: #5f6368;
   --border: #e0e0e0;
