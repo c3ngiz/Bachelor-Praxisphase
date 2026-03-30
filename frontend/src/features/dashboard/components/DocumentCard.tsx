@@ -2,7 +2,13 @@ import type { Document } from "../types/document.types";
 import { useDashboardStore } from "../store/dashboardStore";
 import Card from "@/shared/components/ui/Card";
 import Popover from "@/shared/components/ui/Popover";
-import { MoreVertical, FileText, Pencil, Trash, ExternalLink } from "lucide-react";
+import {
+    MoreVertical,
+    FileText,
+    Pencil,
+    Trash,
+    ExternalLink,
+} from "lucide-react";
 import DocumentCardPreview from "./DocumentCardPreview";
 
 type Props = {
@@ -12,7 +18,8 @@ type Props = {
     onDelete?: (id: string) => void;
 };
 
-function formatDate(date: string) {
+function formatDate(date?: string) {
+    if (!date) return "";
     return new Date(date).toLocaleDateString();
 }
 
@@ -29,6 +36,7 @@ export default function DocumentCard({
     const isSelectionMode = selectedCount > 0;
 
     const isSelected = selectedDocuments.has(document.id);
+    const openedDate = formatDate(document.lastOpenedAt ?? document.updatedAt);
 
     return (
         <Card
@@ -36,7 +44,7 @@ export default function DocumentCard({
             selected={isSelected}
             interactive
             onClick={() => onOpen?.(document.id)}
-            className="overflow-hidden"
+            className="group overflow-hidden"
         >
             <Card.Actions className="left-2 right-auto">
                 <input
@@ -113,15 +121,13 @@ export default function DocumentCard({
 
             <Card.Content padding="sm">
                 <div className="flex items-center gap-2 min-w-0">
-                    <FileText size={16} className="text-blue-500 shrink-0" />
+                    <FileText size={16} className="shrink-0 text-blue-500" />
 
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-medium truncate">
-                            {document.title}
-                        </span>
+                    <div className="flex min-w-0 flex-col">
+                        <span className="truncate text-sm font-medium">{document.title}</span>
 
                         <span className="text-xs text-(--fg-muted)">
-                            Geöffnet {formatDate(document.updatedAt)}
+                            Geöffnet {openedDate}
                         </span>
                     </div>
                 </div>

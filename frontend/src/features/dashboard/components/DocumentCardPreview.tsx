@@ -10,30 +10,34 @@ type Props = {
     document: Document;
 };
 
-function getHeadingStyle(level: number): CSSProperties {
+const PREVIEW_SCALE = 0.42;
+
+function getHeadingClass(level: number): string {
     switch (level) {
         case 1:
-            return { fontSize: "11px", fontWeight: 700, lineHeight: 1.25 };
+            return "mb-3 text-[26px] font-semibold leading-[1.25]";
         case 2:
-            return { fontSize: "10.5px", fontWeight: 700, lineHeight: 1.25 };
+            return "mb-2.5 text-[22px] font-semibold leading-[1.25]";
         case 3:
-            return { fontSize: "10px", fontWeight: 600, lineHeight: 1.25 };
+            return "mb-2 text-[18px] font-semibold leading-[1.3]";
         default:
-            return { fontSize: "9.5px", fontWeight: 600, lineHeight: 1.25 };
+            return "mb-2 text-[16px] font-semibold leading-[1.3]";
     }
 }
 
-function renderSegment(segment: PreviewSegment, index: number) {
-    const style: CSSProperties = {
+function getSegmentStyle(segment: PreviewSegment): CSSProperties {
+    return {
         color: segment.styles.color,
         backgroundColor: segment.styles.highlight,
         fontWeight: segment.styles.bold ? 700 : undefined,
         fontStyle: segment.styles.italic ? "italic" : undefined,
         textDecoration: segment.styles.underline ? "underline" : undefined,
     };
+}
 
+function renderSegment(segment: PreviewSegment, index: number) {
     return (
-        <span key={index} style={style}>
+        <span key={index} style={getSegmentStyle(segment)}>
             {segment.text}
         </span>
     );
@@ -42,11 +46,7 @@ function renderSegment(segment: PreviewSegment, index: number) {
 function renderBlock(block: PreviewBlock, index: number) {
     if (block.type === "heading") {
         return (
-            <p
-                key={index}
-                className="mb-1 break-words"
-                style={getHeadingStyle(block.level)}
-            >
+            <p key={index} className={getHeadingClass(block.level)}>
                 {block.segments.map(renderSegment)}
             </p>
         );
@@ -56,9 +56,9 @@ function renderBlock(block: PreviewBlock, index: number) {
         return (
             <div
                 key={index}
-                className="mb-0.5 flex items-start gap-1 break-words text-[9px] leading-[1.35]"
+                className="mb-2 flex items-start gap-3 text-[14px] leading-[1.5]"
             >
-                <span className="shrink-0 text-[9px] text-(--fg)">
+                <span className="shrink-0 text-[14px] text-[#202124]">
                     {block.ordered ? `${block.index}.` : "•"}
                 </span>
                 <p className="min-w-0 flex-1 break-words">
@@ -69,10 +69,7 @@ function renderBlock(block: PreviewBlock, index: number) {
     }
 
     return (
-        <p
-            key={index}
-            className="mb-0.5 break-words text-[9px] leading-[1.35]"
-        >
+        <p key={index} className="mb-2 text-[14px] leading-[1.5] break-words">
             {block.segments.map(renderSegment)}
         </p>
     );
@@ -82,17 +79,37 @@ export default function DocumentCardPreview({ document }: Props) {
     const blocks = generateDocumentPreview(document.content);
 
     return (
-        <div className="aspect-[3/4] bg-[#f1f3f4] p-2">
-            <div className="h-full w-full overflow-hidden border border-[#e0e0e0] bg-white px-3 py-3 shadow-sm">
-                {blocks.length === 0 ? (
-                    <span className="text-[9px] leading-[1.35] text-[#9aa0a6]">
-                        Empty document
-                    </span>
-                ) : (
-                    <div className="h-full overflow-hidden text-[#202124]">
-                        {blocks.map(renderBlock)}
+        <div className="aspect-[3/4] bg-[#f1f3f4] p-3">
+            <div
+                className="
+          h-full w-full overflow-hidden border border-[#e0e0e0] bg-white
+          shadow-[0_1px_2px_rgba(60,64,67,0.15),0_1px_3px_1px_rgba(60,64,67,0.08)]
+          transition-transform duration-200 ease-out
+          group-hover:scale-[1.02]
+        "
+            >
+                <div
+                    className="h-full w-full origin-top-left"
+                    style={{
+                        transform: `scale(${PREVIEW_SCALE})`,
+                        width: `${100 / PREVIEW_SCALE}%`,
+                        height: `${100 / PREVIEW_SCALE}%`,
+                    }}
+                >
+                    <div className="h-full w-full overflow-hidden px-10 py-10 text-[#202124]">
+                        {blocks.length === 0 ? (
+                            <div className="space-y-3 pt-1">
+                                <div className="h-3 w-3/4 rounded bg-[#eceff1]" />
+                                <div className="h-3 w-5/6 rounded bg-[#eceff1]" />
+                                <div className="h-3 w-2/3 rounded bg-[#eceff1]" />
+                                <div className="h-3 w-4/5 rounded bg-[#eceff1]" />
+                                <div className="h-3 w-1/2 rounded bg-[#eceff1]" />
+                            </div>
+                        ) : (
+                            <div>{blocks.map(renderBlock)}</div>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );
