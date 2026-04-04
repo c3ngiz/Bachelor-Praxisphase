@@ -1,4 +1,3 @@
-import { Button } from "@/shared/components/ui";
 import Popover from "@/shared/components/ui/Popover";
 import { Check, LayoutGrid, List, Rows3 } from "lucide-react";
 import { useDashboardStore } from "../../store/dashboardStore";
@@ -10,16 +9,8 @@ type ViewOption = {
 };
 
 const VIEW_OPTIONS: ViewOption[] = [
-    {
-        value: "grid",
-        label: "Grid",
-        icon: LayoutGrid,
-    },
-    {
-        value: "list",
-        label: "List",
-        icon: List,
-    },
+    { value: "grid", label: "Grid", icon: LayoutGrid },
+    { value: "list", label: "List", icon: List },
 ];
 
 function getCurrentViewLabel(viewMode: "grid" | "list") {
@@ -34,16 +25,22 @@ export default function ViewDropdown() {
         <Popover
             align="right"
             offset={10}
-            className="w-52 py-1"
+            className="w-52 rounded-xl border border-(--border) bg-(--bg-elevated) py-1 shadow-[0_10px_30px_rgba(15,23,42,0.10)]"
             trigger={({ toggle }) => (
-                <Button
-                    variant="ghost"
-                    className="flex items-center gap-2"
+                <button
+                    type="button"
                     onClick={toggle}
+                    className="
+                        inline-flex h-9 w-[6.75rem] items-center justify-center gap-2
+                        rounded-lg px-3 text-sm font-medium text-(--fg)
+                        transition-[background-color,color] duration-150
+                        hover:bg-(--bg) active:bg-(--bg)
+                    "
+                    aria-label="Change view"
                 >
                     <Rows3 size={16} />
-                    {getCurrentViewLabel(viewMode)}
-                </Button>
+                    <span className="truncate">{getCurrentViewLabel(viewMode)}</span>
+                </button>
             )}
         >
             {({ close }) => (
@@ -55,13 +52,19 @@ export default function ViewDropdown() {
                         return (
                             <button
                                 key={option.value}
+                                type="button"
                                 onClick={() => {
                                     setViewMode(option.value);
                                     close();
                                 }}
-                                className="flex w-full items-center justify-between gap-3 px-4 py-2 text-sm hover:bg-(--bg)"
+                                className={[
+                                    "mx-1 flex w-[calc(100%-0.5rem)] items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                                    isActive
+                                        ? "bg-(--bg) text-(--fg)"
+                                        : "text-(--fg) hover:bg-(--bg)",
+                                ].join(" ")}
                             >
-                                <span className="flex items-center gap-2 text-(--fg)">
+                                <span className="flex items-center gap-2">
                                     <Icon size={16} />
                                     {option.label}
                                 </span>

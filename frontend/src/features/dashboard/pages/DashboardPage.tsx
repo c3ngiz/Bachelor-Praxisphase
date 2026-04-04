@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import PageContainer from "@/shared/components/layout/PageContainer";
@@ -141,16 +141,24 @@ export default function DashboardPage() {
                         title="All Documents"
                         description="Browse and manage your documents"
                         center={
-                            <div className="w-full max-w-2xl">
+                            <div className="flex h-11 w-full max-w-[30rem] items-center self-center">
                                 <SearchBar />
                             </div>
                         }
                         right={
-                            <>
-                                <SortDropdown />
-                                <FilterDropdown />
-                                <ViewDropdown />
-                            </>
+                            <div className="flex h-11 items-center self-center">
+                                <div
+                                    className="
+                                        flex h-11 items-center gap-1 rounded-xl border border-(--border)
+                                        bg-(--bg-elevated) p-1
+                                        shadow-[0_2px_8px_rgba(60,64,67,0.08)]
+                                    "
+                                >
+                                    <SortDropdown />
+                                    <FilterDropdown />
+                                    <ViewDropdown />
+                                </div>
+                            </div>
                         }
                     />
 
@@ -173,13 +181,13 @@ export default function DashboardPage() {
                 </Section>
             </PageContainer>
 
-            {selectedCount > 0 && (
+            {selectedCount > 0 ? (
                 <MultiSelectToolbar
                     count={selectedCount}
                     onClear={clearSelection}
                     onDelete={() => handleOpenDeleteModal()}
                 />
-            )}
+            ) : null}
 
             <CreateDocumentModal
                 isOpen={isCreateOpen}

@@ -1,4 +1,3 @@
-import { Button } from "@/shared/components/ui";
 import Popover from "@/shared/components/ui/Popover";
 import { ArrowDownAZ, CalendarRange, Check, Clock3 } from "lucide-react";
 import { useDashboardStore } from "../../store/dashboardStore";
@@ -10,21 +9,9 @@ type SortOption = {
 };
 
 const SORT_OPTIONS: SortOption[] = [
-  {
-    value: "updated",
-    label: "Last updated",
-    icon: Clock3,
-  },
-  {
-    value: "created",
-    label: "Created",
-    icon: CalendarRange,
-  },
-  {
-    value: "title",
-    label: "Title",
-    icon: ArrowDownAZ,
-  },
+  { value: "updated", label: "Last updated", icon: Clock3 },
+  { value: "created", label: "Created", icon: CalendarRange },
+  { value: "title", label: "Title", icon: ArrowDownAZ },
 ];
 
 function getCurrentSortLabel(sortBy: "updated" | "created" | "title") {
@@ -39,16 +26,22 @@ export default function SortDropdown() {
     <Popover
       align="right"
       offset={10}
-      className="w-56 py-1"
+      className="w-56 rounded-xl border border-(--border) bg-(--bg-elevated) py-1 shadow-[0_10px_30px_rgba(15,23,42,0.10)]"
       trigger={({ toggle }) => (
-        <Button
-          variant="ghost"
-          className="flex items-center gap-2"
+        <button
+          type="button"
           onClick={toggle}
+          className="
+                        inline-flex h-9 w-[10.75rem] items-center justify-center gap-2
+                        rounded-lg px-3 text-sm font-medium text-(--fg)
+                        transition-[background-color,color] duration-150
+                        hover:bg-(--bg) active:bg-(--bg)
+                    "
+          aria-label="Sort documents"
         >
           <Clock3 size={16} />
-          {getCurrentSortLabel(sortBy)}
-        </Button>
+          <span className="truncate">{getCurrentSortLabel(sortBy)}</span>
+        </button>
       )}
     >
       {({ close }) => (
@@ -60,13 +53,19 @@ export default function SortDropdown() {
             return (
               <button
                 key={option.value}
+                type="button"
                 onClick={() => {
                   setSortBy(option.value);
                   close();
                 }}
-                className="flex w-full items-center justify-between gap-3 px-4 py-2 text-sm hover:bg-(--bg)"
+                className={[
+                  "mx-1 flex w-[calc(100%-0.5rem)] items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                  isActive
+                    ? "bg-(--bg) text-(--fg)"
+                    : "text-(--fg) hover:bg-(--bg)",
+                ].join(" ")}
               >
-                <span className="flex items-center gap-2 text-(--fg)">
+                <span className="flex items-center gap-2">
                   <Icon size={16} />
                   {option.label}
                 </span>
