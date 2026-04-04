@@ -9,23 +9,18 @@ type Props = {
 export default function Navbar({ left, center, right }: Props) {
   return (
     <header className="w-full border-b border-(--border) bg-(--bg-elevated)">
-      <nav className="flex h-14 w-full items-center justify-between px-6">
-
-        {/* LEFT */}
-        <div className="flex items-center gap-3">
+      <nav className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-6">
+        <div className="flex min-w-0 items-center gap-4">
           {left}
         </div>
 
-        {/* CENTER */}
-        <div className="flex items-center justify-center flex-1">
+        <div className="flex flex-1 items-center justify-center px-6">
           {center}
         </div>
 
-        {/* RIGHT */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {right}
         </div>
-
       </nav>
     </header>
   );
