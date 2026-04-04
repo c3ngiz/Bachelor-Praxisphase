@@ -9,7 +9,6 @@ import DashboardLayout from "../components/DashboardLayout";
 import DocumentsContainer from "../components/DocumentsContainer";
 import DocumentsEmptyState from "../components/DocumentsEmptyState";
 import RecentDocuments from "../components/RecentDocuments";
-import DashboardFooterStrip from "../components/DashboardFooterStrip";
 
 import CreateDocumentModal from "../components/modals/CreateDocumentModal";
 import RenameDocumentModal from "../components/modals/RenameDocumentModal";
@@ -126,7 +125,7 @@ export default function DashboardPage() {
 
     return (
         <>
-            <DashboardLayout>
+            <DashboardLayout documents={documents}>
                 <PageContainer title="Documents">
                     <Section>
                         <SectionHeader
@@ -145,10 +144,10 @@ export default function DashboardPage() {
                                 <div className="flex h-11 items-center self-center">
                                     <div
                                         className="
-                                            flex h-11 items-center gap-1 rounded-xl border border-(--border)
-                                            bg-(--bg-elevated) p-1
-                                            shadow-[0_2px_8px_rgba(60,64,67,0.08)]
-                                        "
+                      flex h-11 items-center gap-1 rounded-xl border border-(--border)
+                      bg-(--bg-elevated) p-1
+                      shadow-[0_2px_8px_rgba(60,64,67,0.08)]
+                    "
                                     >
                                         <SortDropdown />
                                         <FilterDropdown />
@@ -170,10 +169,6 @@ export default function DashboardPage() {
                                 onCreate={handleOpenCreateModal}
                             />
                         )}
-                    </Section>
-
-                    <Section className="pt-2 pb-6">
-                        <DashboardFooterStrip documents={documents} />
                     </Section>
                 </PageContainer>
             </DashboardLayout>
