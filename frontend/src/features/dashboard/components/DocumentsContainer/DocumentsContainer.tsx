@@ -1,5 +1,3 @@
-import { useDocumentSearch } from "../../hooks/useDocumentSearch";
-import { useDashboardStore } from "../../store/dashboardStore";
 import type { Document } from "../../types/document.types";
 
 import DocumentsEmptyState from "../DocumentsEmptyState";
@@ -8,8 +6,11 @@ import DocumentSkeletonGrid from "../DocumentSkeleton/DocumentSkeletonGrid";
 import DocumentSkeletonList from "../DocumentSkeleton/DocumentSkeletonList";
 import DocumentsTable from "../DocumentsTable";
 
+type ViewMode = "grid" | "list";
+
 type Props = {
     documents: Document[];
+    viewMode: ViewMode;
     loading?: boolean;
     onOpen?: (id: string) => void;
     onRename?: (id: string) => void;
@@ -19,18 +20,13 @@ type Props = {
 
 export default function DocumentsContainer({
     documents,
+    viewMode,
     loading,
     onOpen,
     onRename,
     onDelete,
     onCreate,
 }: Props) {
-    const query = useDashboardStore((state) => state.searchQuery);
-    const filters = useDashboardStore((state) => state.filters);
-    const viewMode = useDashboardStore((state) => state.viewMode);
-
-    const filteredDocuments = useDocumentSearch(documents, query, filters);
-
     if (loading) {
         return viewMode === "grid" ? (
             <DocumentSkeletonGrid />
@@ -39,14 +35,14 @@ export default function DocumentsContainer({
         );
     }
 
-    if (filteredDocuments.length === 0) {
+    if (documents.length === 0) {
         return <DocumentsEmptyState onCreateDocument={onCreate} />;
     }
 
     if (viewMode === "grid") {
         return (
             <DocumentsGrid
-                documents={filteredDocuments}
+                documents={documents}
                 onOpen={onOpen}
                 onRename={onRename}
                 onDelete={onDelete}
@@ -57,7 +53,7 @@ export default function DocumentsContainer({
 
     return (
         <DocumentsTable
-            documents={filteredDocuments}
+            documents={documents}
             onOpen={onOpen}
             onRename={onRename}
             onDelete={onDelete}

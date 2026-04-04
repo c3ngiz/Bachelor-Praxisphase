@@ -7,7 +7,6 @@ import SectionHeader from "@/shared/components/layout/SectionHeader";
 
 import DashboardLayout from "../components/DashboardLayout";
 import DocumentsContainer from "../components/DocumentsContainer";
-import DocumentsEmptyState from "../components/DocumentsEmptyState";
 import RecentDocuments from "../components/RecentDocuments";
 
 import CreateDocumentModal from "../components/modals/CreateDocumentModal";
@@ -43,6 +42,7 @@ export default function DashboardPage() {
     const searchQuery = useDashboardStore((s) => s.searchQuery);
     const sortBy = useDashboardStore((s) => s.sortBy);
     const filters = useDashboardStore((s) => s.filters);
+    const viewMode = useDashboardStore((s) => s.viewMode);
 
     const [loading] = useState(false);
 
@@ -57,9 +57,20 @@ export default function DashboardPage() {
     const selectedDocument = documents.find((doc) => doc.id === selectedDocumentId);
     const isBulkDelete = selectedCount > 0;
 
+    const recentDocuments = useMemo(() => {
+        return [...documents]
+            .filter((doc) => !!doc.lastOpenedAt)
+            .sort(
+                (a, b) =>
+                    new Date(b.lastOpenedAt ?? 0).getTime() -
+                    new Date(a.lastOpenedAt ?? 0).getTime(),
+            )
+            .slice(0, 3);
+    }, [documents]);
+
     const processedDocuments = useMemo(() => {
-        const filtered = filterDocuments(documents, searchQuery, filters);
-        return sortDocuments(filtered, sortBy);
+        const filteredDocuments = filterDocuments(documents, searchQuery, filters);
+        return sortDocuments(filteredDocuments, sortBy);
     }, [documents, searchQuery, filters, sortBy]);
 
     function handleOpenCreateModal() {
@@ -121,54 +132,52 @@ export default function DashboardPage() {
         setSelectedDocumentId(null);
     }
 
-    const isEmpty = processedDocuments.length === 0;
-
     return (
         <>
             <DashboardLayout documents={documents}>
                 <PageContainer title="Documents">
-                    <Section>
-                        <SectionHeader
-                            title="Recent Documents"
-                            description="Documents you recently opened"
-                        />
+                    {recentDocuments.length > 0 ? (
+                        <Section>
+                            <SectionHeader
+                                title="Recent Documents"
+                                description="Jump back into the documents you opened most recently"
+                            />
 
-                        <RecentDocuments onOpenDocument={handleOpenDocument} />
-                    </Section>
+                            <RecentDocuments
+                                documents={recentDocuments}
+                                onOpenDocument={handleOpenDocument}
+                            />
+                        </Section>
+                    ) : null}
 
                     <Section variant="subtle" fullBleed>
                         <SectionHeader
                             title="All Documents"
                             description="Browse and manage your documents"
                             right={
-                                <div className="flex h-11 items-center self-center">
-                                    <div
-                                        className="
-                      flex h-11 items-center gap-1 rounded-xl border border-(--border)
-                      bg-(--bg-elevated) p-1
-                      shadow-[0_2px_8px_rgba(60,64,67,0.08)]
-                    "
-                                    >
-                                        <SortDropdown />
-                                        <FilterDropdown />
-                                        <ViewDropdown />
-                                    </div>
+                                <div
+                                    className="
+                    flex h-11 items-center gap-1 rounded-xl border border-(--border)
+                    bg-(--bg-elevated) p-1
+                    shadow-[0_2px_8px_rgba(60,64,67,0.08)]
+                  "
+                                >
+                                    <SortDropdown />
+                                    <FilterDropdown />
+                                    <ViewDropdown />
                                 </div>
                             }
                         />
 
-                        {isEmpty ? (
-                            <DocumentsEmptyState onCreateDocument={handleOpenCreateModal} />
-                        ) : (
-                            <DocumentsContainer
-                                documents={processedDocuments}
-                                loading={loading}
-                                onOpen={handleOpenDocument}
-                                onRename={handleOpenRenameModal}
-                                onDelete={(id) => handleOpenDeleteModal(id)}
-                                onCreate={handleOpenCreateModal}
-                            />
-                        )}
+                        <DocumentsContainer
+                            documents={processedDocuments}
+                            viewMode={viewMode}
+                            loading={loading}
+                            onOpen={handleOpenDocument}
+                            onRename={handleOpenRenameModal}
+                            onDelete={(id) => handleOpenDeleteModal(id)}
+                            onCreate={handleOpenCreateModal}
+                        />
                     </Section>
                 </PageContainer>
             </DashboardLayout>

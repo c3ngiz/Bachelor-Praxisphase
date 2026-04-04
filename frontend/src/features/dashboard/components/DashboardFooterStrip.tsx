@@ -26,7 +26,6 @@ export default function DashboardFooterStrip({ documents }: Props) {
   return (
     <div
       className="
-        sticky bottom-4 z-20
         flex flex-col gap-3 rounded-xl border border-(--border)
         bg-(--bg-elevated)/95 px-4 py-3
         text-sm text-(--fg-muted) shadow-sm backdrop-blur
