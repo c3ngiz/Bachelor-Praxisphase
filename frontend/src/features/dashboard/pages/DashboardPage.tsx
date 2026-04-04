@@ -5,6 +5,7 @@ import PageContainer from "@/shared/components/layout/PageContainer";
 import Section from "@/shared/components/layout/Section";
 import SectionHeader from "@/shared/components/layout/SectionHeader";
 
+import DashboardLayout from "../components/DashboardLayout";
 import DocumentsContainer from "../components/DocumentsContainer";
 import DocumentsEmptyState from "../components/DocumentsEmptyState";
 import RecentDocuments from "../components/RecentDocuments";
@@ -22,7 +23,6 @@ import { useDashboardStore } from "../store/dashboardStore";
 import { filterDocuments } from "../utils/filterDocuments";
 import { sortDocuments } from "../utils/sortDocuments";
 
-import SearchBar from "../components/toolbar/SearchBar";
 import SortDropdown from "../components/toolbar/SortDropdown";
 import FilterDropdown from "../components/toolbar/FilterDropdown";
 import ViewDropdown from "../components/toolbar/ViewDropdown";
@@ -126,60 +126,57 @@ export default function DashboardPage() {
 
     return (
         <>
-            <PageContainer title="Documents">
-                <Section>
-                    <SectionHeader
-                        title="Recent Documents"
-                        description="Documents you recently opened"
-                    />
-
-                    <RecentDocuments onOpenDocument={handleOpenDocument} />
-                </Section>
-
-                <Section variant="subtle" fullBleed>
-                    <SectionHeader
-                        title="All Documents"
-                        description="Browse and manage your documents"
-                        center={
-                            <div className="flex h-11 w-full max-w-[30rem] items-center self-center">
-                                <SearchBar />
-                            </div>
-                        }
-                        right={
-                            <div className="flex h-11 items-center self-center">
-                                <div
-                                    className="
-                                        flex h-11 items-center gap-1 rounded-xl border border-(--border)
-                                        bg-(--bg-elevated) p-1
-                                        shadow-[0_2px_8px_rgba(60,64,67,0.08)]
-                                    "
-                                >
-                                    <SortDropdown />
-                                    <FilterDropdown />
-                                    <ViewDropdown />
-                                </div>
-                            </div>
-                        }
-                    />
-
-                    {isEmpty ? (
-                        <DocumentsEmptyState onCreateDocument={handleOpenCreateModal} />
-                    ) : (
-                        <DocumentsContainer
-                            documents={processedDocuments}
-                            loading={loading}
-                            onOpen={handleOpenDocument}
-                            onRename={handleOpenRenameModal}
-                            onDelete={(id) => handleOpenDeleteModal(id)}
-                            onCreate={handleOpenCreateModal}
+            <DashboardLayout>
+                <PageContainer title="Documents">
+                    <Section>
+                        <SectionHeader
+                            title="Recent Documents"
+                            description="Documents you recently opened"
                         />
-                    )}
-                </Section>
 
-                <Section className="pt-2 pb-6">
-                    <DashboardFooterStrip documents={documents} />
-                </Section>
-            </PageContainer>
+                        <RecentDocuments onOpenDocument={handleOpenDocument} />
+                    </Section>
+
+                    <Section variant="subtle" fullBleed>
+                        <SectionHeader
+                            title="All Documents"
+                            description="Browse and manage your documents"
+                            right={
+                                <div className="flex h-11 items-center self-center">
+                                    <div
+                                        className="
+                                            flex h-11 items-center gap-1 rounded-xl border border-(--border)
+                                            bg-(--bg-elevated) p-1
+                                            shadow-[0_2px_8px_rgba(60,64,67,0.08)]
+                                        "
+                                    >
+                                        <SortDropdown />
+                                        <FilterDropdown />
+                                        <ViewDropdown />
+                                    </div>
+                                </div>
+                            }
+                        />
+
+                        {isEmpty ? (
+                            <DocumentsEmptyState onCreateDocument={handleOpenCreateModal} />
+                        ) : (
+                            <DocumentsContainer
+                                documents={processedDocuments}
+                                loading={loading}
+                                onOpen={handleOpenDocument}
+                                onRename={handleOpenRenameModal}
+                                onDelete={(id) => handleOpenDeleteModal(id)}
+                                onCreate={handleOpenCreateModal}
+                            />
+                        )}
+                    </Section>
+
+                    <Section className="pt-2 pb-6">
+                        <DashboardFooterStrip documents={documents} />
+                    </Section>
+                </PageContainer>
+            </DashboardLayout>
 
             {selectedCount > 0 ? (
                 <MultiSelectToolbar

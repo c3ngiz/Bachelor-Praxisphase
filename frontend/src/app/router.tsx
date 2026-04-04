@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
 import AuthLayout from "@/shared/components/layout/AuthLayout"
-import AppLayout from "@/shared/components/layout/AppLayout"
 
 import SignInPage from "@/features/auth/pages/SignInPage"
 import SignUpPage from "@/features/auth/pages/SignUpPage"
@@ -14,7 +13,6 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
           <Route path="/" element={<Navigate to="/signin" />} />
@@ -22,19 +20,17 @@ export function AppRouter() {
           <Route path="/signup" element={<SignUpPage />} />
         </Route>
 
-        {/* App Routes */}
+        {/* Dashboard Route */}
         <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
-              <AppLayout />
+              <DashboardPage />
             </ProtectedRoute>
           }
-        >
-          <Route path="/dashboard" element={<DashboardPage />} />
-        </Route>
+        />
 
         <Route path="/document/:id" element={<EditorPage />} />
-
       </Routes>
     </BrowserRouter>
   )
