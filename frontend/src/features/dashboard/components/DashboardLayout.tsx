@@ -16,10 +16,8 @@ export default function DashboardLayout({ children, documents }: Props) {
 
       <main className="flex-1">{children}</main>
 
-      <div className="sticky bottom-0 z-20 px-6 pb-4">
-        <div className="mx-auto w-full max-w-7xl">
-          <DashboardFooterStrip documents={documents} />
-        </div>
+      <div className="mx-auto w-full max-w-7xl pb-6">
+        <DashboardFooterStrip documents={documents} />
       </div>
     </div>
   );

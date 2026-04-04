@@ -135,7 +135,7 @@ export default function DashboardPage() {
     return (
         <>
             <DashboardLayout documents={documents}>
-                <PageContainer title="Documents">
+                <PageContainer title="">
                     {recentDocuments.length > 0 ? (
                         <Section>
                             <SectionHeader
