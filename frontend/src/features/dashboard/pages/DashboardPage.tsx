@@ -8,6 +8,7 @@ import SectionHeader from "@/shared/components/layout/SectionHeader";
 import DocumentsContainer from "../components/DocumentsContainer";
 import DocumentsEmptyState from "../components/DocumentsEmptyState";
 import RecentDocuments from "../components/RecentDocuments";
+import DashboardFooterStrip from "../components/DashboardFooterStrip";
 
 import CreateDocumentModal from "../components/modals/CreateDocumentModal";
 import RenameDocumentModal from "../components/modals/RenameDocumentModal";
@@ -165,6 +166,10 @@ export default function DashboardPage() {
                             onCreate={handleOpenCreateModal}
                         />
                     )}
+                </Section>
+
+                <Section className="pt-2 pb-6">
+                    <DashboardFooterStrip documents={documents} />
                 </Section>
             </PageContainer>
 
