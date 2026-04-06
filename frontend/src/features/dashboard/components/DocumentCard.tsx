@@ -64,7 +64,7 @@ export default function DocumentCard({
                             </span>
 
                             <span className="text-xs text-(--fg-muted)">
-                                Geöffnet {openedDate}
+                                Opened {openedDate}
                             </span>
                         </div>
                     </div>
@@ -101,7 +101,7 @@ export default function DocumentCard({
                                     className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
                                 >
                                     <FolderOpen size={14} />
-                                    Öffnen
+                                    Open
                                 </button>
 
                                 <button
@@ -112,7 +112,7 @@ export default function DocumentCard({
                                     className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
                                 >
                                     <Pencil size={14} />
-                                    Umbenennen
+                                    Rename
                                 </button>
 
                                 <button
@@ -123,7 +123,7 @@ export default function DocumentCard({
                                     className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-(--bg)"
                                 >
                                     <Trash size={14} />
-                                    Entfernen
+                                    Delete
                                 </button>
 
                                 <button
@@ -134,7 +134,7 @@ export default function DocumentCard({
                                     className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
                                 >
                                     <ExternalLink size={14} />
-                                    In neuem Tab öffnen
+                                    Open in new tab
                                 </button>
                             </div>
                         )}
