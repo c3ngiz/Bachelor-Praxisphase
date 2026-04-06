@@ -8,11 +8,13 @@ import {
 type Align = "left" | "right" | "center";
 
 type Props = {
-  trigger: (args: { open: boolean; toggle: () => void }) => ReactNode;
+  trigger: (args: { open: boolean; toggle: () => void; close: () => void }) => ReactNode;
   children: (args: { close: () => void }) => ReactNode;
   className?: string;
   align?: Align;
   offset?: number;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export default function Popover({
@@ -21,12 +23,25 @@ export default function Popover({
   className,
   align = "right",
   offset = 8,
+  open: controlledOpen,
+  onOpenChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  const setOpen = (next: boolean) => {
+    if (!isControlled) {
+      setUncontrolledOpen(next);
+    }
+
+    onOpenChange?.(next);
+  };
+
   const close = () => setOpen(false);
-  const toggle = () => setOpen((prev) => !prev);
+  const toggle = () => setOpen(!open);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -47,7 +62,7 @@ export default function Popover({
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, []);
+  }, [open]);
 
   const alignClasses = {
     left: "left-0",
@@ -57,7 +72,7 @@ export default function Popover({
 
   return (
     <div className="relative" ref={ref}>
-      {trigger({ open, toggle })}
+      {trigger({ open, toggle, close })}
 
       {open && (
         <div
@@ -66,11 +81,9 @@ export default function Popover({
             "absolute top-full z-50",
             alignClasses,
 
-            // base styling
             "rounded-xl border border-(--border)",
             "bg-(--bg-elevated) shadow-xl",
 
-            // animation
             "origin-top transform transition-all duration-150 ease-out",
             "scale-95 opacity-0 animate-popover-in",
 

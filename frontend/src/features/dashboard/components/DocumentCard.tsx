@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Document } from "../types/document.types";
 import { useDashboardStore } from "../store/dashboardStore";
 import Card from "@/shared/components/ui/Card";
@@ -33,6 +34,8 @@ export default function DocumentCard({
     const selectedDocuments = useDashboardStore((s) => s.selectedDocuments);
     const toggleSelection = useDashboardStore((s) => s.toggleSelection);
 
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
     const isSelected = selectedDocuments.has(document.id);
     const openedDate = formatDate(document.lastOpenedAt ?? document.updatedAt);
 
@@ -43,6 +46,7 @@ export default function DocumentCard({
             interactive
             onClick={() => toggleSelection(document.id)}
             onDoubleClick={() => onOpen?.(document.id)}
+            onMouseLeave={() => setIsMenuOpen(false)}
             className="group relative z-0 hover:z-20 focus-within:z-20"
         >
             <div className="overflow-hidden rounded-t-xl">
@@ -68,14 +72,20 @@ export default function DocumentCard({
                     <Popover
                         align="right"
                         offset={8}
-                        trigger={({ toggle }) => (
+                        open={isMenuOpen}
+                        onOpenChange={setIsMenuOpen}
+                        trigger={({ toggle, open }) => (
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     toggle();
                                 }}
-                                className="shrink-0 rounded-md p-1 text-(--fg-muted) hover:bg-(--bg)"
+                                className={[
+                                    "shrink-0 rounded-md p-1 text-(--fg-muted)",
+                                    open ? "bg-(--bg)" : "hover:bg-(--bg)",
+                                ].join(" ")}
                                 aria-label={`Open menu for ${document.title}`}
+                                aria-expanded={open}
                             >
                                 <MoreVertical size={16} />
                             </button>
