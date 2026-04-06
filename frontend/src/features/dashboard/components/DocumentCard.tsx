@@ -43,7 +43,7 @@ export default function DocumentCard({
             interactive
             onClick={() => toggleSelection(document.id)}
             onDoubleClick={() => onOpen?.(document.id)}
-            className="group"
+            className="group relative z-0 hover:z-20 focus-within:z-20"
         >
             <div className="overflow-hidden rounded-t-xl">
                 <DocumentCardPreview document={document} />
