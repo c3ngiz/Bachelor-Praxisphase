@@ -1,5 +1,5 @@
 import type { Document } from "../../types/document.types";
-import CreateDocumentCard from "../CreateDocumentCard/CreateDocumentCard";
+import CreateDocumentCard from "../CreateDocumentCard";
 import DocumentCard from "../DocumentCard";
 
 type Props = {

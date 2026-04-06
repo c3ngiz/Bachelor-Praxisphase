@@ -51,11 +51,11 @@ export default function CreateDocumentCard({ onCreate }: Props) {
 
           <div className="flex min-w-0 flex-col">
             <span className="text-sm font-medium truncate">
-              Neues Dokument erstellen
+              Create new document
             </span>
 
             <span className="text-xs text-(--fg-muted)">
-              Klicken zum Erstellen
+              Click to create
             </span>
           </div>
         </div>
