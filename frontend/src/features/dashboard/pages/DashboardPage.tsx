@@ -55,7 +55,15 @@ export default function DashboardPage() {
     );
 
     const selectedDocument = documents.find((doc) => doc.id === selectedDocumentId);
-    const isBulkDelete = selectedCount > 0;
+
+    const selectedDocumentIds = useMemo(() => {
+        return Array.from(selectedDocuments);
+    }, [selectedDocuments]);
+
+    const singleSelectedDocumentId =
+        selectedCount === 1 ? selectedDocumentIds[0] : null;
+
+    const isBulkDelete = selectedCount > 1;
 
     const recentDocuments = useMemo(() => {
         return [...documents]
@@ -114,6 +122,8 @@ export default function DashboardPage() {
     function handleOpenDeleteModal(id?: string) {
         if (id) {
             setSelectedDocumentId(id);
+        } else if (selectedCount === 1 && singleSelectedDocumentId) {
+            setSelectedDocumentId(singleSelectedDocumentId);
         } else {
             setSelectedDocumentId(null);
         }
@@ -122,11 +132,12 @@ export default function DashboardPage() {
     }
 
     function handleConfirmDelete() {
-        if (isBulkDelete) {
-            deleteDocuments(Array.from(selectedDocuments));
+        if (selectedCount > 1) {
+            deleteDocuments(selectedDocumentIds);
             clearSelection();
         } else if (selectedDocumentId) {
             deleteDocument(selectedDocumentId);
+            clearSelection();
         }
 
         setSelectedDocumentId(null);
@@ -157,10 +168,10 @@ export default function DashboardPage() {
                             right={
                                 <div
                                     className="
-                    flex h-11 items-center gap-1 rounded-xl border border-(--border)
-                    bg-(--bg-elevated) p-1
-                    shadow-[0_2px_8px_rgba(60,64,67,0.08)]
-                  "
+                                        flex h-11 items-center gap-1 rounded-xl border border-(--border)
+                                        bg-(--bg-elevated) p-1
+                                        shadow-[0_2px_8px_rgba(60,64,67,0.08)]
+                                    "
                                 >
                                     <SortDropdown />
                                     <FilterDropdown />
@@ -205,7 +216,10 @@ export default function DashboardPage() {
 
             <DeleteConfirmationModal
                 isOpen={isDeleteOpen}
-                onClose={() => setIsDeleteOpen(false)}
+                onClose={() => {
+                    setIsDeleteOpen(false);
+                    setSelectedDocumentId(null);
+                }}
                 onConfirm={handleConfirmDelete}
                 documentTitle={selectedDocument?.title}
                 bulkCount={isBulkDelete ? selectedCount : 0}
