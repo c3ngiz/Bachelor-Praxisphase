@@ -14,9 +14,9 @@ export default function DashboardLayout({ children, documents }: Props) {
     <div className="flex min-h-screen flex-col bg-(--bg)">
       <DashboardNavbar />
 
-      <main className="flex-1">{children}</main>
+      <main className="relative z-10 flex-1">{children}</main>
 
-      <div className="mx-auto w-full max-w-7xl pb-6">
+      <div className="relative z-0 mx-auto w-full max-w-7xl pb-6">
         <DashboardFooterStrip documents={documents} />
       </div>
     </div>
