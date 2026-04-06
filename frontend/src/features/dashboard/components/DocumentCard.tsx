@@ -56,7 +56,7 @@ export default function DocumentCard({
             <Card.Content padding="sm">
                 <div className="flex items-center justify-between gap-3 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
-                        <FileText size={16} className="shrink-0 text-blue-500" />
+                        <FileText size={16} className="shrink-0 text-emerald-500" />
 
                         <div className="flex min-w-0 flex-col">
                             <span className="truncate text-sm font-medium">
