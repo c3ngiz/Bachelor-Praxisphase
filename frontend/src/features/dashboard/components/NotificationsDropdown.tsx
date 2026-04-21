@@ -1,17 +1,31 @@
-import { Bell, CheckCheck, Sparkles } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  MessageSquareText,
+  Share2,
+  UserPlus,
+} from "lucide-react";
 
 import Popover from "@/shared/components/ui/Popover";
 
 const NOTIFICATIONS = [
   {
     id: "n1",
-    title: "Workspace synced",
-    description: "Your latest document changes were saved locally.",
+    title: "Maya edited Product Brief",
+    description: "Updated the launch notes 12 minutes ago.",
+    icon: MessageSquareText,
   },
   {
     id: "n2",
-    title: "Quick tip",
-    description: "Double-click a document card to open it instantly.",
+    title: "Alex shared Roadmap Q3",
+    description: "You now have edit access to this document.",
+    icon: Share2,
+  },
+  {
+    id: "n3",
+    title: "Liam joined DocFlow Team",
+    description: "New viewer added to the workspace today.",
+    icon: UserPlus,
   },
 ];
 
@@ -44,10 +58,10 @@ export default function NotificationsDropdown() {
           <div className="flex items-center justify-between border-b border-(--border) px-4 py-3">
             <div>
               <h3 className="text-sm font-semibold text-(--fg)">
-                Notifications
+                Team activity
               </h3>
               <p className="mt-0.5 text-xs text-(--fg-muted)">
-                Recent updates from your workspace
+                Recent collaboration across your workspace
               </p>
             </div>
 
@@ -62,24 +76,28 @@ export default function NotificationsDropdown() {
 
           {NOTIFICATIONS.length > 0 ? (
             <div className="divide-y divide-(--border)">
-              {NOTIFICATIONS.map((notification) => (
-                <div key={notification.id} className="px-4 py-3">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-(--bg-subtle) text-(--fg-muted)">
-                      <Sparkles size={15} />
-                    </div>
+              {NOTIFICATIONS.map((notification) => {
+                const Icon = notification.icon;
 
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-(--fg)">
-                        {notification.title}
-                      </p>
-                      <p className="mt-1 text-sm leading-5 text-(--fg-muted)">
-                        {notification.description}
-                      </p>
+                return (
+                  <div key={notification.id} className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-(--bg-subtle) text-(--fg-muted)">
+                        <Icon size={15} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-(--fg)">
+                          {notification.title}
+                        </p>
+                        <p className="mt-1 text-sm leading-5 text-(--fg-muted)">
+                          {notification.description}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="px-4 py-6 text-sm text-(--fg-muted)">

@@ -57,9 +57,28 @@ export default function RecentDocuments({
                             <FileText size={18} />
                         </div>
 
-                        <div className="inline-flex items-center gap-1 rounded-lg bg-(--bg-subtle) px-2.5 py-1 text-xs font-medium text-(--fg-muted)">
-                            <Clock3 size={13} />
-                            Recent
+                        <div className="flex items-center gap-2">
+                            <span
+                                className={[
+                                    "rounded-md px-2 py-1 text-[11px] font-semibold",
+                                    doc.visibility === "workspace"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : doc.visibility === "shared"
+                                            ? "bg-sky-100 text-sky-700"
+                                            : "bg-slate-100 text-slate-600",
+                                ].join(" ")}
+                            >
+                                {doc.visibility === "workspace"
+                                    ? "Team"
+                                    : doc.visibility === "shared"
+                                        ? "Shared"
+                                        : "Private"}
+                            </span>
+
+                            <div className="inline-flex items-center gap-1 rounded-lg bg-(--bg-subtle) px-2.5 py-1 text-xs font-medium text-(--fg-muted)">
+                                <Clock3 size={13} />
+                                Recent
+                            </div>
                         </div>
                     </Card.Header>
 
@@ -70,7 +89,7 @@ export default function RecentDocuments({
                             </h3>
 
                             <p className="mt-2 text-sm text-(--fg-muted)">
-                                Continue where you left off.
+                                Edited by {doc.lastEditedByName}
                             </p>
                         </div>
                     </Card.Content>

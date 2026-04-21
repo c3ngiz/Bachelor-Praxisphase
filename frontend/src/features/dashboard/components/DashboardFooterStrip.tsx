@@ -1,4 +1,4 @@
-import { Database, FileText, HardDrive } from "lucide-react";
+import { Database, FileText, Users } from "lucide-react";
 import type { Document } from "../types/document.types";
 
 type Props = {
@@ -22,6 +22,10 @@ export default function DashboardFooterStrip({ documents }: Props) {
         new Date(b.lastOpenedAt ?? 0).getTime() -
         new Date(a.lastOpenedAt ?? 0).getTime(),
     )[0];
+
+  const sharedDocumentsCount = documents.filter(
+    (doc) => doc.visibility !== "private",
+  ).length;
 
   return (
     <div
@@ -61,8 +65,11 @@ export default function DashboardFooterStrip({ documents }: Props) {
       </div>
 
       <div className="flex items-center gap-2">
-        <HardDrive size={16} className="shrink-0" />
-        <span>Saved locally</span>
+        <Users size={16} className="shrink-0" />
+        <span>
+          <span className="font-medium text-(--fg)">{sharedDocumentsCount}</span>{" "}
+          shared in workspace
+        </span>
       </div>
     </div>
   );
