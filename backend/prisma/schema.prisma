@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DocumentVisibility {
+  private
+  shared
+  workspace
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  initials     String
+  avatarColor  String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  ownedDocuments Document[] @relation("DocumentOwner")
+  editedDocuments Document[] @relation("DocumentLastEditor")
+}
+
+model Document {
+  id             String             @id @default(cuid())
+  title          String
+  content        Json
+  author         String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  lastOpenedAt   DateTime?
+  visibility     DocumentVisibility @default(private)
+
+  ownerId        String
+  ownerName      String
+  owner          User               @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  collaborators  Json
+
+  lastEditedById   String
+  lastEditedByName String
+  lastEditedAt     DateTime         @default(now())
+  lastEditedBy     User             @relation("DocumentLastEditor", fields: [lastEditedById], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([lastEditedById])
+  @@index([updatedAt])
+}
