@@ -1,4 +1,4 @@
-import type { Document } from "../../types/document.types";
+import type { Document } from "@/features/documents";
 import { useDashboardStore } from "../../store/dashboardStore";
 import Button from "@/shared/components/ui/Button";
 

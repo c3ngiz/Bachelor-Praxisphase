@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useDocumentsStore } from "../store/documentsStore";
-import type { Document } from "../types/document.types";
+import { useDocumentsStore } from "@/features/documents";
+import type { Document } from "@/features/documents";
 
 export function useRecentDocuments(): Document[] {
   const documents = useDocumentsStore((s) => s.documents);

@@ -2,14 +2,14 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 import App from './App.tsx'
-import { AuthProvider } from './features/auth/context/AuthProvider.tsx';
+import { AppProviders } from './app/providers/AppProviders.tsx';
 
 import './shared/styles/global.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider>
+    <AppProviders>
       <App />
-    </AuthProvider>
+    </AppProviders>
   </React.StrictMode>
 );

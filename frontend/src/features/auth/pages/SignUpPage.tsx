@@ -9,7 +9,7 @@ import useAuth from "../hooks/useAuth"
 
 export default function SignUpPage() {
   const navigate = useNavigate()
-  const { registerUser, loading } = useAuth()
+  const { registerWithCredentials, isLoading } = useAuth()
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -17,7 +17,7 @@ export default function SignUpPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await registerUser({ name, email, password })
+    await registerWithCredentials({ name, email, password })
     navigate("/dashboard")
   }
 
@@ -50,8 +50,8 @@ export default function SignUpPage() {
           required
         />
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Creating account..." : "Sign Up"}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Creating account..." : "Sign Up"}
         </Button>
       </form>
 

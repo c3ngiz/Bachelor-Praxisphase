@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import DashboardFooterStrip from "./DashboardFooterStrip";
 import DashboardNavbar from "./DashboardNavbar";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 
 type Props = {
   children: ReactNode;

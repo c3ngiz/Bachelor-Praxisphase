@@ -8,7 +8,7 @@ import {
 
 import Popover from "@/shared/components/ui/Popover";
 import { useMemo } from "react";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 
 type NotificationItem = {
   id: string;

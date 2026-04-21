@@ -17,7 +17,7 @@ import RenameDocumentModal from "../components/modals/RenameDocumentModal";
 import DeleteConfirmationModal from "../components/modals/DeleteConfirmationModal";
 import MultiSelectToolbar from "../components/MultiSelectToolbar";
 
-import { useDocumentsStore } from "../store/documentsStore";
+import { useDocumentsStore } from "@/features/documents";
 import { useDocumentSelection } from "../hooks/useDocumentSelection";
 
 import { useDashboardStore } from "../store/dashboardStore";

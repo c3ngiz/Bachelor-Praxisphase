@@ -1,4 +1,4 @@
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 
 export type SortOption = "updated" | "created" | "title";
 

@@ -1,5 +1,5 @@
 import type { DashboardFilters } from "../store/dashboardStore";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 
 function isDocumentEmpty(content: unknown): boolean {
   if (!content || typeof content !== "object") {

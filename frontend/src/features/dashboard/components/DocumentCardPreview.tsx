@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 import {
     generateDocumentPreview,
     type PreviewBlock,

@@ -9,14 +9,14 @@ import useAuth from "../hooks/useAuth"
 
 export default function SignInPage() {
   const navigate = useNavigate()
-  const { loginUser, loading } = useAuth()
+  const { loginWithCredentials, isLoading } = useAuth()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await loginUser({ email, password })
+    await loginWithCredentials({ email, password })
     navigate("/dashboard")
   }
 
@@ -41,8 +41,8 @@ export default function SignInPage() {
           required
         />
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in..." : "Sign In"}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Signing in..." : "Sign In"}
         </Button>
       </form>
 

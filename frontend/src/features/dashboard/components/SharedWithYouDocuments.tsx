@@ -1,7 +1,7 @@
 import { ArrowUpRight, Share2, Users } from "lucide-react";
 
 import Card from "@/shared/components/ui/Card";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 
 type Props = {
   documents: Document[];

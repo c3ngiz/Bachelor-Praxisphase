@@ -1,13 +1,13 @@
 import { Navigate, useLocation } from "react-router-dom"
 import type { ReactNode } from "react"
-import useAuthContext from "../hooks/useAuthContext"
+import useAuth from "../hooks/useAuth"
 
 type Props = {
   children: ReactNode
 }
 
 export default function ProtectedRoute({ children }: Props) {
-  const { token, isLoading } = useAuthContext()
+  const { token, isLoading } = useAuth()
   const location = useLocation()
 
   if (isLoading) {

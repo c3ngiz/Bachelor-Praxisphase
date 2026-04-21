@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Document, DocumentCollaborator } from "../types/document.types";
+import type { Document, DocumentCollaborator } from "@/features/documents";
 import { useDashboardStore } from "../store/dashboardStore";
 import Card from "@/shared/components/ui/Card";
 import Popover from "@/shared/components/ui/Popover";

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { DashboardFilters } from "../store/dashboardStore";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 import { filterDocuments } from "../utils/filterDocuments";
 
 const DEFAULT_FILTERS: DashboardFilters = {

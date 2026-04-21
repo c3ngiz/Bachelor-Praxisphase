@@ -5,7 +5,7 @@ import AppLogo from "./AppLogo";
 import InviteMembersButton from "./InviteMembersButton";
 import WorkspaceMembersPreview from "./WorkspaceMembersPreview";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 type Props = {

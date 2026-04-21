@@ -1,5 +1,5 @@
 import { Database, FileText, Users } from "lucide-react";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 
 type Props = {
   documents: Document[];

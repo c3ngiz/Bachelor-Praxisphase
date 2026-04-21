@@ -3,7 +3,7 @@ import Popover from "@/shared/components/ui/Popover";
 import { Funnel, SlidersHorizontal } from "lucide-react";
 import { useMemo } from "react";
 
-import { useDocumentsStore } from "../../store/documentsStore";
+import { useDocumentsStore } from "@/features/documents";
 import { useDashboardStore } from "../../store/dashboardStore";
 
 export default function FilterDropdown() {

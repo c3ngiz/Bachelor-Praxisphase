@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 
 type WorkspaceMember = {
   id: string;

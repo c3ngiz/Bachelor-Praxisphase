@@ -2,12 +2,13 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
 import AuthLayout from "@/shared/components/layout/AuthLayout"
 
-import SignInPage from "@/features/auth/pages/SignInPage"
-import SignUpPage from "@/features/auth/pages/SignUpPage"
-import DashboardPage from "@/features/dashboard/pages/DashboardPage"
-import EditorPage from "@/features/editor/pages/EditorPage"
-
-import ProtectedRoute from "@/features/auth/components/ProtectedRoute"
+import {
+  ProtectedRoute,
+  SignInPage,
+  SignUpPage,
+} from "@/features/auth"
+import { DashboardPage } from "@/features/dashboard"
+import { EditorPage } from "@/features/editor"
 
 export function AppRouter() {
   return (

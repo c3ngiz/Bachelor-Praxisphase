@@ -21,7 +21,7 @@ import EditorArea from "../components/EditorArea";
 import PresenceBar from "../components/PresenceBar";
 import EditorTitleBar from "../components/EditorTitleBar";
 
-import { useDocumentsStore } from "@/features/dashboard/store/documentsStore";
+import { useDocumentsStore } from "@/features/documents";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export default function EditorPage() {

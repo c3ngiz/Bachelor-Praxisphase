@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link2, MailPlus } from "lucide-react";
 
 import { Button, Input, Modal, Select } from "@/shared/components/ui";
-import type { Document } from "../types/document.types";
+import type { Document } from "@/features/documents";
 
 type Props = {
   document: Document;
