@@ -1,9 +1,56 @@
-import { StatusCodes } from "http-status-codes";
-import { prisma } from "../../lib/prisma.js";
-import { ApiError } from "../../utils/apiError.js";
-import type { AuthUser } from "../auth/auth.types.js";
-import type { CreateDocumentInput, UpdateDocumentInput } from "./document.schemas.js";
-import type { DocumentCollaborator, DocumentDto } from "./document.types.js";
+import { StatusCodes } from 'http-status-codes';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../lib/prisma.js';
+import { ApiError } from '../../utils/apiError.js';
+import type { AuthUser } from '../auth/auth.types.js';
+import type { CreateDocumentInput, UpdateDocumentInput } from './document.schemas.js';
+import type { DocumentCollaborator, DocumentDto } from './document.types.js';
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Object.prototype.toString.call(value) === '[object Object]';
+}
+
+function toPrismaInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
+  if (value === null) {
+    return null;
+  }
+
+  switch (typeof value) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+      return value;
+    case 'object': {
+      if (Array.isArray(value)) {
+        return value.map((item) => toPrismaInputJsonValue(item)) as Prisma.InputJsonArray;
+      }
+
+      if (!isPlainObject(value)) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Document content must be valid JSON.');
+      }
+
+      const result: Record<string, Prisma.InputJsonValue | null> = {};
+
+      for (const [key, item] of Object.entries(value)) {
+        result[key] = toPrismaInputJsonValue(item);
+      }
+
+      return result as Prisma.InputJsonObject;
+    }
+    default:
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Document content must be valid JSON.');
+  }
+}
+
+function toPrismaNonNullJsonValue(value: unknown): Prisma.InputJsonValue {
+  const parsedValue = toPrismaInputJsonValue(value);
+
+  if (parsedValue === null) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Document content must be valid JSON.');
+  }
+
+  return parsedValue;
+}
 
 function normalizeCollaborators(
   collaborators: DocumentCollaborator[],
@@ -14,7 +61,7 @@ function normalizeCollaborators(
     name: authUser.name,
     initials: authUser.initials,
     color: authUser.avatarColor,
-    role: "owner",
+    role: 'owner',
   };
 
   const deduped = new Map<string, DocumentCollaborator>();
@@ -40,7 +87,7 @@ function toDocumentDto(document: {
   createdAt: Date;
   updatedAt: Date;
   lastOpenedAt: Date | null;
-  visibility: "private" | "shared" | "workspace";
+  visibility: 'private' | 'shared' | 'workspace';
   ownerId: string;
   ownerName: string;
   collaborators: unknown;
@@ -70,7 +117,7 @@ function toDocumentDto(document: {
 
 export async function listDocuments(userId: string): Promise<DocumentDto[]> {
   const documents = await prisma.document.findMany({
-    orderBy: { updatedAt: "desc" },
+    orderBy: { updatedAt: 'desc' },
   });
 
   return documents
@@ -79,7 +126,10 @@ export async function listDocuments(userId: string): Promise<DocumentDto[]> {
         ? (document.collaborators as DocumentCollaborator[])
         : [];
 
-      return document.ownerId === userId || collaborators.some((collaborator) => collaborator.id === userId);
+      return (
+        document.ownerId === userId ||
+        collaborators.some((collaborator) => collaborator.id === userId)
+      );
     })
     .map(toDocumentDto);
 }
@@ -90,30 +140,34 @@ export async function getDocumentById(documentId: string, userId: string): Promi
   });
 
   if (!document) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Document not found.");
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Document not found.');
   }
 
   const collaborators = Array.isArray(document.collaborators)
     ? (document.collaborators as DocumentCollaborator[])
     : [];
 
-  const canAccess = document.ownerId === userId || collaborators.some((collaborator) => collaborator.id === userId);
+  const canAccess =
+    document.ownerId === userId || collaborators.some((collaborator) => collaborator.id === userId);
 
   if (!canAccess) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "You do not have access to this document.");
+    throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have access to this document.');
   }
 
   return toDocumentDto(document);
 }
 
-export async function createDocument(input: CreateDocumentInput, authUser: AuthUser): Promise<DocumentDto> {
+export async function createDocument(
+  input: CreateDocumentInput,
+  authUser: AuthUser,
+): Promise<DocumentDto> {
   const collaborators = normalizeCollaborators(input.collaborators, authUser);
   const now = new Date();
 
   const document = await prisma.document.create({
     data: {
       title: input.title,
-      content: input.content,
+      content: input.content === null ? Prisma.JsonNull : toPrismaNonNullJsonValue(input.content),
       author: authUser.name,
       visibility: input.visibility,
       ownerId: authUser.id,
@@ -139,21 +193,23 @@ export async function updateDocument(
   });
 
   if (!existingDocument) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Document not found.");
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Document not found.');
   }
 
   const existingCollaborators = Array.isArray(existingDocument.collaborators)
     ? (existingDocument.collaborators as DocumentCollaborator[])
     : [];
 
-  const currentCollaborator = existingCollaborators.find((collaborator) => collaborator.id === authUser.id);
+  const currentCollaborator = existingCollaborators.find(
+    (collaborator) => collaborator.id === authUser.id,
+  );
   const canEdit =
     existingDocument.ownerId === authUser.id ||
-    currentCollaborator?.role === "owner" ||
-    currentCollaborator?.role === "editor";
+    currentCollaborator?.role === 'owner' ||
+    currentCollaborator?.role === 'editor';
 
   if (!canEdit) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "You do not have permission to edit this document.");
+    throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have permission to edit this document.');
   }
 
   const collaborators = input.collaborators
@@ -164,7 +220,12 @@ export async function updateDocument(
     where: { id: documentId },
     data: {
       title: input.title,
-      content: input.content,
+      content:
+        input.content === undefined
+          ? undefined
+          : input.content === null
+            ? Prisma.JsonNull
+            : toPrismaNonNullJsonValue(input.content),
       visibility: input.visibility,
       collaborators,
       lastOpenedAt:
@@ -188,11 +249,11 @@ export async function deleteDocument(documentId: string, authUser: AuthUser): Pr
   });
 
   if (!existingDocument) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Document not found.");
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Document not found.');
   }
 
   if (existingDocument.ownerId !== authUser.id) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "Only the owner can delete this document.");
+    throw new ApiError(StatusCodes.FORBIDDEN, 'Only the owner can delete this document.');
   }
 
   await prisma.document.delete({
