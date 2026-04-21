@@ -7,29 +7,70 @@ import {
 } from "lucide-react";
 
 import Popover from "@/shared/components/ui/Popover";
+import { useMemo } from "react";
+import type { Document } from "../types/document.types";
 
-const NOTIFICATIONS = [
-  {
-    id: "n1",
-    title: "Maya edited Product Brief",
-    description: "Updated the launch notes 12 minutes ago.",
-    icon: MessageSquareText,
-  },
-  {
-    id: "n2",
-    title: "Alex shared Roadmap Q3",
-    description: "You now have edit access to this document.",
-    icon: Share2,
-  },
-  {
-    id: "n3",
-    title: "Liam joined DocFlow Team",
-    description: "New viewer added to the workspace today.",
-    icon: UserPlus,
-  },
-];
+type NotificationItem = {
+  id: string;
+  title: string;
+  description: string;
+  icon: typeof MessageSquareText;
+};
 
-export default function NotificationsDropdown() {
+type Props = {
+  documents: Document[];
+  currentUserId: string | null;
+};
+
+function toRelativeTime(date?: string): string {
+  if (!date) {
+    return "Recently";
+  }
+
+  const value = new Date(date);
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  const diffMs = value.getTime() - Date.now();
+  const diffMinutes = Math.round(diffMs / (1000 * 60));
+
+  if (Math.abs(diffMinutes) < 60) {
+    return formatter.format(diffMinutes, "minute");
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (Math.abs(diffHours) < 24) {
+    return formatter.format(diffHours, "hour");
+  }
+
+  const diffDays = Math.round(diffHours / 24);
+  return formatter.format(diffDays, "day");
+}
+
+export default function NotificationsDropdown({ documents, currentUserId }: Props) {
+  const notifications = useMemo<NotificationItem[]>(() => {
+    return [...documents]
+      .sort(
+        (a, b) =>
+          new Date(b.lastEditedAt ?? b.updatedAt).getTime() -
+          new Date(a.lastEditedAt ?? a.updatedAt).getTime(),
+      )
+      .filter((document) => document.lastEditedById !== currentUserId)
+      .slice(0, 5)
+      .map((document) => {
+        const icon =
+          document.visibility === "workspace"
+            ? UserPlus
+            : document.visibility === "shared"
+              ? Share2
+              : MessageSquareText;
+
+        return {
+          id: document.id,
+          title: `${document.lastEditedByName} edited ${document.title}`,
+          description: `Updated ${toRelativeTime(document.lastEditedAt)}.`,
+          icon,
+        };
+      });
+  }, [currentUserId, documents]);
   return (
     <Popover
       align="right"
@@ -74,9 +115,9 @@ export default function NotificationsDropdown() {
             </button>
           </div>
 
-          {NOTIFICATIONS.length > 0 ? (
+          {notifications.length > 0 ? (
             <div className="divide-y divide-(--border)">
-              {NOTIFICATIONS.map((notification) => {
+              {notifications.map((notification) => {
                 const Icon = notification.icon;
 
                 return (

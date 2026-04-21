@@ -4,7 +4,7 @@ import { Modal, Button, Input } from "@/shared/components/ui";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
   documentTitle?: string;
   bulkCount?: number;
 };
@@ -18,6 +18,7 @@ export default function DeleteConfirmationModal({
 }: Props) {
   const [confirmationText, setConfirmationText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isBulkDelete = bulkCount > 1;
 
@@ -29,22 +30,36 @@ export default function DeleteConfirmationModal({
     if (isOpen) {
       setConfirmationText("");
       setError(null);
+      setIsSubmitting(false);
     }
   }, [isOpen]);
 
   const isMatch = isBulkDelete ? true : confirmationText === expectedText;
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!isBulkDelete && !isMatch) {
       setError("Document name does not match.");
       return;
     }
 
-    onConfirm();
-    onClose();
+    try {
+      setIsSubmitting(true);
+      await onConfirm();
+      onClose();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to delete document.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleClose() {
+    if (isSubmitting) return;
+
     setConfirmationText("");
     setError(null);
     onClose();
@@ -94,16 +109,21 @@ export default function DeleteConfirmationModal({
             }}
             error={error ?? undefined}
             autoFocus
+            disabled={isSubmitting}
           />
         </>
       )}
 
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={handleClose}>
+        <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button variant="danger" onClick={handleConfirm} disabled={!isMatch}>
-          Delete
+        <Button
+          variant="danger"
+          onClick={() => void handleConfirm()}
+          disabled={isSubmitting || !isMatch}
+        >
+          {isSubmitting ? "Deleting..." : "Delete"}
         </Button>
       </div>
     </Modal>

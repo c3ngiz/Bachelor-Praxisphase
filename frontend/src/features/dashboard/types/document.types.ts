@@ -32,6 +32,20 @@ export interface Document {
   lastEditedAt: string;
 }
 
+export type CreateDocumentInput = {
+  title: string;
+  content?: unknown;
+  visibility?: DocumentVisibility;
+  collaborators?: DocumentCollaborator[];
+};
+
+export type UpdateDocumentInput = Partial<
+  Pick<
+    Document,
+    "title" | "content" | "visibility" | "collaborators" | "lastOpenedAt"
+  >
+>;
+
 export interface DocumentPreview {
   text: string;
 }

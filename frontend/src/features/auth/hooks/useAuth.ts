@@ -1,36 +1,14 @@
-import { useState } from "react"
-import { signIn, signUp } from "../api/authApi"
-import useAuthContext from "./useAuthContext"
-import type { AuthCredentials, SignUpCredentials } from "../types"
+import { useContext } from "react";
+import { AuthContext, type AuthContextType } from "../context/AuthContext";
 
-export default function useAuth() {
-  const [loading, setLoading] = useState(false)
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
 
-  const { login } = useAuthContext()
-
-  async function loginUser(data: AuthCredentials) {
-    setLoading(true)
-
-    const result = await signIn(data)
-
-    login(result.token, result.user)
-
-    setLoading(false)
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
 
-  async function registerUser(data: SignUpCredentials) {
-    setLoading(true)
-
-    const result = await signUp(data)
-
-    login(result.token, result.user)
-
-    setLoading(false)
-  }
-
-  return {
-    loginUser,
-    registerUser,
-    loading
-  }
+  return context;
 }
+
+export default useAuth;

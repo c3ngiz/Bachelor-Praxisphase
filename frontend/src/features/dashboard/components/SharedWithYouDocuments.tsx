@@ -5,12 +5,17 @@ import type { Document } from "../types/document.types";
 
 type Props = {
   documents: Document[];
+  currentUserId: string | null;
   onOpenDocument?: (documentId: string) => void;
 };
 
-function getPermissionLabel(document: Document) {
+function getPermissionLabel(document: Document, currentUserId: string | null) {
+  if (!currentUserId) {
+    return "Can view";
+  }
+
   const currentUser = document.collaborators.find(
-    (collaborator) => collaborator.id === "u-you",
+    (collaborator) => collaborator.id === currentUserId,
   );
 
   switch (currentUser?.role) {
@@ -36,6 +41,7 @@ function getVisibilityLabel(document: Document) {
 
 export default function SharedWithYouDocuments({
   documents,
+  currentUserId,
   onOpenDocument,
 }: Props) {
   if (documents.length === 0) {
@@ -101,7 +107,7 @@ export default function SharedWithYouDocuments({
                 Access
               </div>
               <div className="mt-1 truncate text-sm text-(--fg)">
-                {getPermissionLabel(doc)}
+                {getPermissionLabel(doc, currentUserId)}
               </div>
             </div>
 

@@ -175,7 +175,7 @@ function extractBlocksFromNode(node: any): PreviewBlock[] {
       return node.content
         .map((item: any) => extractListItemSegments(item))
         .filter(hasVisibleText)
-        .map((segments) => ({
+        .map((segments: PreviewSegment[]) => ({
           type: "list-item" as const,
           segments,
         }));
@@ -189,13 +189,23 @@ function extractBlocksFromNode(node: any): PreviewBlock[] {
           segments: extractListItemSegments(item),
           index,
         }))
-        .filter(({ segments }) => hasVisibleText(segments))
-        .map(({ segments, index }) => ({
-          type: "list-item" as const,
-          ordered: true,
-          index: index + 1,
-          segments,
-        }));
+        .filter(({ segments }: { segments: PreviewSegment[] }) =>
+          hasVisibleText(segments),
+        )
+        .map(
+          ({
+            segments,
+            index,
+          }: {
+            segments: PreviewSegment[];
+            index: number;
+          }) => ({
+            type: "list-item" as const,
+            ordered: true,
+            index: index + 1,
+            segments,
+          }),
+        );
     }
 
     default:

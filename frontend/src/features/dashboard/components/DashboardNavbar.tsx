@@ -5,8 +5,16 @@ import AppLogo from "./AppLogo";
 import InviteMembersButton from "./InviteMembersButton";
 import WorkspaceMembersPreview from "./WorkspaceMembersPreview";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
+import type { Document } from "../types/document.types";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
-export default function DashboardNavbar() {
+type Props = {
+  documents: Document[];
+};
+
+export default function DashboardNavbar({ documents }: Props) {
+  const { user } = useAuth();
+
   return (
     <header className="sticky top-0 z-30 border-b border-(--border) bg-(--bg-elevated)/95 backdrop-blur supports-[backdrop-filter]:bg-(--bg-elevated)/88">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-6">
@@ -22,9 +30,12 @@ export default function DashboardNavbar() {
         </div>
 
         <div className="flex items-center gap-3">
-          <WorkspaceMembersPreview />
+          <WorkspaceMembersPreview documents={documents} />
           <InviteMembersButton />
-          <NotificationsDropdown />
+          <NotificationsDropdown
+            documents={documents}
+            currentUserId={user?.id ?? null}
+          />
           <AvatarDropdown />
         </div>
       </div>

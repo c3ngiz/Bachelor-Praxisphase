@@ -22,11 +22,13 @@ import PresenceBar from "../components/PresenceBar";
 import EditorTitleBar from "../components/EditorTitleBar";
 
 import { useDocumentsStore } from "@/features/dashboard/store/documentsStore";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export default function EditorPage() {
     const { id } = useParams();
+    const { token } = useAuth();
 
-    const { documents, updateDocument } = useDocumentsStore();
+    const { documents, updateDocument, refreshDocument } = useDocumentsStore();
 
     const titleRef = useRef("");
     const idRef = useRef(id);
@@ -43,6 +45,11 @@ export default function EditorPage() {
     useEffect(() => {
         titleRef.current = currentDocument?.title ?? "";
     }, [currentDocument?.title]);
+
+    useEffect(() => {
+        if (!id || !token || currentDocument) return;
+        void refreshDocument(id, token);
+    }, [currentDocument, id, refreshDocument, token]);
 
     const editor = useEditor({
         extensions: [
@@ -89,14 +96,16 @@ export default function EditorPage() {
         onUpdate({ editor }) {
             const json = editor.getJSON();
 
-            if (!idRef.current) return;
+            if (!idRef.current || !token) return;
 
-            updateDocument({
-                id: idRef.current,
-                title: titleRef.current,
-                content: json,
-                updatedAt: new Date().toISOString(),
-            });
+            void updateDocument(
+                idRef.current,
+                {
+                    title: titleRef.current,
+                    content: json,
+                },
+                token,
+            );
         },
     });
 
@@ -123,7 +132,7 @@ export default function EditorPage() {
             <EditorTitleBar
                 title={currentDocument?.title ?? ""}
                 onTitleChange={(value) => {
-                    if (!id) return;
+                    if (!id || !token) return;
 
                     const currentContent =
                         editor?.getJSON() ??
@@ -132,12 +141,14 @@ export default function EditorPage() {
                             content: [],
                         };
 
-                    updateDocument({
+                    void updateDocument(
                         id,
-                        title: value,
-                        content: currentContent,
-                        updatedAt: new Date().toISOString(),
-                    });
+                        {
+                            title: value,
+                            content: currentContent,
+                        },
+                        token,
+                    );
                 }}
             />
 

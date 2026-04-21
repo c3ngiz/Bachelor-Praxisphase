@@ -30,7 +30,14 @@ export function AppRouter() {
           }
         />
 
-        <Route path="/document/:id" element={<EditorPage />} />
+        <Route
+          path="/document/:id"
+          element={
+            <ProtectedRoute>
+              <EditorPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   )

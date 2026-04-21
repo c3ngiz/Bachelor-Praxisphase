@@ -12,7 +12,7 @@ type Props = {
 export default function DashboardLayout({ children, documents }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-(--bg)">
-      <DashboardNavbar />
+      <DashboardNavbar documents={documents} />
 
       <main className="relative z-10 flex-1">{children}</main>
 

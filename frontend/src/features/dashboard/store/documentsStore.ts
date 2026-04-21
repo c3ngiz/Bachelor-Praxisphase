@@ -1,229 +1,173 @@
 import { create } from "zustand";
-import type { Document, DocumentCollaborator } from "../types/document.types";
-import { loadDocuments, saveDocuments } from "../services/documentStorage";
+import {
+  createDocumentRequest,
+  deleteDocumentRequest,
+  getDocument,
+  listDocuments,
+  updateDocumentRequest,
+} from "../services/documentsApi";
+import type {
+  CreateDocumentInput,
+  Document,
+  UpdateDocumentInput,
+} from "../types/document.types";
 
 interface DocumentsState {
   documents: Document[];
+  isLoading: boolean;
+  error: string | null;
 
-  createDocument: (title: string) => Document;
-  updateDocument: (doc: Document) => void;
-  deleteDocument: (id: string) => void;
-  deleteDocuments: (ids: string[]) => void;
+  loadDocuments: (token: string) => Promise<void>;
+  refreshDocument: (id: string, token: string) => Promise<Document | undefined>;
+  createDocument: (
+    title: string,
+    token: string,
+    input?: Omit<CreateDocumentInput, "title">,
+  ) => Promise<Document>;
+  updateDocument: (
+    id: string,
+    input: UpdateDocumentInput,
+    token: string,
+  ) => Promise<Document>;
+  deleteDocument: (id: string, token: string) => Promise<void>;
+  deleteDocuments: (ids: string[], token: string) => Promise<void>;
   getDocumentById: (id: string) => Document | undefined;
 
   setDocuments: (docs: Document[]) => void;
+  clearDocuments: () => void;
+  clearError: () => void;
 }
 
-const currentUser: DocumentCollaborator = {
-  id: "u-you",
-  name: "You",
-  initials: "U",
-  color: "bg-emerald-500",
-  role: "owner",
-};
+function upsertDocument(documents: Document[], incoming: Document): Document[] {
+  const existingIndex = documents.findIndex((doc) => doc.id === incoming.id);
 
-const teammatePool: DocumentCollaborator[] = [
-  {
-    id: "u-alex",
-    name: "Alex Kim",
-    initials: "AK",
-    color: "bg-sky-500",
-    role: "editor",
-  },
-  {
-    id: "u-maya",
-    name: "Maya Chen",
-    initials: "MC",
-    color: "bg-violet-500",
-    role: "editor",
-  },
-  {
-    id: "u-liam",
-    name: "Liam Scott",
-    initials: "LS",
-    color: "bg-amber-500",
-    role: "viewer",
-  },
-];
-
-type CollaborationProfile = {
-  visibility: Document["visibility"];
-  owner: DocumentCollaborator;
-  collaborators: DocumentCollaborator[];
-  lastEditedBy: DocumentCollaborator;
-};
-
-function buildLegacyCollaborationProfile(title: string): CollaborationProfile {
-  const lower = title.toLowerCase();
-
-  if (
-    lower.includes("brief") ||
-    lower.includes("roadmap") ||
-    lower.includes("files") ||
-    lower.includes("shared")
-  ) {
-    return {
-      visibility: "workspace",
-      owner: teammatePool[0],
-      collaborators: [
-        { ...currentUser, role: "editor" },
-        teammatePool[0],
-        teammatePool[1],
-      ],
-      lastEditedBy: teammatePool[0],
-    };
+  if (existingIndex === -1) {
+    return [incoming, ...documents].sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
   }
 
-  if (
-    lower.includes("meeting") ||
-    lower.includes("notes") ||
-    lower.includes("plan") ||
-    lower.includes("hallo")
-  ) {
-    return {
-      visibility: "shared",
-      owner: teammatePool[1],
-      collaborators: [{ ...currentUser, role: "viewer" }, teammatePool[1]],
-      lastEditedBy: teammatePool[1],
-    };
-  }
+  const next = [...documents];
+  next[existingIndex] = incoming;
 
-  return {
-    visibility: "private",
-    owner: currentUser,
-    collaborators: [currentUser],
-    lastEditedBy: currentUser,
-  };
-}
-
-function getDefaultCollaborators(title: string): CollaborationProfile {
-  const lower = title.toLowerCase();
-
-  if (lower.includes("brief") || lower.includes("roadmap")) {
-    return {
-      visibility: "workspace",
-      owner: teammatePool[0],
-      collaborators: [
-        { ...currentUser, role: "editor" },
-        teammatePool[0],
-        teammatePool[1],
-      ],
-      lastEditedBy: teammatePool[0],
-    };
-  }
-
-  if (
-    lower.includes("meeting") ||
-    lower.includes("notes") ||
-    lower.includes("plan")
-  ) {
-    return {
-      visibility: "shared",
-      owner: teammatePool[1],
-      collaborators: [{ ...currentUser, role: "editor" }, teammatePool[1]],
-      lastEditedBy: teammatePool[1],
-    };
-  }
-
-  return {
-    visibility: "private",
-    owner: currentUser,
-    collaborators: [currentUser],
-    lastEditedBy: currentUser,
-  };
-}
-
-function normalizeDocument(document: Document): Document {
-  const profile = buildLegacyCollaborationProfile(document.title);
-  const fallbackEditedAt =
-    document.lastEditedAt ??
-    document.updatedAt ??
-    document.lastOpenedAt ??
-    new Date().toISOString();
-
-  return {
-    ...document,
-    visibility: document.visibility ?? profile.visibility,
-    ownerId: document.ownerId ?? profile.owner.id,
-    ownerName: document.ownerName ?? profile.owner.name,
-    collaborators:
-      document.collaborators && document.collaborators.length > 0
-        ? document.collaborators
-        : profile.collaborators,
-    lastEditedById: document.lastEditedById ?? profile.lastEditedBy.id,
-    lastEditedByName: document.lastEditedByName ?? profile.lastEditedBy.name,
-    lastEditedAt: fallbackEditedAt,
-  };
-}
-
-function normalizeDocuments(documents: Document[]): Document[] {
-  return documents.map(normalizeDocument);
+  return next.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
 }
 
 export const useDocumentsStore = create<DocumentsState>((set, get) => ({
-  documents: normalizeDocuments(loadDocuments()),
+  documents: [],
+  isLoading: false,
+  error: null,
 
-  setDocuments: (docs) => {
-    const normalized = normalizeDocuments(docs);
+  setDocuments: (docs) => set({ documents: docs }),
 
-    set({ documents: normalized });
-    saveDocuments(normalized);
+  clearDocuments: () => set({ documents: [] }),
+
+  clearError: () => set({ error: null }),
+
+  loadDocuments: async (token) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await listDocuments(token);
+      set({ documents: response.documents, isLoading: false });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load documents.";
+      set({ error: message, isLoading: false });
+      throw error;
+    }
   },
 
-  createDocument: (title) => {
-    const now = new Date().toISOString();
-    const collaboration = getDefaultCollaborators(title);
-
-    const newDoc: Document = {
-      id: crypto.randomUUID(),
-      title,
-      author: currentUser.name,
-      createdAt: now,
-      updatedAt: now,
-      lastOpenedAt: now,
-      visibility: collaboration.visibility,
-      ownerId: collaboration.owner.id,
-      ownerName: collaboration.owner.name,
-      collaborators: collaboration.collaborators,
-      lastEditedById: collaboration.lastEditedBy.id,
-      lastEditedByName: collaboration.lastEditedBy.name,
-      lastEditedAt: now,
-      content: {
-        type: "doc",
-        content: [],
-      },
-    };
-
-    const updated = [newDoc, ...get().documents];
-
-    set({ documents: updated });
-    saveDocuments(updated);
-
-    return newDoc;
+  refreshDocument: async (id, token) => {
+    try {
+      const response = await getDocument(id, token);
+      set((state) => ({
+        documents: upsertDocument(state.documents, response.document),
+      }));
+      return response.document;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to refresh document.";
+      set({ error: message });
+      throw error;
+    }
   },
 
-  updateDocument: (updatedDoc) => {
-    const normalizedUpdatedDoc = normalizeDocument(updatedDoc);
-    const updated = get().documents.map((doc) =>
-      doc.id === normalizedUpdatedDoc.id ? normalizedUpdatedDoc : doc,
-    );
+  createDocument: async (title, token, input) => {
+    try {
+      const response = await createDocumentRequest(
+        {
+          title,
+          content: input?.content,
+          visibility: input?.visibility,
+          collaborators: input?.collaborators,
+        },
+        token,
+      );
 
-    set({ documents: updated });
-    saveDocuments(updated);
+      set((state) => ({
+        documents: upsertDocument(state.documents, response.document),
+        error: null,
+      }));
+
+      return response.document;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create document.";
+      set({ error: message });
+      throw error;
+    }
   },
 
-  deleteDocument: (id) => {
-    const updated = get().documents.filter((doc) => doc.id !== id);
+  updateDocument: async (id, input, token) => {
+    try {
+      const response = await updateDocumentRequest(id, input, token);
 
-    set({ documents: updated });
-    saveDocuments(updated);
+      set((state) => ({
+        documents: upsertDocument(state.documents, response.document),
+        error: null,
+      }));
+
+      return response.document;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update document.";
+      set({ error: message });
+      throw error;
+    }
   },
 
-  deleteDocuments: (ids) => {
-    const updated = get().documents.filter((doc) => !ids.includes(doc.id));
+  deleteDocument: async (id, token) => {
+    try {
+      await deleteDocumentRequest(id, token);
+      set((state) => ({
+        documents: state.documents.filter((doc) => doc.id !== id),
+        error: null,
+      }));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete document.";
+      set({ error: message });
+      throw error;
+    }
+  },
 
-    set({ documents: updated });
-    saveDocuments(updated);
+  deleteDocuments: async (ids, token) => {
+    try {
+      await Promise.all(ids.map((id) => deleteDocumentRequest(id, token)));
+      set((state) => ({
+        documents: state.documents.filter((doc) => !ids.includes(doc.id)),
+        error: null,
+      }));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete documents.";
+      set({ error: message });
+      throw error;
+    }
   },
 
   getDocumentById: (id) => {

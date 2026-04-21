@@ -8,11 +8,16 @@ import {
 } from "lucide-react";
 
 import Popover from "@/shared/components/ui/Popover";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export default function AvatarDropdown() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const initials = user?.initials || user?.name?.charAt(0)?.toUpperCase() || "?";
 
   function handleLogout() {
+    logout();
     navigate("/signin");
   }
 
@@ -35,7 +40,7 @@ export default function AvatarDropdown() {
               : "bg-(--bg) text-(--fg) hover:bg-(--bg-secondary)",
           ].join(" ")}
         >
-          U
+          {initials}
         </button>
       )}
     >
@@ -44,15 +49,15 @@ export default function AvatarDropdown() {
           <div className="border-b border-(--border) px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-(--border) bg-(--bg) text-sm font-semibold text-(--fg)">
-                U
+                {initials}
               </div>
 
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-(--fg)">
-                  You
+                  {user?.name ?? "User"}
                 </p>
                 <p className="truncate text-xs text-(--fg-muted)">
-                  Personal workspace
+                  {user?.email ?? "Workspace member"}
                 </p>
               </div>
             </div>

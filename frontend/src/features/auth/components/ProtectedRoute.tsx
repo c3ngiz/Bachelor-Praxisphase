@@ -7,8 +7,12 @@ type Props = {
 }
 
 export default function ProtectedRoute({ children }: Props) {
-  const { token } = useAuthContext()
+  const { token, isLoading } = useAuthContext()
   const location = useLocation()
+
+  if (isLoading) {
+    return null
+  }
 
   if (!token) {
     return <Navigate to="/signin" replace state={{ from: location }} />

@@ -5,7 +5,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   currentName: string;
-  onRename: (newName: string) => void;
+  onRename: (newName: string) => Promise<void> | void;
 };
 
 export default function RenameDocumentModal({
@@ -16,15 +16,17 @@ export default function RenameDocumentModal({
 }: Props) {
   const [name, setName] = useState(currentName);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setName(currentName);
       setError(null);
+      setIsSubmitting(false);
     }
   }, [isOpen, currentName]);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!name.trim()) {
       setError("Document name is required");
       return;
@@ -35,26 +37,46 @@ export default function RenameDocumentModal({
       return;
     }
 
-    onRename(name.trim());
+    try {
+      setIsSubmitting(true);
+      await onRename(name.trim());
+      onClose();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to rename document.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleClose() {
+    if (isSubmitting) return;
     onClose();
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Rename Document">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Rename Document">
       <Input
         label="New Name"
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) => {
+          setName(e.target.value);
+          if (error) setError(null);
+        }}
         error={error ?? undefined}
         autoFocus
+        disabled={isSubmitting}
       />
 
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>
+        <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit}>
-          Save
+        <Button onClick={() => void handleSubmit()} disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save"}
         </Button>
       </div>
     </Modal>
