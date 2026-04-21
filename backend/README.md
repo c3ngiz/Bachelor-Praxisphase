@@ -7,6 +7,7 @@ This is a minimal TypeScript backend for the collaboration app.
 - Express
 - Prisma
 - PostgreSQL
+- Docker Compose for the local database
 - JWT authentication
 - Zod request validation
 
@@ -19,20 +20,55 @@ This is a minimal TypeScript backend for the collaboration app.
 - document CRUD with owner/editor/viewer authorization
 - document shape aligned with the current frontend document type
 
-## Setup
+## Local development setup
 
-1. Copy `.env.example` to `.env`
-2. Install dependencies
-3. Generate Prisma client
-4. Run the first migration
-5. Start the dev server
+This setup runs **PostgreSQL in Docker** and the **backend locally**.
+
+### 1. Copy the environment file
+
+```bash
+cp .env.example .env
+```
+
+### 2. Start PostgreSQL in Docker
+
+```bash
+npm run db:up
+```
+
+The database will be available at `localhost:5432` and Prisma will connect through the `DATABASE_URL` in `.env`.
+
+### 3. Install dependencies
 
 ```bash
 npm install
-cp .env.example .env
+```
+
+### 4. Generate the Prisma client
+
+```bash
 npm run prisma:generate
-npm run prisma:migrate
+```
+
+### 5. Run the initial migration
+
+```bash
+npm run prisma:migrate -- --name init
+```
+
+### 6. Start the backend
+
+```bash
 npm run dev
+```
+
+## Useful database commands
+
+```bash
+npm run db:up
+npm run db:logs
+npm run db:down
+npm run db:reset
 ```
 
 ## API
