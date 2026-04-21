@@ -46,28 +46,68 @@ const teammatePool: DocumentCollaborator[] = [
   },
 ];
 
-function normalizeDocument(document: Document): Document {
+type CollaborationProfile = {
+  visibility: Document["visibility"];
+  owner: DocumentCollaborator;
+  collaborators: DocumentCollaborator[];
+  lastEditedBy: DocumentCollaborator;
+};
+
+function buildLegacyCollaborationProfile(title: string): CollaborationProfile {
+  const lower = title.toLowerCase();
+
+  if (
+    lower.includes("brief") ||
+    lower.includes("roadmap") ||
+    lower.includes("files") ||
+    lower.includes("shared")
+  ) {
+    return {
+      visibility: "workspace",
+      owner: teammatePool[0],
+      collaborators: [
+        { ...currentUser, role: "editor" },
+        teammatePool[0],
+        teammatePool[1],
+      ],
+      lastEditedBy: teammatePool[0],
+    };
+  }
+
+  if (
+    lower.includes("meeting") ||
+    lower.includes("notes") ||
+    lower.includes("plan") ||
+    lower.includes("hallo")
+  ) {
+    return {
+      visibility: "shared",
+      owner: teammatePool[1],
+      collaborators: [{ ...currentUser, role: "viewer" }, teammatePool[1]],
+      lastEditedBy: teammatePool[1],
+    };
+  }
+
   return {
-    ...document,
-    collaborators: document.collaborators ?? [],
+    visibility: "private",
+    owner: currentUser,
+    collaborators: [currentUser],
+    lastEditedBy: currentUser,
   };
 }
 
-function normalizeDocuments(documents: Document[]): Document[] {
-  return documents.map(normalizeDocument);
-}
-
-function getDefaultCollaborators(title: string): {
-  visibility: Document["visibility"];
-  collaborators: DocumentCollaborator[];
-  lastEditedBy: DocumentCollaborator;
-} {
+function getDefaultCollaborators(title: string): CollaborationProfile {
   const lower = title.toLowerCase();
 
   if (lower.includes("brief") || lower.includes("roadmap")) {
     return {
       visibility: "workspace",
-      collaborators: [currentUser, teammatePool[0], teammatePool[1]],
+      owner: teammatePool[0],
+      collaborators: [
+        { ...currentUser, role: "editor" },
+        teammatePool[0],
+        teammatePool[1],
+      ],
       lastEditedBy: teammatePool[0],
     };
   }
@@ -79,16 +119,45 @@ function getDefaultCollaborators(title: string): {
   ) {
     return {
       visibility: "shared",
-      collaborators: [currentUser, teammatePool[1]],
+      owner: teammatePool[1],
+      collaborators: [{ ...currentUser, role: "editor" }, teammatePool[1]],
       lastEditedBy: teammatePool[1],
     };
   }
 
   return {
     visibility: "private",
+    owner: currentUser,
     collaborators: [currentUser],
     lastEditedBy: currentUser,
   };
+}
+
+function normalizeDocument(document: Document): Document {
+  const profile = buildLegacyCollaborationProfile(document.title);
+  const fallbackEditedAt =
+    document.lastEditedAt ??
+    document.updatedAt ??
+    document.lastOpenedAt ??
+    new Date().toISOString();
+
+  return {
+    ...document,
+    visibility: document.visibility ?? profile.visibility,
+    ownerId: document.ownerId ?? profile.owner.id,
+    ownerName: document.ownerName ?? profile.owner.name,
+    collaborators:
+      document.collaborators && document.collaborators.length > 0
+        ? document.collaborators
+        : profile.collaborators,
+    lastEditedById: document.lastEditedById ?? profile.lastEditedBy.id,
+    lastEditedByName: document.lastEditedByName ?? profile.lastEditedBy.name,
+    lastEditedAt: fallbackEditedAt,
+  };
+}
+
+function normalizeDocuments(documents: Document[]): Document[] {
+  return documents.map(normalizeDocument);
 }
 
 export const useDocumentsStore = create<DocumentsState>((set, get) => ({
@@ -113,8 +182,8 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       updatedAt: now,
       lastOpenedAt: now,
       visibility: collaboration.visibility,
-      ownerId: currentUser.id,
-      ownerName: currentUser.name,
+      ownerId: collaboration.owner.id,
+      ownerName: collaboration.owner.name,
       collaborators: collaboration.collaborators,
       lastEditedById: collaboration.lastEditedBy.id,
       lastEditedByName: collaboration.lastEditedBy.name,

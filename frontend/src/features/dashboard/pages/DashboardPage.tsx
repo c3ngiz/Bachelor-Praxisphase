@@ -8,6 +8,8 @@ import SectionHeader from "@/shared/components/layout/SectionHeader";
 import DashboardLayout from "../components/DashboardLayout";
 import DocumentsContainer from "../components/DocumentsContainer";
 import RecentDocuments from "../components/RecentDocuments";
+import SharedWithYouDocuments from "../components/SharedWithYouDocuments";
+import TeamActivityFeed from "../components/TeamActivityFeed";
 
 import CreateDocumentModal from "../components/modals/CreateDocumentModal";
 import RenameDocumentModal from "../components/modals/RenameDocumentModal";
@@ -64,6 +66,39 @@ export default function DashboardPage() {
         selectedCount === 1 ? selectedDocumentIds[0] : null;
 
     const isBulkDelete = selectedCount > 1;
+
+    const sharedWithYouDocuments = useMemo(() => {
+        return [...documents]
+            .filter((doc) => {
+                if (doc.visibility === "private") return false;
+
+                const currentUserAccess = doc.collaborators?.some(
+                    (collaborator) => collaborator.id === "u-you",
+                );
+
+                return currentUserAccess && doc.lastEditedById !== "u-you";
+            })
+            .sort(
+                (a, b) =>
+                    new Date(b.lastEditedAt ?? b.updatedAt).getTime() -
+                    new Date(a.lastEditedAt ?? a.updatedAt).getTime(),
+            )
+            .slice(0, 3);
+    }, [documents]);
+
+    const teamActivityDocuments = useMemo(() => {
+        return [...documents]
+            .filter(
+                (doc) =>
+                    doc.visibility !== "private" && doc.lastEditedById !== "u-you",
+            )
+            .sort(
+                (a, b) =>
+                    new Date(b.lastEditedAt ?? b.updatedAt).getTime() -
+                    new Date(a.lastEditedAt ?? a.updatedAt).getTime(),
+            )
+            .slice(0, 4);
+    }, [documents]);
 
     const recentDocuments = useMemo(() => {
         return [...documents]
@@ -147,10 +182,38 @@ export default function DashboardPage() {
         <>
             <DashboardLayout documents={documents}>
                 <PageContainer title="">
+                    {sharedWithYouDocuments.length > 0 ? (
+                        <Section>
+                            <SectionHeader
+                                title="Shared with You"
+                                description="Documents teammates recently shared or updated for you"
+                            />
+
+                            <SharedWithYouDocuments
+                                documents={sharedWithYouDocuments}
+                                onOpenDocument={handleOpenDocument}
+                            />
+                        </Section>
+                    ) : null}
+
+                    {teamActivityDocuments.length > 0 ? (
+                        <Section>
+                            <SectionHeader
+                                title="Recent Team Activity"
+                                description="See what your teammates edited across shared documents"
+                            />
+
+                            <TeamActivityFeed
+                                documents={teamActivityDocuments}
+                                onOpenDocument={handleOpenDocument}
+                            />
+                        </Section>
+                    ) : null}
+
                     {recentDocuments.length > 0 ? (
                         <Section>
                             <SectionHeader
-                                title="Recent Documents"
+                                title="Your Recent Documents"
                                 description="Jump back into the documents you opened most recently"
                             />
 
@@ -168,10 +231,10 @@ export default function DashboardPage() {
                             right={
                                 <div
                                     className="
-                                        flex h-11 items-center gap-1 rounded-xl border border-(--border)
-                                        bg-(--bg-elevated) p-1
-                                        shadow-[0_2px_8px_rgba(60,64,67,0.08)]
-                                    "
+                    flex h-11 items-center gap-1 rounded-xl border border-(--border)
+                    bg-(--bg-elevated) p-1
+                    shadow-[0_2px_8px_rgba(60,64,67,0.08)]
+                  "
                                 >
                                     <SortDropdown />
                                     <FilterDropdown />
