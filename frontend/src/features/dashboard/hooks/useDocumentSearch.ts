@@ -1,13 +1,12 @@
 import { useMemo } from "react";
 import type { DashboardFilters } from "../store/dashboardStore";
-import type { Document } from "@/features/documents";
-import { filterDocuments } from "../utils/filterDocuments";
+import {
+  DEFAULT_DOCUMENT_FILTERS,
+  filterDocuments,
+  type Document,
+} from "@/features/documents";
 
-const DEFAULT_FILTERS: DashboardFilters = {
-  author: "all",
-  onlyEmpty: false,
-  onlyRecentlyOpened: false,
-};
+const DEFAULT_FILTERS: DashboardFilters = DEFAULT_DOCUMENT_FILTERS;
 
 export function useDocumentSearch(
   documents: Document[],

@@ -22,13 +22,24 @@ import PresenceBar from "../components/PresenceBar";
 import EditorTitleBar from "../components/EditorTitleBar";
 
 import { useDocumentsStore } from "@/features/documents";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth";
+import { useEditorSessionStore } from "../store/editorSessionStore";
 
 export default function EditorPage() {
     const { id } = useParams();
     const { token } = useAuth();
 
     const { documents, updateDocument, refreshDocument } = useDocumentsStore();
+
+    const sessionDocumentId = useEditorSessionStore((s) => s.documentId);
+    const titleDraft = useEditorSessionStore((s) => s.titleDraft);
+    const isSaving = useEditorSessionStore((s) => s.isSaving);
+    const lastSavedAt = useEditorSessionStore((s) => s.lastSavedAt);
+    const startSession = useEditorSessionStore((s) => s.startSession);
+    const setTitleDraft = useEditorSessionStore((s) => s.setTitleDraft);
+    const setIsSaving = useEditorSessionStore((s) => s.setIsSaving);
+    const markSaved = useEditorSessionStore((s) => s.markSaved);
+    const endSession = useEditorSessionStore((s) => s.endSession);
 
     const titleRef = useRef("");
     const idRef = useRef(id);
@@ -44,7 +55,16 @@ export default function EditorPage() {
 
     useEffect(() => {
         titleRef.current = currentDocument?.title ?? "";
-    }, [currentDocument?.title]);
+        if (id && currentDocument) {
+            startSession(id, currentDocument.title);
+        }
+    }, [currentDocument, id, startSession]);
+
+    useEffect(() => {
+        return () => {
+            endSession();
+        };
+    }, [endSession]);
 
     useEffect(() => {
         if (!id || !token || currentDocument) return;
@@ -98,14 +118,22 @@ export default function EditorPage() {
 
             if (!idRef.current || !token) return;
 
-            void updateDocument(
-                idRef.current,
-                {
-                    title: titleRef.current,
-                    content: json,
-                },
-                token,
-            );
+            void (async () => {
+                setIsSaving(true);
+                try {
+                    await updateDocument(
+                        idRef.current!,
+                        {
+                            title: titleRef.current,
+                            content: json,
+                        },
+                        token,
+                    );
+                    markSaved();
+                } finally {
+                    setIsSaving(false);
+                }
+            })();
         },
     });
 
@@ -130,8 +158,17 @@ export default function EditorPage() {
     return (
         <div className="flex flex-col h-screen">
             <EditorTitleBar
-                title={currentDocument?.title ?? ""}
+                title={
+                    sessionDocumentId === id
+                        ? titleDraft
+                        : currentDocument?.title ?? ""
+                }
+                isSaving={isSaving}
+                lastSavedAt={lastSavedAt}
                 onTitleChange={(value) => {
+                    titleRef.current = value;
+                    setTitleDraft(value);
+
                     if (!id || !token) return;
 
                     const currentContent =
@@ -141,14 +178,22 @@ export default function EditorPage() {
                             content: [],
                         };
 
-                    void updateDocument(
-                        id,
-                        {
-                            title: value,
-                            content: currentContent,
-                        },
-                        token,
-                    );
+                    void (async () => {
+                        setIsSaving(true);
+                        try {
+                            await updateDocument(
+                                id,
+                                {
+                                    title: value,
+                                    content: currentContent,
+                                },
+                                token,
+                            );
+                            markSaved();
+                        } finally {
+                            setIsSaving(false);
+                        }
+                    })();
                 }}
             />
 

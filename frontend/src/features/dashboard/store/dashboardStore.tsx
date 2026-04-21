@@ -1,13 +1,13 @@
 import { create } from "zustand";
+import {
+    DEFAULT_DOCUMENT_FILTERS,
+    type DocumentFilters,
+    type DocumentSortOption,
+} from "@/features/documents";
 
 type ViewMode = "grid" | "list";
-export type SortOption = "updated" | "created" | "title";
-
-export type DashboardFilters = {
-    author: string;
-    onlyEmpty: boolean;
-    onlyRecentlyOpened: boolean;
-};
+export type SortOption = DocumentSortOption;
+export type DashboardFilters = DocumentFilters;
 
 interface DashboardState {
     selectedDocuments: Set<string>;
@@ -26,11 +26,7 @@ interface DashboardState {
     resetFilters: () => void;
 }
 
-const defaultFilters: DashboardFilters = {
-    author: "all",
-    onlyEmpty: false,
-    onlyRecentlyOpened: false,
-};
+const defaultFilters: DashboardFilters = DEFAULT_DOCUMENT_FILTERS;
 
 export const useDashboardStore = create<DashboardState>((set) => ({
     selectedDocuments: new Set(),

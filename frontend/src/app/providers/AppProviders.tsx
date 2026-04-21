@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { AuthProvider } from "@/features/auth/context/AuthProvider";
+import { AuthProvider } from "@/features/auth";
 
 type Props = {
   children: ReactNode;

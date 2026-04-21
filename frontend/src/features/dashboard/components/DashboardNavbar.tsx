@@ -6,7 +6,7 @@ import InviteMembersButton from "./InviteMembersButton";
 import WorkspaceMembersPreview from "./WorkspaceMembersPreview";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import type { Document } from "@/features/documents";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth";
 
 type Props = {
   documents: Document[];

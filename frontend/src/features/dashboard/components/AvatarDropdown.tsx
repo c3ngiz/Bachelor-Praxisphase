@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import Popover from "@/shared/components/ui/Popover";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth";
 
 export default function AvatarDropdown() {
   const navigate = useNavigate();

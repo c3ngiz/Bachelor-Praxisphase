@@ -3,7 +3,7 @@ import Popover from "@/shared/components/ui/Popover";
 import { Funnel, SlidersHorizontal } from "lucide-react";
 import { useMemo } from "react";
 
-import { useDocumentsStore } from "@/features/documents";
+import { selectDocumentAuthors, useDocumentsStore } from "@/features/documents";
 import { useDashboardStore } from "../../store/dashboardStore";
 
 export default function FilterDropdown() {
@@ -14,12 +14,7 @@ export default function FilterDropdown() {
   const resetFilters = useDashboardStore((s) => s.resetFilters);
 
   const authorOptions = useMemo(() => {
-    const authors = Array.from(new Set(documents.map((d) => d.author))).sort();
-
-    return [
-      { value: "all", label: "All authors" },
-      ...authors.map((author) => ({ value: author, label: author })),
-    ];
+    return selectDocumentAuthors(documents);
   }, [documents]);
 
   const activeCount =

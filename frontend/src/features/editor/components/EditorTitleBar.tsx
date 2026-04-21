@@ -3,11 +3,27 @@ import { FileText } from "lucide-react"
 
 type Props = {
     title: string
+    isSaving?: boolean
+    lastSavedAt?: string | null
     onTitleChange: (value: string) => void
 }
 
-export default function EditorTitleBar({ title, onTitleChange }: Props) {
+export default function EditorTitleBar({
+    title,
+    isSaving = false,
+    lastSavedAt,
+    onTitleChange,
+}: Props) {
     const navigate = useNavigate()
+
+    const saveLabel = isSaving
+        ? "Saving..."
+        : lastSavedAt
+            ? `Saved ${new Date(lastSavedAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+            })}`
+            : "";
 
     return (
         <div className="flex items-center justify-between border-b border-(--border) bg-(--bg-elevated) px-6 py-3">
@@ -21,6 +37,10 @@ export default function EditorTitleBar({ title, onTitleChange }: Props) {
                     onChange={(e) => onTitleChange(e.target.value)}
                     className="text-lg font-semibold bg-transparent outline-none"
                 />
+
+                {saveLabel ? (
+                    <span className="text-xs text-(--fg-muted)">{saveLabel}</span>
+                ) : null}
 
             </div>
 

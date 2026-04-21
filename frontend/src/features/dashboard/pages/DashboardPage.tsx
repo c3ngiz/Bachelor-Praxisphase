@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import PageContainer from "@/shared/components/layout/PageContainer";
 import Section from "@/shared/components/layout/Section";
 import SectionHeader from "@/shared/components/layout/SectionHeader";
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth";
 
 import DashboardLayout from "../components/DashboardLayout";
 import DocumentsContainer from "../components/DocumentsContainer";
@@ -17,12 +17,13 @@ import RenameDocumentModal from "../components/modals/RenameDocumentModal";
 import DeleteConfirmationModal from "../components/modals/DeleteConfirmationModal";
 import MultiSelectToolbar from "../components/MultiSelectToolbar";
 
-import { useDocumentsStore } from "@/features/documents";
+import {
+  selectProcessedDocuments,
+  useDocumentsStore,
+} from "@/features/documents";
 import { useDocumentSelection } from "../hooks/useDocumentSelection";
 
 import { useDashboardStore } from "../store/dashboardStore";
-import { filterDocuments } from "../utils/filterDocuments";
-import { sortDocuments } from "../utils/sortDocuments";
 
 import SortDropdown from "../components/toolbar/SortDropdown";
 import FilterDropdown from "../components/toolbar/FilterDropdown";
@@ -128,8 +129,7 @@ export default function DashboardPage() {
   }, [documents]);
 
   const processedDocuments = useMemo(() => {
-    const filteredDocuments = filterDocuments(documents, searchQuery, filters);
-    return sortDocuments(filteredDocuments, sortBy);
+    return selectProcessedDocuments(documents, searchQuery, filters, sortBy);
   }, [documents, searchQuery, filters, sortBy]);
 
   function handleOpenCreateModal() {
