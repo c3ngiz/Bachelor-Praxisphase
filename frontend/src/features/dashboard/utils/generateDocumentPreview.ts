@@ -28,9 +28,28 @@ export type PreviewBlock =
       segments: PreviewSegment[];
     };
 
-function getMarkStyles(
-  marks?: Array<{ type?: string; attrs?: Record<string, any> }>,
-): PreviewMarkStyles {
+type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+
+type JsonObject = {
+  [key: string]: JsonValue;
+};
+
+type PreviewMark = {
+  type?: string;
+  attrs?: Record<string, JsonValue>;
+};
+
+type PreviewNode = {
+  type?: string;
+  text?: string;
+  attrs?: Record<string, JsonValue>;
+  marks?: PreviewMark[];
+  content?: PreviewNode[];
+};
+
+export type PreviewContent = PreviewNode;
+
+function getMarkStyles(marks?: PreviewMark[]): PreviewMarkStyles {
   const styles: PreviewMarkStyles = {};
 
   if (!marks) return styles;
@@ -49,12 +68,12 @@ function getMarkStyles(
         styles.underline = true;
         break;
       case "textStyle":
-        if (mark.attrs?.color) {
+        if (typeof mark.attrs?.color === "string") {
           styles.color = mark.attrs.color;
         }
         break;
       case "highlight":
-        if (mark.attrs?.color) {
+        if (typeof mark.attrs?.color === "string") {
           styles.highlight = mark.attrs.color;
         } else {
           styles.highlight = "#fff59d";
@@ -99,7 +118,9 @@ function mergeAdjacentSegments(segments: PreviewSegment[]): PreviewSegment[] {
   return merged;
 }
 
-function extractSegments(node: any): PreviewSegment[] {
+function extractSegments(
+  node: PreviewNode | null | undefined,
+): PreviewSegment[] {
   if (!node) return [];
 
   if (node.type === "text") {
@@ -118,7 +139,7 @@ function extractSegments(node: any): PreviewSegment[] {
     return [];
   }
 
-  const segments = node.content.flatMap((child: any) => extractSegments(child));
+  const segments = node.content.flatMap((child) => extractSegments(child));
   return mergeAdjacentSegments(segments);
 }
 
@@ -126,22 +147,26 @@ function hasVisibleText(segments: PreviewSegment[]): boolean {
   return segments.some((segment) => segment.text.trim().length > 0);
 }
 
-function extractListItemSegments(node: any): PreviewSegment[] {
+function extractListItemSegments(
+  node: PreviewNode | null | undefined,
+): PreviewSegment[] {
   if (!node || node.type !== "listItem" || !Array.isArray(node.content)) {
     return [];
   }
 
-  const segments = node.content.flatMap((child: any) => extractSegments(child));
+  const segments = node.content.flatMap((child) => extractSegments(child));
   return mergeAdjacentSegments(segments);
 }
 
-function extractBlocksFromNode(node: any): PreviewBlock[] {
+function extractBlocksFromNode(
+  node: PreviewNode | null | undefined,
+): PreviewBlock[] {
   if (!node) return [];
 
   switch (node.type) {
     case "doc":
       return Array.isArray(node.content)
-        ? node.content.flatMap((child: any) => extractBlocksFromNode(child))
+        ? node.content.flatMap((child) => extractBlocksFromNode(child))
         : [];
 
     case "heading": {
@@ -173,7 +198,7 @@ function extractBlocksFromNode(node: any): PreviewBlock[] {
       if (!Array.isArray(node.content)) return [];
 
       return node.content
-        .map((item: any) => extractListItemSegments(item))
+        .map((item) => extractListItemSegments(item))
         .filter(hasVisibleText)
         .map((segments: PreviewSegment[]) => ({
           type: "list-item" as const,
@@ -185,7 +210,7 @@ function extractBlocksFromNode(node: any): PreviewBlock[] {
       if (!Array.isArray(node.content)) return [];
 
       return node.content
-        .map((item: any, index: number) => ({
+        .map((item, index: number) => ({
           segments: extractListItemSegments(item),
           index,
         }))
@@ -210,12 +235,14 @@ function extractBlocksFromNode(node: any): PreviewBlock[] {
 
     default:
       return Array.isArray(node.content)
-        ? node.content.flatMap((child: any) => extractBlocksFromNode(child))
+        ? node.content.flatMap((child) => extractBlocksFromNode(child))
         : [];
   }
 }
 
-export function generateDocumentPreview(content: any): PreviewBlock[] {
+export function generateDocumentPreview(
+  content: PreviewContent | null | undefined,
+): PreviewBlock[] {
   if (!content || typeof content !== "object") return [];
 
   const blocks = extractBlocksFromNode(content);

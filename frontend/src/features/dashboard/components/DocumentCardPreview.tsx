@@ -3,6 +3,7 @@ import type { Document } from "@/features/documents";
 import {
     generateDocumentPreview,
     type PreviewBlock,
+    type PreviewContent,
     type PreviewSegment,
 } from "../utils/generateDocumentPreview";
 
@@ -76,7 +77,7 @@ function renderBlock(block: PreviewBlock, index: number) {
 }
 
 export default function DocumentCardPreview({ document }: Props) {
-    const blocks = generateDocumentPreview(document.content);
+    const blocks = generateDocumentPreview(document.content as PreviewContent);
 
     return (
         <div className="aspect-[3/4] bg-[#f1f3f4] p-3">

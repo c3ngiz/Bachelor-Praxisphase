@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -32,16 +33,21 @@ export default function Popover({
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
 
-  const setOpen = (next: boolean) => {
+  const setOpen = useCallback((next: boolean) => {
     if (!isControlled) {
       setUncontrolledOpen(next);
     }
 
     onOpenChange?.(next);
-  };
+  }, [isControlled, onOpenChange]);
 
-  const close = () => setOpen(false);
-  const toggle = () => setOpen(!open);
+  const close = useCallback(() => {
+    setOpen(false);
+  }, [setOpen]);
+
+  const toggle = useCallback(() => {
+    setOpen(!open);
+  }, [open, setOpen]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -62,7 +68,7 @@ export default function Popover({
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [open]);
+  }, [close, open]);
 
   const alignClasses = {
     left: "left-0",
