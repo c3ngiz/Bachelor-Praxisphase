@@ -21,6 +21,9 @@ const ACCESS_OPTIONS = [
   { value: "workspace", label: "Anyone in workspace" },
 ];
 
+/**
+ * ShareDocumentModal component.
+ */
 export default function ShareDocumentModal({
   document,
   isOpen,

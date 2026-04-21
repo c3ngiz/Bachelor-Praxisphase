@@ -18,6 +18,9 @@ type Props = {
     onCreate?: () => void;
 };
 
+/**
+ * DocumentsContainer component.
+ */
 export default function DocumentsContainer({
     documents,
     viewMode,

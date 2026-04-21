@@ -4,6 +4,9 @@ type Props = {
   name?: string;
 };
 
+/**
+ * AppLogo component.
+ */
 export default function AppLogo({
   className = "",
   labelClassName = "",

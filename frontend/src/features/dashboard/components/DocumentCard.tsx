@@ -53,6 +53,9 @@ function getVisibleCollaborators(collaborators?: DocumentCollaborator[]) {
     return (collaborators ?? []).slice(0, 3);
 }
 
+/**
+ * DocumentCard component.
+ */
 export default function DocumentCard({
     document,
     onOpen,

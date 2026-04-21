@@ -10,6 +10,9 @@ import {
 import Popover from "@/shared/components/ui/Popover";
 import { useAuth } from "@/features/auth";
 
+/**
+ * AvatarDropdown component.
+ */
 export default function AvatarDropdown() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();

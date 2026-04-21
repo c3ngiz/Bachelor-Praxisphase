@@ -17,6 +17,9 @@ function formatRecentDate(date?: string) {
     });
 }
 
+/**
+ * RecentDocuments component.
+ */
 export default function RecentDocuments({
     documents,
     onOpenDocument,

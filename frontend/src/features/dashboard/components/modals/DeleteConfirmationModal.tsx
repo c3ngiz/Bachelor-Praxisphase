@@ -9,6 +9,9 @@ type Props = {
   bulkCount?: number;
 };
 
+/**
+ * DeleteConfirmationModal component.
+ */
 export default function DeleteConfirmationModal({
   isOpen,
   onClose,

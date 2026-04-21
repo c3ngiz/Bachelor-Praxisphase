@@ -76,6 +76,9 @@ function renderBlock(block: PreviewBlock, index: number) {
     );
 }
 
+/**
+ * DocumentCardPreview component.
+ */
 export default function DocumentCardPreview({ document }: Props) {
     const blocks = generateDocumentPreview(document.content as PreviewContent);
 

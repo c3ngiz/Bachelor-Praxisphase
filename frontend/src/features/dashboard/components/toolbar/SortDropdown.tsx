@@ -18,6 +18,9 @@ function getCurrentSortLabel(sortBy: "updated" | "created" | "title") {
   return SORT_OPTIONS.find((option) => option.value === sortBy)?.label ?? "Sort";
 }
 
+/**
+ * SortDropdown component.
+ */
 export default function SortDropdown() {
   const sortBy = useDashboardStore((s) => s.sortBy);
   const setSortBy = useDashboardStore((s) => s.setSortBy);

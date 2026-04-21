@@ -39,6 +39,9 @@ function getVisibilityLabel(document: Document) {
   }
 }
 
+/**
+ * SharedWithYouDocuments component.
+ */
 export default function SharedWithYouDocuments({
   documents,
   currentUserId,

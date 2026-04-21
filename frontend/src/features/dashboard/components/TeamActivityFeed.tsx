@@ -17,6 +17,9 @@ function formatActivityDate(date?: string) {
   });
 }
 
+/**
+ * TeamActivityFeed component.
+ */
 export default function TeamActivityFeed({
   documents,
   onOpenDocument,

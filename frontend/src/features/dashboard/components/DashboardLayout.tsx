@@ -9,6 +9,9 @@ type Props = {
   documents: Document[];
 };
 
+/**
+ * DashboardLayout component.
+ */
 export default function DashboardLayout({ children, documents }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-(--bg)">

@@ -8,6 +8,9 @@ import {
 
 const DEFAULT_FILTERS: DashboardFilters = DEFAULT_DOCUMENT_FILTERS;
 
+/**
+ * Returns documents filtered by dashboard search text and active filter settings.
+ */
 export function useDocumentSearch(
   documents: Document[],
   query: string,

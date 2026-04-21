@@ -17,6 +17,9 @@ function getCurrentViewLabel(viewMode: "grid" | "list") {
     return VIEW_OPTIONS.find((option) => option.value === viewMode)?.label ?? "View";
 }
 
+/**
+ * ViewDropdown component.
+ */
 export default function ViewDropdown() {
     const viewMode = useDashboardStore((s) => s.viewMode);
     const setViewMode = useDashboardStore((s) => s.setViewMode);

@@ -6,6 +6,9 @@ import { useMemo } from "react";
 import { selectDocumentAuthors, useDocumentsStore } from "@/features/documents";
 import { useDashboardStore } from "../../store/dashboardStore";
 
+/**
+ * FilterDropdown component.
+ */
 export default function FilterDropdown() {
   const documents = useDocumentsStore((s) => s.documents);
 

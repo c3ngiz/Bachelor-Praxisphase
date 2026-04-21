@@ -5,6 +5,9 @@ import { useDashboardStore } from "../../store/dashboardStore";
 
 const DEBOUNCE_MS = 300;
 
+/**
+ * SearchBar component.
+ */
 export default function SearchBar() {
     const setSearchQuery = useDashboardStore((s) => s.setSearchQuery);
     const query = useDashboardStore((s) => s.searchQuery);

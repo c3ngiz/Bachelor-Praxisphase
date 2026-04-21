@@ -14,6 +14,9 @@ function formatDateTime(date?: string) {
   });
 }
 
+/**
+ * DashboardFooterStrip component.
+ */
 export default function DashboardFooterStrip({ documents }: Props) {
   const lastOpenedDocument = [...documents]
     .filter((doc) => !!doc.lastOpenedAt)

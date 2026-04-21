@@ -45,6 +45,9 @@ function toRelativeTime(date?: string): string {
   return formatter.format(diffDays, "day");
 }
 
+/**
+ * NotificationsDropdown component.
+ */
 export default function NotificationsDropdown({ documents, currentUserId }: Props) {
   const notifications = useMemo<NotificationItem[]>(() => {
     return [...documents]

@@ -1,3 +1,6 @@
+/**
+ * DocumentSkeletonGrid component.
+ */
 export default function DocumentSkeletonGrid() {
     const items = Array.from({ length: 8 });
 

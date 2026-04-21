@@ -18,6 +18,9 @@ function toInitials(name: string): string {
   return parts.map((part) => part.charAt(0).toUpperCase()).join("") || "?";
 }
 
+/**
+ * WorkspaceMembersPreview component.
+ */
 export default function WorkspaceMembersPreview({ documents }: Props) {
   const { user } = useAuth();
 

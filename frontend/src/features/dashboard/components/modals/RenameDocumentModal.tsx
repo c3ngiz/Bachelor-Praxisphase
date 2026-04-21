@@ -8,6 +8,9 @@ type Props = {
   onRename: (newName: string) => Promise<void> | void;
 };
 
+/**
+ * RenameDocumentModal component.
+ */
 export default function RenameDocumentModal({
   isOpen,
   onClose,

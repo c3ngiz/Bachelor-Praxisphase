@@ -9,6 +9,9 @@ type Props = {
     onDelete?: (id: string) => void;
 };
 
+/**
+ * DocumentsTable component.
+ */
 export default function DocumentsTable({
     documents,
     onOpen,

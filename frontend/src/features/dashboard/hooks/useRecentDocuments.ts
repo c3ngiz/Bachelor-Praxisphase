@@ -2,6 +2,9 @@ import { useMemo } from "react";
 import { useDocumentsStore } from "@/features/documents";
 import type { Document } from "@/features/documents";
 
+/**
+ * Returns the most recently opened documents for quick dashboard access.
+ */
 export function useRecentDocuments(): Document[] {
   const documents = useDocumentsStore((s) => s.documents);
 

@@ -10,6 +10,9 @@ type Props = {
     onCreate?: () => void;
 };
 
+/**
+ * DocumentsGrid component.
+ */
 export default function DocumentsGrid({
     documents,
     onOpen,

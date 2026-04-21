@@ -7,6 +7,9 @@ const WORKSPACES = [
   { id: "w-personal", name: "Personal Notes", subtitle: "Private workspace" },
 ];
 
+/**
+ * WorkspaceSwitcher component.
+ */
 export default function WorkspaceSwitcher() {
   const activeWorkspace = WORKSPACES[0];
 

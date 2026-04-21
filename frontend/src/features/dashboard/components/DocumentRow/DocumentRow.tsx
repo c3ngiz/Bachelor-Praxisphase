@@ -13,6 +13,9 @@ function formatDate(date: string) {
     return new Date(date).toLocaleDateString();
 }
 
+/**
+ * DocumentRow component.
+ */
 export default function DocumentRow({
     document,
     onOpen,

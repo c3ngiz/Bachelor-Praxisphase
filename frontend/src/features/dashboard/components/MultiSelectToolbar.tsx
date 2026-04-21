@@ -6,6 +6,9 @@ type Props = {
   onDelete: () => void;
 };
 
+/**
+ * MultiSelectToolbar component.
+ */
 export default function MultiSelectToolbar({
   count,
   onClear,

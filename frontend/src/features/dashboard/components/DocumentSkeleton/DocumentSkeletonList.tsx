@@ -1,3 +1,6 @@
+/**
+ * DocumentSkeletonList component.
+ */
 export default function DocumentSkeletonList() {
     const rows = Array.from({ length: 6 });
 

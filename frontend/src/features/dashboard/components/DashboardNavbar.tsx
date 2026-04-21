@@ -12,6 +12,9 @@ type Props = {
   documents: Document[];
 };
 
+/**
+ * DashboardNavbar component.
+ */
 export default function DashboardNavbar({ documents }: Props) {
   const { user } = useAuth();
 

@@ -5,6 +5,9 @@ type Props = {
   onCreate: () => void;
 };
 
+/**
+ * CreateDocumentCard component.
+ */
 export default function CreateDocumentCard({ onCreate }: Props) {
   return (
     <Card

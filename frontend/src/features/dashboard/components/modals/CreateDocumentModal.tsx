@@ -7,6 +7,9 @@ type Props = {
   onCreate: (name: string) => Promise<void> | void;
 };
 
+/**
+ * CreateDocumentModal component.
+ */
 export default function CreateDocumentModal({ isOpen, onClose, onCreate }: Props) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);

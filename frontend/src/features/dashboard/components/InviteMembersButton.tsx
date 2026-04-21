@@ -8,6 +8,9 @@ const ROLE_OPTIONS = [
   { value: "viewer", label: "Viewer" },
 ];
 
+/**
+ * InviteMembersButton component.
+ */
 export default function InviteMembersButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
