@@ -1,6 +1,6 @@
 import Popover from "@/shared/components/ui/Popover";
 import { Check, LayoutGrid, List, Rows3 } from "lucide-react";
-import { useDashboardStore } from "../../store/dashboardStore";
+import { useDashboardViewControls } from "../../hooks/useDashboardViewControls";
 
 type ViewOption = {
     value: "grid" | "list";
@@ -21,8 +21,7 @@ function getCurrentViewLabel(viewMode: "grid" | "list") {
  * ViewDropdown component.
  */
 export default function ViewDropdown() {
-    const viewMode = useDashboardStore((s) => s.viewMode);
-    const setViewMode = useDashboardStore((s) => s.setViewMode);
+    const { viewMode, setViewMode } = useDashboardViewControls();
 
     return (
         <Popover
@@ -34,7 +33,7 @@ export default function ViewDropdown() {
                     type="button"
                     onClick={toggle}
                     className="
-                        inline-flex h-9 w-[6.75rem] items-center justify-center gap-2
+                        inline-flex h-9 w-27 items-center justify-center gap-2
                         rounded-lg px-3 text-sm font-medium text-(--fg)
                         transition-[background-color,color] duration-150
                         hover:bg-(--bg) active:bg-(--bg)

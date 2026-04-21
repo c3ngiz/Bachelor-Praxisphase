@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Document, DocumentCollaborator } from "@/features/documents";
-import { useDashboardStore } from "../store/dashboardStore";
+import { useDashboardSelectionState } from "../hooks/useDashboardSelectionState";
 import Card from "@/shared/components/ui/Card";
 import Popover from "@/shared/components/ui/Popover";
 import {
@@ -62,8 +62,7 @@ export default function DocumentCard({
     onRename,
     onDelete,
 }: Props) {
-    const selectedDocuments = useDashboardStore((s) => s.selectedDocuments);
-    const toggleSelection = useDashboardStore((s) => s.toggleSelection);
+    const { selectedDocuments, toggleSelection } = useDashboardSelectionState();
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);

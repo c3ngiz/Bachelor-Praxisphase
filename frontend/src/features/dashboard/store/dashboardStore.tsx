@@ -1,66 +1,25 @@
-import { create } from "zustand";
 import {
-    DEFAULT_DOCUMENT_FILTERS,
-    type DocumentFilters,
-    type DocumentSortOption,
-} from "@/features/documents";
+    type DashboardFilters,
+    useDashboardViewStore,
+} from "./dashboardViewStore";
+import { useDashboardSelectionStore } from "./dashboardSelectionStore";
 
-type ViewMode = "grid" | "list";
-export type SortOption = DocumentSortOption;
-export type DashboardFilters = DocumentFilters;
+export type SortOption = ReturnType<typeof useDashboardViewStore.getState>["sortBy"];
 
-interface DashboardState {
-    selectedDocuments: Set<string>;
-    viewMode: ViewMode;
-    searchQuery: string;
-    sortBy: SortOption;
-    filters: DashboardFilters;
+type DashboardState = ReturnType<typeof useDashboardViewStore.getState> &
+    ReturnType<typeof useDashboardSelectionStore.getState>;
 
-    toggleSelection: (id: string) => void;
-    clearSelection: () => void;
+/**
+ * Backward-compatible facade combining split dashboard stores.
+ */
+export function useDashboardStore<T>(selector: (state: DashboardState) => T): T {
+    const viewState = useDashboardViewStore();
+    const selectionState = useDashboardSelectionStore();
 
-    setViewMode: (mode: ViewMode) => void;
-    setSearchQuery: (query: string) => void;
-    setSortBy: (sort: SortOption) => void;
-    setFilters: (filters: Partial<DashboardFilters>) => void;
-    resetFilters: () => void;
+    return selector({
+        ...viewState,
+        ...selectionState,
+    });
 }
 
-const defaultFilters: DashboardFilters = DEFAULT_DOCUMENT_FILTERS;
-
-export const useDashboardStore = create<DashboardState>((set) => ({
-    selectedDocuments: new Set(),
-
-    viewMode: "grid",
-    searchQuery: "",
-    sortBy: "updated",
-    filters: defaultFilters,
-
-    toggleSelection: (id) =>
-        set((state) => {
-            const selected = new Set(state.selectedDocuments);
-
-            if (selected.has(id)) selected.delete(id);
-            else selected.add(id);
-
-            return { selectedDocuments: selected };
-        }),
-
-    clearSelection: () => set({ selectedDocuments: new Set() }),
-
-    setViewMode: (viewMode) => set({ viewMode }),
-
-    setSearchQuery: (searchQuery) => set({ searchQuery }),
-
-    setSortBy: (sortBy) => set({ sortBy }),
-
-    setFilters: (filters) =>
-        set((state) => ({
-            filters: {
-                ...state.filters,
-                ...filters,
-            },
-        })),
-
-    resetFilters: () => set({ filters: defaultFilters }),
-}));
+export type { DashboardFilters };

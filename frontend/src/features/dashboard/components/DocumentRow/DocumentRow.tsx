@@ -1,5 +1,5 @@
 import type { Document } from "@/features/documents";
-import { useDashboardStore } from "../../store/dashboardStore";
+import { useDashboardSelectionState } from "../../hooks/useDashboardSelectionState";
 import Button from "@/shared/components/ui/Button";
 
 type Props = {
@@ -22,8 +22,7 @@ export default function DocumentRow({
     onRename,
     onDelete,
 }: Props) {
-    const selectedDocuments = useDashboardStore((s) => s.selectedDocuments);
-    const toggleSelection = useDashboardStore((s) => s.toggleSelection);
+    const { selectedDocuments, toggleSelection } = useDashboardSelectionState();
 
     const isSelected = selectedDocuments.has(document.id);
     const isSelectionMode = selectedDocuments.size > 0;
@@ -32,7 +31,7 @@ export default function DocumentRow({
         <tr
             className={[
                 "border-b border-(--border) hover:bg-(--bg)",
-                isSelected ? "bg-[color:var(--accent)/0.10]" : "",
+                isSelected ? "bg-[var(--accent)/0.10]" : "",
             ].join(" ")}
         >
             <td className="px-4 py-3">
@@ -41,7 +40,7 @@ export default function DocumentRow({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelection(document.id)}
-                        className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                        className="h-4 w-4 cursor-pointer accent-(--accent)"
                         aria-label={`Select document ${document.title}`}
                     />
                 </div>

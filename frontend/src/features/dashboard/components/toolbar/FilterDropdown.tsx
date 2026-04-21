@@ -4,7 +4,7 @@ import { Funnel, SlidersHorizontal } from "lucide-react";
 import { useMemo } from "react";
 
 import { selectDocumentAuthors, useDocumentsStore } from "@/features/documents";
-import { useDashboardStore } from "../../store/dashboardStore";
+import { useDashboardViewControls } from "../../hooks/useDashboardViewControls";
 
 /**
  * FilterDropdown component.
@@ -12,9 +12,7 @@ import { useDashboardStore } from "../../store/dashboardStore";
 export default function FilterDropdown() {
   const documents = useDocumentsStore((s) => s.documents);
 
-  const filters = useDashboardStore((s) => s.filters);
-  const setFilters = useDashboardStore((s) => s.setFilters);
-  const resetFilters = useDashboardStore((s) => s.resetFilters);
+  const { filters, setFilters, resetFilters } = useDashboardViewControls();
 
   const authorOptions = useMemo(() => {
     return selectDocumentAuthors(documents);
@@ -35,7 +33,7 @@ export default function FilterDropdown() {
           type="button"
           onClick={toggle}
           className="
-                        relative inline-flex h-9 w-[7.5rem] items-center justify-center gap-2
+                  relative inline-flex h-9 w-30 items-center justify-center gap-2
                         rounded-lg px-3 text-sm font-medium text-(--fg)
                         transition-[background-color,color] duration-150
                         hover:bg-(--bg) active:bg-(--bg)

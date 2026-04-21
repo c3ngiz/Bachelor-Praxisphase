@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { DashboardFilters } from "../store/dashboardStore";
+import type { DashboardFilters } from "../store/dashboardViewStore";
 import {
   DEFAULT_DOCUMENT_FILTERS,
   filterDocuments,

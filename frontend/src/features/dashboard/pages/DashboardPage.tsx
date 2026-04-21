@@ -20,8 +20,7 @@ import { useDocumentSelection } from "../hooks/useDocumentSelection";
 import { useDashboardDocumentActions } from "../hooks/useDashboardDocumentActions";
 import { useDashboardModalState } from "../hooks/useDashboardModalState";
 import { useDashboardSectionDocuments } from "../hooks/useDashboardSectionDocuments";
-
-import { useDashboardStore } from "../store/dashboardStore";
+import { useDashboardViewControls } from "../hooks/useDashboardViewControls";
 
 /**
  * Dashboard page coordinator for documents, sections, filters and modal flows.
@@ -40,10 +39,7 @@ export default function DashboardPage() {
   const { selectedDocuments, selectedCount, clearSelection } =
     useDocumentSelection();
 
-  const searchQuery = useDashboardStore((s) => s.searchQuery);
-  const sortBy = useDashboardStore((s) => s.sortBy);
-  const filters = useDashboardStore((s) => s.filters);
-  const viewMode = useDashboardStore((s) => s.viewMode);
+  const { searchQuery, sortBy, filters, viewMode } = useDashboardViewControls();
   const currentUserId = user?.id ?? null;
 
   useEffect(() => {

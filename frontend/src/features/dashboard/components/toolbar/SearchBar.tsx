@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, X } from "lucide-react";
 
-import { useDashboardStore } from "../../store/dashboardStore";
+import { useDashboardViewControls } from "../../hooks/useDashboardViewControls";
 
 const DEBOUNCE_MS = 300;
 
@@ -9,15 +9,14 @@ const DEBOUNCE_MS = 300;
  * SearchBar component.
  */
 export default function SearchBar() {
-    const setSearchQuery = useDashboardStore((s) => s.setSearchQuery);
-    const query = useDashboardStore((s) => s.searchQuery);
+    const { setSearchQuery, searchQuery } = useDashboardViewControls();
 
-    const [localValue, setLocalValue] = useState(query);
+    const [localValue, setLocalValue] = useState(searchQuery);
     const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
-        setLocalValue(query);
-    }, [query]);
+        setLocalValue(searchQuery);
+    }, [searchQuery]);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -56,7 +55,7 @@ export default function SearchBar() {
                     pl-10 pr-11 text-sm text-(--fg) placeholder:text-(--fg-muted)
                     shadow-[0_1px_2px_rgba(15,23,42,0.04)]
                     transition-[border-color,box-shadow,background-color] duration-150
-                    hover:border-[color:color-mix(in_srgb,var(--border)_72%,var(--fg)_28%)]
+                    hover:border-[color-mix(in_srgb,var(--border)_72%,var(--fg)_28%)]
                     focus:border-(--accent)
                     focus:bg-(--bg-elevated)
                     focus:shadow-[0_0_0_3px_var(--focus-ring),0_4px_14px_rgba(15,23,42,0.08)]

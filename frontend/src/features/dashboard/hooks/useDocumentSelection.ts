@@ -1,12 +1,11 @@
-import { useDashboardStore } from "../store/dashboardStore";
+import { useDashboardSelectionState } from "./useDashboardSelectionState";
 
 /**
  * Provides selection state helpers for dashboard document views.
  */
 export function useDocumentSelection() {
-  const selectedDocuments = useDashboardStore((s) => s.selectedDocuments);
-  const toggleSelection = useDashboardStore((s) => s.toggleSelection);
-  const clearSelection = useDashboardStore((s) => s.clearSelection);
+  const { selectedDocuments, toggleSelection, clearSelection } =
+    useDashboardSelectionState();
 
   const isSelected = (id: string) => {
     return selectedDocuments.has(id);
