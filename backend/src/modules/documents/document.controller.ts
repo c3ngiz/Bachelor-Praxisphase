@@ -1,6 +1,10 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { createDocumentSchema, updateDocumentSchema } from './document.schemas.js';
+import {
+  createDocumentSchema,
+  inviteDocumentCollaboratorSchema,
+  updateDocumentSchema,
+} from './document.schemas.js';
 import * as documentService from './document.service.js';
 import { ApiError } from '../../utils/apiError.js';
 
@@ -15,7 +19,9 @@ function getDocumentIdParam(request: Request): string {
 }
 
 export async function listDocuments(request: Request, response: Response) {
-  const documents = await documentService.listDocuments(request.authUser!.id);
+  const workspaceId =
+    typeof request.query.workspaceId === 'string' ? request.query.workspaceId : undefined;
+  const documents = await documentService.listDocuments(request.authUser!.id, workspaceId);
   return response.status(StatusCodes.OK).json({ documents });
 }
 
@@ -35,6 +41,17 @@ export async function updateDocument(request: Request, response: Response) {
   const documentId = getDocumentIdParam(request);
   const input = updateDocumentSchema.parse(request.body);
   const document = await documentService.updateDocument(documentId, input, request.authUser!);
+  return response.status(StatusCodes.OK).json({ document });
+}
+
+export async function inviteDocumentCollaborator(request: Request, response: Response) {
+  const documentId = getDocumentIdParam(request);
+  const input = inviteDocumentCollaboratorSchema.parse(request.body);
+  const document = await documentService.inviteDocumentCollaborator(
+    documentId,
+    input,
+    request.authUser!,
+  );
   return response.status(StatusCodes.OK).json({ document });
 }
 

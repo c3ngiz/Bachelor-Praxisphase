@@ -12,6 +12,7 @@ type UseDashboardDocumentActionsInput = {
   selectedCount: number;
   clearSelection: () => void;
   onBeforeCreate?: () => void;
+  workspaceId: string | null;
 };
 
 type UseDashboardDocumentActionsResult = {
@@ -33,6 +34,7 @@ export function useDashboardDocumentActions({
   selectedCount,
   clearSelection,
   onBeforeCreate,
+  workspaceId,
 }: UseDashboardDocumentActionsInput): UseDashboardDocumentActionsResult {
   const navigate = useNavigate();
   const {
@@ -55,7 +57,9 @@ export function useDashboardDocumentActions({
     onBeforeCreate?.();
     clearError();
 
-    const newDoc = await createDocument(name, token);
+    const newDoc = await createDocument(name, token, {
+      workspaceId: workspaceId ?? undefined,
+    });
     navigate(`/document/${newDoc.id}`);
   }
 

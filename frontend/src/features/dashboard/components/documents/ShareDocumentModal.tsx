@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link2, MailPlus } from "lucide-react";
 
 import { Button, Input, Modal, Notice, Select } from "@/shared/components/ui";
+import { useAuth } from "@/features/auth";
 import type { Document } from "@/features/documents";
+import { useDocumentsStore } from "@/features/documents";
+import { useWorkspacesStore } from "@/features/workspaces";
 
 type Props = {
   document: Document;
@@ -29,14 +32,43 @@ export default function ShareDocumentModal({
   isOpen,
   onClose,
 }: Props) {
+  const { token } = useAuth();
+  const inviteDocumentCollaborator = useDocumentsStore(
+    (state) => state.inviteDocumentCollaborator,
+  );
+  const activeWorkspace = useWorkspacesStore((state) => state.activeWorkspace);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("editor");
   const [access, setAccess] = useState(document.visibility);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const collaborators = document.collaborators ?? [];
 
-  function handleInvite() {
-    setEmail("");
-    onClose();
+  async function handleInvite() {
+    if (!token) return;
+
+    try {
+      setIsSubmitting(true);
+      await inviteDocumentCollaborator(
+        document.id,
+        {
+          email,
+          role: role as "editor" | "viewer",
+        },
+        token,
+      );
+      setEmail("");
+      setError(null);
+      onClose();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to invite document collaborator.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleCopyLink() {
@@ -65,7 +97,11 @@ export default function ShareDocumentModal({
           label="Invite by email"
           placeholder="name@company.com"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            if (error) setError(null);
+          }}
+          disabled={isSubmitting}
         />
 
         <Select
@@ -73,6 +109,7 @@ export default function ShareDocumentModal({
           value={role}
           onChange={(event) => setRole(event.target.value)}
           options={ROLE_OPTIONS}
+          disabled={isSubmitting}
         />
 
         <Select
@@ -81,8 +118,34 @@ export default function ShareDocumentModal({
           onChange={(event) =>
             setAccess(event.target.value as Document["visibility"])
           }
-          options={ACCESS_OPTIONS}
+          options={
+            activeWorkspace?.isDefault
+              ? ACCESS_OPTIONS.map((option) =>
+                  option.value === "workspace"
+                    ? {
+                        ...option,
+                        label: "Anyone in private workspace (only you)",
+                      }
+                    : option,
+                )
+              : ACCESS_OPTIONS
+          }
         />
+
+        {activeWorkspace?.isDefault ? (
+          <Notice>
+            <Notice.Description>
+              Your default workspace cannot be shared as a whole. Use individual
+              document invites when other people need access.
+            </Notice.Description>
+          </Notice>
+        ) : null}
+
+        {error ? (
+          <Notice variant="danger">
+            <Notice.Description>{error}</Notice.Description>
+          </Notice>
+        ) : null}
 
         <Notice className="space-y-3">
           <div className="mb-2 text-sm font-medium text-(--fg)">
@@ -129,13 +192,16 @@ export default function ShareDocumentModal({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
 
-          <Button onClick={handleInvite} disabled={!email.trim()}>
+          <Button
+            onClick={() => void handleInvite()}
+            disabled={!email.trim() || isSubmitting}
+          >
             <MailPlus size={16} />
-            Invite
+            {isSubmitting ? "Inviting..." : "Invite"}
           </Button>
         </div>
       </Modal.Footer>

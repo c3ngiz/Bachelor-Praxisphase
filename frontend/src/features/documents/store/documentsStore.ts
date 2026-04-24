@@ -3,12 +3,14 @@ import {
   createDocumentRequest,
   deleteDocumentRequest,
   getDocument,
+  inviteDocumentCollaboratorRequest,
   listDocuments,
   updateDocumentRequest,
 } from "../api/documentsApi";
 import type {
   CreateDocumentInput,
   Document,
+  InviteDocumentCollaboratorInput,
   UpdateDocumentInput,
 } from "../types/document.types";
 
@@ -17,7 +19,7 @@ interface DocumentsState {
   isLoading: boolean;
   error: string | null;
 
-  loadDocuments: (token: string) => Promise<void>;
+  loadDocuments: (token: string, workspaceId?: string | null) => Promise<void>;
   refreshDocument: (id: string, token: string) => Promise<Document | undefined>;
   createDocument: (
     title: string,
@@ -27,6 +29,11 @@ interface DocumentsState {
   updateDocument: (
     id: string,
     input: UpdateDocumentInput,
+    token: string,
+  ) => Promise<Document>;
+  inviteDocumentCollaborator: (
+    id: string,
+    input: InviteDocumentCollaboratorInput,
     token: string,
   ) => Promise<Document>;
   deleteDocument: (id: string, token: string) => Promise<void>;
@@ -67,11 +74,11 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  loadDocuments: async (token) => {
+  loadDocuments: async (token, workspaceId) => {
     set({ isLoading: true, error: null });
 
     try {
-      const response = await listDocuments(token);
+      const response = await listDocuments(token, workspaceId);
       set({ documents: response.documents, isLoading: false });
     } catch (error) {
       const message =
@@ -103,6 +110,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
           title,
           content: input?.content,
           visibility: input?.visibility,
+          workspaceId: input?.workspaceId,
           collaborators: input?.collaborators,
         },
         token,
@@ -135,6 +143,24 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to update document.";
+      set({ error: message });
+      throw error;
+    }
+  },
+
+  inviteDocumentCollaborator: async (id, input, token) => {
+    try {
+      const response = await inviteDocumentCollaboratorRequest(id, input, token);
+
+      set((state) => ({
+        documents: upsertDocument(state.documents, response.document),
+        error: null,
+      }));
+
+      return response.document;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to invite document collaborator.";
       set({ error: message });
       throw error;
     }

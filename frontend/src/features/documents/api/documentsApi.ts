@@ -2,14 +2,17 @@ import { apiRequest } from "@/shared/lib/api";
 import type {
   CreateDocumentInput,
   Document,
+  InviteDocumentCollaboratorInput,
   UpdateDocumentInput,
 } from "../types/document.types";
 import { normalizeDocument, normalizeDocuments } from "../types/document.types";
 
 export async function listDocuments(
   token: string,
+  workspaceId?: string | null,
 ): Promise<{ documents: Document[] }> {
-  const response = await apiRequest<{ documents: Document[] }>("/documents", {
+  const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
+  const response = await apiRequest<{ documents: Document[] }>(`/documents${query}`, {
     method: "GET",
     token,
   });
@@ -47,6 +50,7 @@ export async function createDocumentRequest(
       title: input.title,
       content: input.content ?? { type: "doc", content: [] },
       visibility: input.visibility ?? "private",
+      workspaceId: input.workspaceId,
       collaborators: input.collaborators ?? [],
     },
   });
@@ -83,4 +87,23 @@ export async function deleteDocumentRequest(
     method: "DELETE",
     token,
   });
+}
+
+export async function inviteDocumentCollaboratorRequest(
+  documentId: string,
+  input: InviteDocumentCollaboratorInput,
+  token: string,
+): Promise<{ document: Document }> {
+  const response = await apiRequest<{ document: Document }>(
+    `/documents/${documentId}/collaborators`,
+    {
+      method: "POST",
+      token,
+      body: input,
+    },
+  );
+
+  return {
+    document: normalizeDocument(response.document),
+  };
 }

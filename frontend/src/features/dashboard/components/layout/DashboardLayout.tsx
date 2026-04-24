@@ -7,6 +7,7 @@ import { useDashboardViewControls } from "../../hooks/useDashboardViewControls";
 import { getDashboardCollections } from "../../utils/dashboardCollections";
 
 type Props = {
+  activeWorkspaceId: string | null;
   children: ReactNode;
   currentUserId: string | null;
   documents: Document[];
@@ -16,12 +17,17 @@ type Props = {
  * DashboardLayout component.
  */
 export default function DashboardLayout({
+  activeWorkspaceId,
   children,
   currentUserId,
   documents,
 }: Props) {
   const { activeCollection, setActiveCollection } = useDashboardViewControls();
-  const collections = getDashboardCollections(documents, currentUserId);
+  const collections = getDashboardCollections(
+    documents,
+    currentUserId,
+    activeWorkspaceId,
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-(--bg)">

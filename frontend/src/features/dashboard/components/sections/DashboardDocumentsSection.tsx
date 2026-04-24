@@ -25,6 +25,7 @@ type Props = {
   onRenameDocument: (id: string) => void;
   onDeleteDocument: (id?: string) => void;
   onCreateDocument: () => void;
+  workspaceName?: string;
 };
 
 /**
@@ -42,6 +43,7 @@ export default function DashboardDocumentsSection({
   onRenameDocument,
   onDeleteDocument,
   onCreateDocument,
+  workspaceName,
 }: Props) {
   const isAllDocuments = collectionId === "all";
   const emptyCopy = getEmptyCopy(collectionId);
@@ -71,6 +73,7 @@ export default function DashboardDocumentsSection({
             Documents
           </Section.Title>
           <Section.Description className="text-sm text-(--fg-muted)">
+            {workspaceName ? `${workspaceName} · ` : ""}
             {collectionLabel} · {collectionTotal} document
             {collectionTotal === 1 ? "" : "s"}
           </Section.Description>

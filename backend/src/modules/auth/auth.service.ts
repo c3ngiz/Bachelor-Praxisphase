@@ -44,14 +44,33 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
     throw new ApiError(StatusCodes.CONFLICT, "A user with this email already exists.");
   }
 
-  const user = await prisma.user.create({
-    data: {
-      email: input.email.toLowerCase(),
-      passwordHash: await hashPassword(input.password),
-      name: input.name.trim(),
-      initials: buildInitials(input.name),
-      avatarColor: input.avatarColor,
-    },
+  const user = await prisma.$transaction(async (tx) => {
+    const createdUser = await tx.user.create({
+      data: {
+        email: input.email.toLowerCase(),
+        passwordHash: await hashPassword(input.password),
+        name: input.name.trim(),
+        initials: buildInitials(input.name),
+        avatarColor: input.avatarColor,
+      },
+    });
+
+    await tx.workspace.create({
+      data: {
+        name: `${createdUser.name}'s Workspace`,
+        description: "Your private default workspace",
+        isDefault: true,
+        ownerId: createdUser.id,
+        members: {
+          create: {
+            userId: createdUser.id,
+            role: "owner",
+          },
+        },
+      },
+    });
+
+    return createdUser;
   });
 
   const authUser = toAuthUser(user);

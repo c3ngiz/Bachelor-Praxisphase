@@ -7,6 +7,7 @@ import { StatusCodes } from "http-status-codes";
 import { env } from "./config/env.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { documentRouter } from "./modules/documents/document.routes.js";
+import { workspaceRouter } from "./modules/workspaces/workspace.routes.js";
 import { ApiError } from "./utils/apiError.js";
 
 export const app = express();
@@ -27,6 +28,7 @@ app.get("/health", (_request, response) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/documents", documentRouter);
+app.use("/api/workspaces", workspaceRouter);
 
 app.use((_request, response) => {
   return response.status(StatusCodes.NOT_FOUND).json({

@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 
 import { useAuth } from "@/features/auth";
 import { Notice } from "@/shared/components/ui";
+import { useWorkspacesStore } from "@/features/workspaces";
 
 import { DashboardLayout } from "../components/layout";
 import { DashboardDocumentsSection } from "../components/sections";
@@ -36,6 +37,13 @@ export default function DashboardPage() {
     loadDocuments,
     clearError,
   } = useDocumentsStore();
+  const {
+    activeWorkspace,
+    activeWorkspaceId,
+    error: workspaceError,
+    isLoading: isWorkspaceLoading,
+    loadWorkspaces,
+  } = useWorkspacesStore();
 
   const { selectedDocuments, selectedCount, clearSelection } =
     useDashboardSelectionState();
@@ -46,8 +54,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!token) return;
+    void loadWorkspaces(token);
+  }, [token, loadWorkspaces]);
+
+  useEffect(() => {
+    if (!token || !activeWorkspaceId) return;
     void loadDocuments(token);
-  }, [token, loadDocuments]);
+  }, [activeWorkspaceId, token, loadDocuments]);
 
   const selectedDocumentIds = useMemo(() => {
     return Array.from(selectedDocuments);
@@ -87,13 +100,19 @@ export default function DashboardPage() {
     selectedCount,
     clearSelection,
     onBeforeCreate: clearError,
+    workspaceId: activeWorkspaceId,
   });
 
   const isBulkDelete = selectedCount > 1;
 
   const activeCollectionDetails = useMemo(() => {
-    return getDashboardCollection(documents, currentUserId, activeCollection);
-  }, [activeCollection, currentUserId, documents]);
+    return getDashboardCollection(
+      documents,
+      currentUserId,
+      activeCollection,
+      activeWorkspaceId,
+    );
+  }, [activeCollection, activeWorkspaceId, currentUserId, documents]);
 
   const processedDocuments = useMemo(() => {
     return selectProcessedDocuments(
@@ -119,12 +138,22 @@ export default function DashboardPage() {
     openDeleteModal(id);
   }
 
-  const loading = isLoading || isAuthLoading;
+  const loading = isLoading || isAuthLoading || isWorkspaceLoading;
 
   return (
     <>
-      <DashboardLayout documents={documents} currentUserId={currentUserId}>
+      <DashboardLayout
+        documents={documents}
+        currentUserId={currentUserId}
+        activeWorkspaceId={activeWorkspaceId}
+      >
         <div className="w-full px-4 py-5 sm:px-6 lg:px-8">
+          {workspaceError ? (
+            <Notice variant="danger" className="mb-4">
+              <Notice.Description>{workspaceError}</Notice.Description>
+            </Notice>
+          ) : null}
+
           {error ? (
             <Notice variant="danger" className="mb-4">
               <Notice.Description>{error}</Notice.Description>
@@ -136,6 +165,7 @@ export default function DashboardPage() {
             collectionLabel={activeCollectionDetails.label}
             collectionDescription={activeCollectionDetails.description}
             collectionTotal={activeCollectionDetails.documents.length}
+            workspaceName={activeWorkspace?.name}
             documents={processedDocuments}
             viewMode={viewMode}
             loading={loading}

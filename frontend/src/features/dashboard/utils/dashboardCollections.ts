@@ -38,7 +38,12 @@ function sortByDateDesc(
 export function getDashboardCollections(
   documents: Document[],
   currentUserId: string | null,
+  activeWorkspaceId?: string | null,
 ): DashboardCollection[] {
+  const workspaceDocuments = activeWorkspaceId
+    ? documents.filter((doc) => doc.workspaceId === activeWorkspaceId)
+    : documents;
+
   const sharedDocuments = currentUserId
     ? sortByDateDesc(
         documents.filter((doc) => {
@@ -50,7 +55,10 @@ export function getDashboardCollections(
             (collaborator) => collaborator.id === currentUserId,
           );
 
-          return currentUserAccess && doc.lastEditedById !== currentUserId;
+          return (
+            currentUserAccess &&
+            doc.ownerId !== currentUserId
+          );
         }),
         (document) => document.lastEditedAt ?? document.updatedAt,
       )
@@ -58,7 +66,7 @@ export function getDashboardCollections(
 
   const activityDocuments = currentUserId
     ? sortByDateDesc(
-        documents.filter(
+        workspaceDocuments.filter(
           (doc) =>
             doc.visibility !== "private" &&
             doc.lastEditedById !== currentUserId,
@@ -68,24 +76,24 @@ export function getDashboardCollections(
     : [];
 
   const recentDocuments = sortByDateDesc(
-    documents,
+    workspaceDocuments,
     (document) =>
       document.lastOpenedAt ?? document.lastEditedAt ?? document.updatedAt,
   ).slice(0, 8);
 
-  const emptyDocuments = documents.filter((doc) => isDocumentEmpty(doc.content));
+  const emptyDocuments = workspaceDocuments.filter((doc) => isDocumentEmpty(doc.content));
 
   return [
     {
       id: "all",
       label: "All Documents",
       description: "Browse and manage every document in your workspace.",
-      documents,
+      documents: workspaceDocuments,
     },
     {
       id: "shared",
       label: "Shared with You",
-      description: "Documents teammates recently shared or updated for you.",
+      description: "Documents teammates shared with you.",
       documents: sharedDocuments,
     },
     {
@@ -113,8 +121,13 @@ export function getDashboardCollection(
   documents: Document[],
   currentUserId: string | null,
   collectionId: DashboardCollectionId,
+  activeWorkspaceId?: string | null,
 ): DashboardCollection {
-  const collections = getDashboardCollections(documents, currentUserId);
+  const collections = getDashboardCollections(
+    documents,
+    currentUserId,
+    activeWorkspaceId,
+  );
 
   return (
     collections.find((collection) => collection.id === collectionId) ??

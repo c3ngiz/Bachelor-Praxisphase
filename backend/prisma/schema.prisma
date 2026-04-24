@@ -13,6 +13,12 @@ enum DocumentVisibility {
   workspace
 }
 
+enum WorkspaceRole {
+  owner
+  editor
+  viewer
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -25,6 +31,43 @@ model User {
 
   ownedDocuments Document[] @relation("DocumentOwner")
   editedDocuments Document[] @relation("DocumentLastEditor")
+  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  documents Document[]
+  members   WorkspaceMember[]
+
+  @@index([ownerId])
+  @@index([isDefault])
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  role        WorkspaceRole
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@index([workspaceId])
 }
 
 model Document {
@@ -36,6 +79,9 @@ model Document {
   updatedAt      DateTime           @updatedAt
   lastOpenedAt   DateTime?
   visibility     DocumentVisibility @default(private)
+
+  workspaceId    String
+  workspace      Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   ownerId        String
   ownerName      String
@@ -49,6 +95,7 @@ model Document {
   lastEditedBy     User             @relation("DocumentLastEditor", fields: [lastEditedById], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
+  @@index([workspaceId])
   @@index([lastEditedById])
   @@index([updatedAt])
 }

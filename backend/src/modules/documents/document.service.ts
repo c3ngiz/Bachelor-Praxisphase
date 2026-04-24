@@ -3,7 +3,12 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/apiError.js';
 import type { AuthUser } from '../auth/auth.types.js';
-import type { CreateDocumentInput, UpdateDocumentInput } from './document.schemas.js';
+import { getDefaultWorkspaceId, getWorkspaceMembership } from '../workspaces/workspace.service.js';
+import type {
+  CreateDocumentInput,
+  InviteDocumentCollaboratorInput,
+  UpdateDocumentInput,
+} from './document.schemas.js';
 import type { DocumentCollaborator, DocumentDto } from './document.types.js';
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -88,6 +93,7 @@ function toDocumentDto(document: {
   updatedAt: Date;
   lastOpenedAt: Date | null;
   visibility: 'private' | 'shared' | 'workspace';
+  workspaceId: string;
   ownerId: string;
   ownerName: string;
   collaborators: unknown;
@@ -104,6 +110,7 @@ function toDocumentDto(document: {
     updatedAt: document.updatedAt.toISOString(),
     lastOpenedAt: document.lastOpenedAt?.toISOString(),
     visibility: document.visibility,
+    workspaceId: document.workspaceId,
     ownerId: document.ownerId,
     ownerName: document.ownerName,
     collaborators: Array.isArray(document.collaborators)
@@ -115,23 +122,86 @@ function toDocumentDto(document: {
   };
 }
 
-export async function listDocuments(userId: string): Promise<DocumentDto[]> {
+function getCollaborators(value: unknown): DocumentCollaborator[] {
+  return Array.isArray(value) ? (value as DocumentCollaborator[]) : [];
+}
+
+async function canAccessDocument(document: {
+  ownerId: string;
+  workspaceId: string;
+  visibility: 'private' | 'shared' | 'workspace';
+  collaborators: unknown;
+}, userId: string): Promise<boolean> {
+  if (document.ownerId === userId) {
+    return true;
+  }
+
+  const collaborators = getCollaborators(document.collaborators);
+
+  if (collaborators.some((collaborator) => collaborator.id === userId)) {
+    return true;
+  }
+
+  if (document.visibility !== 'workspace') {
+    return false;
+  }
+
+  const membership = await getWorkspaceMembership(document.workspaceId, userId);
+
+  return Boolean(membership);
+}
+
+async function canEditDocument(document: {
+  ownerId: string;
+  workspaceId: string;
+  visibility: 'private' | 'shared' | 'workspace';
+  collaborators: unknown;
+}, authUser: AuthUser): Promise<boolean> {
+  if (document.ownerId === authUser.id) {
+    return true;
+  }
+
+  const collaborators = getCollaborators(document.collaborators);
+  const currentCollaborator = collaborators.find(
+    (collaborator) => collaborator.id === authUser.id,
+  );
+
+  if (currentCollaborator?.role === 'owner' || currentCollaborator?.role === 'editor') {
+    return true;
+  }
+
+  if (document.visibility !== 'workspace') {
+    return false;
+  }
+
+  const membership = await getWorkspaceMembership(document.workspaceId, authUser.id);
+
+  return membership?.role === 'owner' || membership?.role === 'editor';
+}
+
+export async function listDocuments(userId: string, workspaceId?: string): Promise<DocumentDto[]> {
+  if (workspaceId) {
+    const membership = await getWorkspaceMembership(workspaceId, userId);
+
+    if (!membership) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have access to this workspace.');
+    }
+  }
+
   const documents = await prisma.document.findMany({
+    where: workspaceId ? { workspaceId } : undefined,
     orderBy: { updatedAt: 'desc' },
   });
 
-  return documents
-    .filter((document) => {
-      const collaborators = Array.isArray(document.collaborators)
-        ? (document.collaborators as DocumentCollaborator[])
-        : [];
+  const visibleDocuments: DocumentDto[] = [];
 
-      return (
-        document.ownerId === userId ||
-        collaborators.some((collaborator) => collaborator.id === userId)
-      );
-    })
-    .map(toDocumentDto);
+  for (const document of documents) {
+    if (await canAccessDocument(document, userId)) {
+      visibleDocuments.push(toDocumentDto(document));
+    }
+  }
+
+  return visibleDocuments;
 }
 
 export async function getDocumentById(documentId: string, userId: string): Promise<DocumentDto> {
@@ -143,14 +213,7 @@ export async function getDocumentById(documentId: string, userId: string): Promi
     throw new ApiError(StatusCodes.NOT_FOUND, 'Document not found.');
   }
 
-  const collaborators = Array.isArray(document.collaborators)
-    ? (document.collaborators as DocumentCollaborator[])
-    : [];
-
-  const canAccess =
-    document.ownerId === userId || collaborators.some((collaborator) => collaborator.id === userId);
-
-  if (!canAccess) {
+  if (!(await canAccessDocument(document, userId))) {
     throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have access to this document.');
   }
 
@@ -163,6 +226,16 @@ export async function createDocument(
 ): Promise<DocumentDto> {
   const collaborators = normalizeCollaborators(input.collaborators, authUser);
   const now = new Date();
+  const workspaceId = input.workspaceId ?? (await getDefaultWorkspaceId(authUser.id));
+  const membership = await getWorkspaceMembership(workspaceId, authUser.id);
+
+  if (!membership) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have access to this workspace.');
+  }
+
+  if (membership.role === 'viewer') {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have permission to create documents.');
+  }
 
   const document = await prisma.document.create({
     data: {
@@ -170,6 +243,7 @@ export async function createDocument(
       content: input.content === null ? Prisma.JsonNull : toPrismaNonNullJsonValue(input.content),
       author: authUser.name,
       visibility: input.visibility,
+      workspaceId,
       ownerId: authUser.id,
       ownerName: authUser.name,
       collaborators,
@@ -196,19 +270,9 @@ export async function updateDocument(
     throw new ApiError(StatusCodes.NOT_FOUND, 'Document not found.');
   }
 
-  const existingCollaborators = Array.isArray(existingDocument.collaborators)
-    ? (existingDocument.collaborators as DocumentCollaborator[])
-    : [];
+  const existingCollaborators = getCollaborators(existingDocument.collaborators);
 
-  const currentCollaborator = existingCollaborators.find(
-    (collaborator) => collaborator.id === authUser.id,
-  );
-  const canEdit =
-    existingDocument.ownerId === authUser.id ||
-    currentCollaborator?.role === 'owner' ||
-    currentCollaborator?.role === 'editor';
-
-  if (!canEdit) {
+  if (!(await canEditDocument(existingDocument, authUser))) {
     throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have permission to edit this document.');
   }
 
@@ -234,6 +298,78 @@ export async function updateDocument(
           : input.lastOpenedAt === null
             ? null
             : new Date(input.lastOpenedAt),
+      lastEditedById: authUser.id,
+      lastEditedByName: authUser.name,
+      lastEditedAt: new Date(),
+    },
+  });
+
+  return toDocumentDto(updatedDocument);
+}
+
+export async function inviteDocumentCollaborator(
+  documentId: string,
+  input: InviteDocumentCollaboratorInput,
+  authUser: AuthUser,
+): Promise<DocumentDto> {
+  const existingDocument = await prisma.document.findUnique({
+    where: { id: documentId },
+  });
+
+  if (!existingDocument) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Document not found.');
+  }
+
+  if (!(await canEditDocument(existingDocument, authUser))) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have permission to share this document.');
+  }
+
+  const invitedUser = await prisma.user.findUnique({
+    where: { email: input.email.toLowerCase() },
+    select: {
+      id: true,
+      name: true,
+      initials: true,
+      avatarColor: true,
+    },
+  });
+
+  if (!invitedUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'No registered user exists for this email.');
+  }
+
+  const existingCollaborators = getCollaborators(existingDocument.collaborators);
+  const nextCollaborators = normalizeCollaborators(
+    [
+      ...existingCollaborators.filter((collaborator) => collaborator.id !== invitedUser.id),
+      {
+        id: invitedUser.id,
+        name: invitedUser.name,
+        initials: invitedUser.initials,
+        color: invitedUser.avatarColor,
+        role: input.role,
+      },
+    ],
+    {
+      id: existingDocument.ownerId,
+      email: '',
+      name: existingDocument.ownerName,
+      initials:
+        existingCollaborators.find((collaborator) => collaborator.id === existingDocument.ownerId)
+          ?.initials ?? 'O',
+      avatarColor:
+        existingCollaborators.find((collaborator) => collaborator.id === existingDocument.ownerId)
+          ?.color ?? 'bg-violet-500',
+      createdAt: '',
+      updatedAt: '',
+    },
+  );
+
+  const updatedDocument = await prisma.document.update({
+    where: { id: documentId },
+    data: {
+      collaborators: nextCollaborators,
+      visibility: existingDocument.visibility === 'private' ? 'shared' : existingDocument.visibility,
       lastEditedById: authUser.id,
       lastEditedByName: authUser.name,
       lastEditedAt: new Date(),

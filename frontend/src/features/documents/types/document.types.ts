@@ -22,6 +22,7 @@ export interface Document {
   lastOpenedAt?: string;
 
   visibility: DocumentVisibility;
+  workspaceId: string;
   ownerId: string;
   ownerName: string;
 
@@ -36,6 +37,7 @@ export type CreateDocumentInput = {
   title: string;
   content?: unknown;
   visibility?: DocumentVisibility;
+  workspaceId?: string;
   collaborators?: DocumentCollaborator[];
 };
 
@@ -45,6 +47,11 @@ export type UpdateDocumentInput = Partial<
     "title" | "content" | "visibility" | "collaborators" | "lastOpenedAt"
   >
 >;
+
+export type InviteDocumentCollaboratorInput = {
+  email: string;
+  role: Exclude<DocumentRole, "owner">;
+};
 
 export interface DocumentPreview {
   text: string;

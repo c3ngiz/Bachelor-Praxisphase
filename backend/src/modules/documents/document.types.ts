@@ -18,6 +18,7 @@ export type DocumentDto = {
   updatedAt: string;
   lastOpenedAt?: string;
   visibility: DocumentVisibility;
+  workspaceId: string;
   ownerId: string;
   ownerName: string;
   collaborators: DocumentCollaborator[];
