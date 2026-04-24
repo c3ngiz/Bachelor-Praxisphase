@@ -74,22 +74,29 @@ export default function DocumentCard({
                 onClick={() => toggleSelection(document.id)}
                 onDoubleClick={() => onOpen?.(document.id)}
                 onMouseLeave={() => setIsMenuOpen(false)}
-                className="group relative z-0 hover:z-20 focus-within:z-20"
+                padding="none"
+                shadow="none"
+                className="
+                    group relative z-0 bg-white/82
+                    shadow-[0_14px_38px_rgba(68,71,95,0.10)]
+                    hover:z-20 hover:shadow-[0_22px_48px_rgba(68,71,95,0.18)]
+                    focus-within:z-20
+                "
             >
-                <div className="overflow-hidden rounded-t-xl">
+                <div className="overflow-hidden">
                     <DocumentCardPreview document={document} />
                 </div>
 
-                <Card.Content padding="sm">
-                    <div className="mb-3 flex items-start justify-between gap-3">
+                <Card.Content padding="md" className="gap-3">
+                    <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2">
-                            <FileText size={16} className="shrink-0 text-emerald-500" />
+                            <FileText size={16} className="shrink-0 text-(--accent)" />
 
                             <div className="min-w-0">
-                                <span className="block truncate text-sm font-medium">
+                                <span className="block truncate text-sm font-bold text-[#030618]">
                                     {document.title}
                                 </span>
-                                <span className="block text-xs text-(--fg-muted)">
+                                <span className="block truncate text-xs text-(--fg-muted)">
                                     Edited by {document.lastEditedByName} · {formatEditedAt(document.lastEditedAt)}
                                 </span>
                             </div>
@@ -102,7 +109,7 @@ export default function DocumentCard({
                                         e.stopPropagation();
                                     }}
                                     className={[
-                                        "shrink-0 rounded-md p-1 text-(--fg-muted)",
+                                        "shrink-0 rounded-lg p-1 text-(--fg-muted)",
                                         isMenuOpen ? "bg-(--bg)" : "hover:bg-(--bg)",
                                     ].join(" ")}
                                     aria-label={`Open menu for ${document.title}`}
@@ -166,13 +173,13 @@ export default function DocumentCard({
                         </Menu.Root>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-3 border-t border-(--border)/45 pt-3">
+                        <div className="flex min-w-0 items-center gap-2">
                             <Badge variant={getVisibilityVariant(document)}>
                                 {getVisibilityLabel(document)}
                             </Badge>
 
-                            <span className="text-xs text-(--fg-muted)">
+                            <span className="truncate text-xs text-(--fg-muted)">
                                 {collaborators.length} collaborator{collaborators.length === 1 ? "" : "s"}
                             </span>
                         </div>

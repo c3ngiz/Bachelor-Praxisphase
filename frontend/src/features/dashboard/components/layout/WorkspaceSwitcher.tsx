@@ -20,12 +20,12 @@ export default function WorkspaceSwitcher() {
           type="button"
           aria-label="Switch workspace"
           className={[
-            "inline-flex h-10 items-center gap-3 rounded-xl border border-(--border) px-3",
+            "inline-flex h-10 items-center gap-3 rounded-xl border border-white/10 px-3",
             "transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-(--focus-ring)",
-            "bg-(--bg-elevated) text-(--fg) hover:bg-(--bg)",
+            "bg-white/5 text-white hover:bg-white/10",
           ].join(" ")}
         >
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white">
             <Users size={16} />
           </span>
 
@@ -33,12 +33,12 @@ export default function WorkspaceSwitcher() {
             <span className="truncate text-sm font-semibold">
               {activeWorkspace.name}
             </span>
-            <span className="truncate text-xs text-(--fg-muted)">
+            <span className="truncate text-xs text-white/55">
               {activeWorkspace.subtitle}
             </span>
           </span>
 
-          <ChevronDown size={16} className="shrink-0 text-(--fg-muted)" />
+          <ChevronDown size={16} className="shrink-0 text-white/55" />
         </button>
       </Popover.Trigger>
 
@@ -74,7 +74,7 @@ export default function WorkspaceSwitcher() {
                     </span>
 
                     {isActive ? (
-                      <span className="rounded-md bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+                      <span className="rounded-md bg-violet-100 px-2 py-1 text-[11px] font-semibold text-violet-700">
                         Active
                       </span>
                     ) : null}

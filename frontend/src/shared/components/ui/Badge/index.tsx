@@ -21,8 +21,8 @@ type Props = HTMLAttributes<HTMLSpanElement> & {
 const variantClasses: Record<BadgeVariant, string> = {
   default: "bg-(--bg) text-(--fg)",
   subtle: "bg-(--bg-subtle) text-(--fg-muted)",
-  success: "bg-emerald-100 text-emerald-700",
-  info: "bg-sky-100 text-sky-700",
+  success: "bg-violet-100 text-violet-700",
+  info: "bg-indigo-100 text-indigo-700",
   warning: "bg-amber-100 text-amber-700",
   danger: "bg-red-100 text-red-700",
 };

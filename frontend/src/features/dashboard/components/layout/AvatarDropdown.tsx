@@ -31,9 +31,9 @@ export default function AvatarDropdown() {
           type="button"
           aria-label="User menu"
           className={[
-            "inline-flex h-9 w-9 items-center justify-center rounded-full border border-(--border)",
+            "inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15",
             "text-sm font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-(--focus-ring)",
-            "bg-(--bg) text-(--fg) hover:bg-(--bg-secondary)",
+            "bg-[#31b6d8] text-white hover:bg-[#49c4e1]",
           ].join(" ")}
         >
           {initials}

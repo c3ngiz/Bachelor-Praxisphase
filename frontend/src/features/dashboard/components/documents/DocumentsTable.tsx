@@ -21,9 +21,13 @@ export default function DocumentsTable({
 }: Props) {
     return (
         <div className="w-full">
-            <Card padding="none" hoverable={false} className="overflow-hidden">
+            <Card
+                padding="none"
+                hoverable={false}
+                className="overflow-hidden bg-white/82 shadow-[0_14px_38px_rgba(68,71,95,0.10)]"
+            >
                 <table className="w-full text-sm">
-                    <thead className="border-b border-(--border) text-left text-(--fg-muted)">
+                    <thead className="border-b border-(--border)/60 bg-(--bg-subtle) text-left text-(--fg-muted)">
                         <tr>
                             <th className="w-10 px-4 py-3"></th>
                             <th className="px-4 py-3">Title</th>

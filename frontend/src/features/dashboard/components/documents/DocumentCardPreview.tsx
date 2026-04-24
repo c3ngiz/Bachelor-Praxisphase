@@ -83,13 +83,13 @@ export default function DocumentCardPreview({ document }: Props) {
     const blocks = generateDocumentPreview(document.content as PreviewContent);
 
     return (
-        <div className="aspect-[3/4] bg-[#f1f3f4] p-3">
+        <div className="aspect-[3/4] bg-[linear-gradient(135deg,#edf0f6,#f8f9fd)] p-4">
             <div
                 className="
-          h-full w-full overflow-hidden border border-[#e0e0e0] bg-white
-          shadow-[0_1px_2px_rgba(60,64,67,0.15),0_1px_3px_1px_rgba(60,64,67,0.08)]
+          mx-auto h-full w-[84%] overflow-hidden rounded-[3px] border border-[#e4e7f1] bg-white
+          shadow-[0_18px_34px_rgba(68,71,95,0.16)]
           transition-transform duration-200 ease-out
-          group-hover:scale-[1.02]
+          group-hover:-translate-y-1 group-hover:scale-[1.025]
         "
             >
                 <div

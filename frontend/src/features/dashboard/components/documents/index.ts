@@ -1,4 +1,3 @@
-export { default as CreateDocumentCard } from "./CreateDocumentCard";
 export { default as DocumentCard } from "./DocumentCard";
 export { default as DocumentCardPreview } from "./DocumentCardPreview";
 export { default as DocumentRow } from "./DocumentRow";
@@ -8,7 +7,4 @@ export { default as DocumentsContainer } from "./DocumentsContainer";
 export { default as DocumentsEmptyState } from "./DocumentsEmptyState";
 export { default as DocumentsGrid } from "./DocumentsGrid";
 export { default as DocumentsTable } from "./DocumentsTable";
-export { default as RecentDocuments } from "./RecentDocuments";
 export { default as ShareDocumentModal } from "./ShareDocumentModal";
-export { default as SharedWithYouDocuments } from "./SharedWithYouDocuments";
-export { default as TeamActivityFeed } from "./TeamActivityFeed";

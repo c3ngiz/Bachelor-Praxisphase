@@ -28,10 +28,11 @@ export default function FilterDropdown() {
         <button
           type="button"
           className="
-                  relative inline-flex h-9 w-30 items-center justify-center gap-2
-                        rounded-lg px-3 text-sm font-medium text-(--fg)
-                        transition-[background-color,color] duration-150
-                        hover:bg-(--bg) active:bg-(--bg)
+                  relative inline-flex h-10 w-30 items-center justify-center gap-2
+                        rounded-xl border border-(--border) bg-white px-3
+                        text-sm font-semibold text-(--fg)
+                        shadow-sm transition-[background-color,border-color,color] duration-150
+                        hover:border-(--accent) hover:text-(--accent)
                     "
           aria-label="Filter documents"
         >
@@ -39,7 +40,7 @@ export default function FilterDropdown() {
           <span>Filter</span>
 
           {activeCount > 0 ? (
-            <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-(--bg) px-1.5 py-0.5 text-[11px] font-semibold text-(--fg)">
+            <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-(--accent) px-1.5 py-0.5 text-[11px] font-semibold text-white">
               {activeCount}
             </span>
           ) : null}

@@ -21,6 +21,8 @@ export { default as Popover } from "./Popover/index";
 export { usePopoverContext, type PopoverAlign, type PopoverSide, type PopoverStrategy } from "./Popover/context";
 export { default as Select } from "./Select/index";
 export type { SelectProps } from "./Select/index";
+export { default as SegmentedControl } from "./SegmentedControl/index";
+export type { SegmentedControlOption } from "./SegmentedControl/index";
 export { default as Skeleton } from "./Skeleton/index";
 export { default as Textarea } from "./Textarea/index";
 export type { TextareaProps } from "./Textarea/index";

@@ -83,7 +83,7 @@ export default function NotificationsDropdown({ documents, currentUserId }: Prop
           className={[
             "inline-flex h-9 w-9 items-center justify-center rounded-lg",
             "transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-(--focus-ring)",
-            "text-(--fg-muted) hover:bg-(--bg) hover:text-(--fg)",
+            "border border-white/10 bg-white/5 text-white/75 hover:bg-white/10 hover:text-white",
           ].join(" ")}
         >
           <Bell size={18} />

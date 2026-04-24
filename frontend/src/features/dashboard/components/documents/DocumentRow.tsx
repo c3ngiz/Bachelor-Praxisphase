@@ -30,8 +30,8 @@ export default function DocumentRow({
     return (
         <tr
             className={[
-                "border-b border-(--border) hover:bg-(--bg)",
-                isSelected ? "bg-[var(--accent)/0.10]" : "",
+                "border-b border-(--border)/55 hover:bg-(--bg-subtle)",
+                isSelected ? "bg-[rgba(73,67,190,0.10)]" : "",
             ].join(" ")}
         >
             <td className="px-4 py-3">

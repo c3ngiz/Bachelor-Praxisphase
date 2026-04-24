@@ -5,18 +5,19 @@
 :root {
   color-scheme: light;
 
-  --bg: #eef1f4;
+  --bg: #edf0f6;
   --bg-elevated: #ffffff;
-  --bg-subtle: #f6f8fa;
-  --fg: #202124;
-  --fg-muted: #5f6368;
-  --border: #e0e0e0;
+  --bg-subtle: #f7f8fc;
+  --bg-secondary: #edf0f6;
+  --fg: #030618;
+  --fg-muted: #44475f;
+  --border: #bdc6d8;
 
-  --accent: #10b981;
-  --accent-hover: #059669;
-  --accent-contrast: #ecfdf5;
+  --accent: #4943be;
+  --accent-hover: #3d37a8;
+  --accent-contrast: #ffffff;
 
-  --focus-ring: rgba(16, 185, 129, 0.35);
+  --focus-ring: rgba(73, 67, 190, 0.34);
 
   font-family:
     Inter,
@@ -33,7 +34,9 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 62% 0%, rgba(174, 175, 202, 0.28), transparent 34rem),
+    var(--bg);
   color: var(--fg);
 }
 

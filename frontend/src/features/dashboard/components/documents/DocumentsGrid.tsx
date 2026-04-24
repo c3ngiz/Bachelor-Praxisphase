@@ -1,5 +1,4 @@
 import type { Document } from "@/features/documents";
-import CreateDocumentCard from "./CreateDocumentCard";
 import DocumentCard from "./DocumentCard";
 
 type Props = {
@@ -7,7 +6,6 @@ type Props = {
     onOpen?: (id: string) => void;
     onRename?: (id: string) => void;
     onDelete?: (id: string) => void;
-    onCreate?: () => void;
 };
 
 /**
@@ -18,14 +16,13 @@ export default function DocumentsGrid({
     onOpen,
     onRename,
     onDelete,
-    onCreate,
 }: Props) {
     return (
         <div
             className="
                 grid
-                grid-cols-[repeat(auto-fill,minmax(220px,1fr))]
-                gap-x-6 gap-y-8
+                grid-cols-[repeat(auto-fill,minmax(230px,1fr))]
+                gap-x-5 gap-y-7
                 items-start
             "
         >
@@ -38,8 +35,6 @@ export default function DocumentsGrid({
                     onDelete={onDelete}
                 />
             ))}
-
-            <CreateDocumentCard onCreate={onCreate ?? (() => { })} />
         </div>
     );
 }

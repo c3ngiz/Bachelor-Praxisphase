@@ -12,6 +12,9 @@ type Props = {
     documents: Document[];
     viewMode: ViewMode;
     loading?: boolean;
+    emptyDescription?: string;
+    emptyShowCreateAction?: boolean;
+    emptyTitle?: string;
     onOpen?: (id: string) => void;
     onRename?: (id: string) => void;
     onDelete?: (id: string) => void;
@@ -25,6 +28,9 @@ export default function DocumentsContainer({
     documents,
     viewMode,
     loading,
+    emptyDescription,
+    emptyShowCreateAction,
+    emptyTitle,
     onOpen,
     onRename,
     onDelete,
@@ -39,7 +45,14 @@ export default function DocumentsContainer({
     }
 
     if (documents.length === 0) {
-        return <DocumentsEmptyState onCreateDocument={onCreate} />;
+        return (
+            <DocumentsEmptyState
+                title={emptyTitle}
+                description={emptyDescription}
+                showCreateAction={emptyShowCreateAction}
+                onCreateDocument={onCreate}
+            />
+        );
     }
 
     if (viewMode === "grid") {
@@ -49,7 +62,6 @@ export default function DocumentsContainer({
                 onOpen={onOpen}
                 onRename={onRename}
                 onDelete={onDelete}
-                onCreate={onCreate}
             />
         );
     }

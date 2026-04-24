@@ -18,7 +18,7 @@ type CardRootProps = HTMLAttributes<HTMLDivElement> & {
 };
 
 const variantClasses: Record<Variant, string> = {
-  default: "border-(--border) bg-(--bg-elevated)",
+  default: "border-white/75 bg-(--bg-elevated)",
   outline: "border-(--border) bg-transparent",
   ghost: "border-transparent bg-transparent",
 };
@@ -51,13 +51,15 @@ function CardRoot({
   return (
     <div
       className={cn(
-        "group relative flex flex-col rounded-xl border transition-all",
+        "group relative flex flex-col rounded-2xl border transition-all",
         variantClasses[variant],
         shadowClasses[shadow],
         padding !== "none" && paddingClasses[padding],
         hoverable && "hover:-translate-y-px hover:shadow-md",
         interactive && "cursor-pointer active:scale-[0.99]",
-        selectable && selected && "border-(--accent) ring-2 ring-(--accent)",
+        selectable &&
+          selected &&
+          "border-(--accent) ring-2 ring-(--accent) ring-offset-2 ring-offset-(--bg)",
         className,
       )}
       {...props}

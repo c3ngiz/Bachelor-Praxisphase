@@ -1,4 +1,3 @@
-export { default as CreateButton } from "./CreateButton";
 export { default as FilterDropdown } from "./FilterDropdown";
 export { default as MultiSelectToolbar } from "./MultiSelectToolbar";
 export { default as SearchBar } from "./SearchBar";

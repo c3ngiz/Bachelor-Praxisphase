@@ -17,7 +17,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   primary:
     "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)] hover:bg-[var(--accent-hover)]",
   secondary:
-    "border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--fg)] hover:border-[var(--accent)]",
+    "border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--fg)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
   ghost:
     "border-transparent bg-transparent text-[var(--fg)] hover:border-[var(--border)] hover:bg-[var(--bg)]",
   danger: "border-red-600 bg-red-600 text-white hover:bg-red-700",
@@ -25,7 +25,7 @@ const variantClasses: Record<ButtonVariant, string> = {
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "min-h-8 gap-1.5 rounded-md px-3 py-1.5 text-xs",
-  md: "min-h-10 gap-2 rounded-lg px-4 py-2 text-sm",
+  md: "min-h-10 gap-2 rounded-xl px-4 py-2 text-sm",
   lg: "min-h-11 gap-2 rounded-xl px-5 py-2.5 text-sm",
 };
 
@@ -65,7 +65,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
       ref={ref}
       type={type}
       className={cn(
-        "inline-flex items-center justify-center border font-medium transition-[background-color,border-color,color,box-shadow,transform]",
+        "inline-flex items-center justify-center border font-semibold shadow-sm transition-[background-color,border-color,color,box-shadow,transform]",
         "focus:outline-none focus:ring-2 focus:ring-(--focus-ring)",
         "disabled:cursor-not-allowed disabled:opacity-50",
         variantClasses[variant],

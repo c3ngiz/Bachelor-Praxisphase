@@ -23,8 +23,8 @@ export default function AppLogo({
         >
           <defs>
             <linearGradient id="docflow-gradient" x1="6" y1="6" x2="34" y2="34">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="100%" stopColor="#059669" />
+              <stop offset="0%" stopColor="#AEAFCA" />
+              <stop offset="100%" stopColor="#4943BE" />
             </linearGradient>
           </defs>
 
@@ -52,7 +52,7 @@ export default function AppLogo({
           {/* flow line */}
           <path
             d="M13.5 21 C16 17, 20 25, 23.5 19"
-            stroke="#10b981"
+            stroke="#4943BE"
             strokeWidth="2"
             strokeLinecap="round"
           />

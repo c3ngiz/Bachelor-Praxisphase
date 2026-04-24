@@ -1,26 +1,42 @@
 import type { ReactNode } from "react";
 
-import DashboardFooterStrip from "./DashboardFooterStrip";
 import DashboardNavbar from "./DashboardNavbar";
+import DashboardSidebar from "./DashboardSidebar";
 import type { Document } from "@/features/documents";
+import { useDashboardViewControls } from "../../hooks/useDashboardViewControls";
+import { getDashboardCollections } from "../../utils/dashboardCollections";
 
 type Props = {
   children: ReactNode;
+  currentUserId: string | null;
   documents: Document[];
 };
 
 /**
  * DashboardLayout component.
  */
-export default function DashboardLayout({ children, documents }: Props) {
+export default function DashboardLayout({
+  children,
+  currentUserId,
+  documents,
+}: Props) {
+  const { activeCollection, setActiveCollection } = useDashboardViewControls();
+  const collections = getDashboardCollections(documents, currentUserId);
+
   return (
     <div className="flex min-h-screen flex-col bg-(--bg)">
       <DashboardNavbar documents={documents} />
 
-      <main className="relative z-10 flex-1">{children}</main>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:h-[calc(100vh-4rem)] md:flex-row">
+        <DashboardSidebar
+          activeCollection={activeCollection}
+          collections={collections}
+          onSelectCollection={setActiveCollection}
+        />
 
-      <div className="relative z-0 mx-auto w-full max-w-7xl pb-6">
-        <DashboardFooterStrip documents={documents} />
+        <main className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto">
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -8,11 +8,11 @@ Use PascalCase file names and apply a role suffix when the responsibility is cle
 
 - Page: `DashboardPage`
 - Layout: `DashboardLayout`
-- Section: `DashboardDocumentsSection`, `DashboardHighlightsSections`
-- Card: `DocumentCard`, `CreateDocumentCard`
+- Section: `DashboardDocumentsSection`
+- Card: `DocumentCard`
 - Row/Table: `DocumentRow`, `DocumentsTable`
 - Modal: `CreateDocumentModal`, `RenameDocumentModal`, `DeleteConfirmationModal`
-- Toolbar/Dropdown/Button: `MultiSelectToolbar`, `FilterDropdown`, `SortDropdown`, `ViewDropdown`, `CreateButton`
+- Toolbar/Dropdown/Button: `MultiSelectToolbar`, `FilterDropdown`, `SortDropdown`, `ViewDropdown`
 - Empty/Skeleton/Preview: `DocumentsEmptyState`, `DocumentSkeletonGrid`, `DocumentCardPreview`
 
 ## Hook Naming Convention
@@ -21,7 +21,6 @@ Hooks use the `use` prefix and describe one domain concern.
 
 - `useDashboardDocumentActions`
 - `useDashboardModalState`
-- `useDashboardSectionDocuments`
 - `useDashboardSelectionState`
 
 ## Module Boundaries
@@ -34,7 +33,7 @@ Hooks use the `use` prefix and describe one domain concern.
 - `components/modals/`: create/rename/delete dialog components.
 - `components/index.ts`: optional barrel export for dashboard component domains.
 - `hooks/`: isolated dashboard behavior and state orchestration.
-- `store/dashboardViewStore.ts`: search, sort, filters and view mode.
+- `store/dashboardViewStore.ts`: active collection, search, sort, filters and view mode.
 - `store/dashboardSelectionStore.ts`: selection state for multi-select flows.
 
 ## JSDoc Standard

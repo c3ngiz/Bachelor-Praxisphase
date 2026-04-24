@@ -4,10 +4,7 @@ import { useAuth } from "@/features/auth";
 import { Notice } from "@/shared/components/ui";
 
 import { DashboardLayout } from "../components/layout";
-import {
-  DashboardDocumentsSection,
-  DashboardHighlightsSections,
-} from "../components/sections";
+import { DashboardDocumentsSection } from "../components/sections";
 
 import {
   CreateDocumentModal,
@@ -23,8 +20,8 @@ import {
 import { useDashboardSelectionState } from "../hooks/useDashboardSelectionState";
 import { useDashboardDocumentActions } from "../hooks/useDashboardDocumentActions";
 import { useDashboardModalState } from "../hooks/useDashboardModalState";
-import { useDashboardSectionDocuments } from "../hooks/useDashboardSectionDocuments";
 import { useDashboardViewControls } from "../hooks/useDashboardViewControls";
+import { getDashboardCollection } from "../utils/dashboardCollections";
 
 /**
  * Dashboard page coordinator for documents, sections, filters and modal flows.
@@ -43,7 +40,8 @@ export default function DashboardPage() {
   const { selectedDocuments, selectedCount, clearSelection } =
     useDashboardSelectionState();
 
-  const { searchQuery, sortBy, filters, viewMode } = useDashboardViewControls();
+  const { activeCollection, searchQuery, sortBy, filters, viewMode } =
+    useDashboardViewControls();
   const currentUserId = user?.id ?? null;
 
   useEffect(() => {
@@ -76,15 +74,6 @@ export default function DashboardPage() {
   });
 
   const {
-    sharedWithYouDocuments,
-    teamActivityDocuments,
-    recentDocuments,
-  } = useDashboardSectionDocuments({
-    documents,
-    currentUserId,
-  });
-
-  const {
     selectedDocument,
     createDocumentFromModal,
     openDocument,
@@ -102,9 +91,18 @@ export default function DashboardPage() {
 
   const isBulkDelete = selectedCount > 1;
 
+  const activeCollectionDetails = useMemo(() => {
+    return getDashboardCollection(documents, currentUserId, activeCollection);
+  }, [activeCollection, currentUserId, documents]);
+
   const processedDocuments = useMemo(() => {
-    return selectProcessedDocuments(documents, searchQuery, filters, sortBy);
-  }, [documents, searchQuery, filters, sortBy]);
+    return selectProcessedDocuments(
+      activeCollectionDetails.documents,
+      searchQuery,
+      filters,
+      sortBy,
+    );
+  }, [activeCollectionDetails.documents, searchQuery, filters, sortBy]);
 
   function handleOpenCreateModal() {
     clearError();
@@ -125,33 +123,27 @@ export default function DashboardPage() {
 
   return (
     <>
-      <DashboardLayout documents={documents}>
-        <div className="mx-auto w-full max-w-[1200px] px-6 py-6">
+      <DashboardLayout documents={documents} currentUserId={currentUserId}>
+        <div className="w-full px-4 py-5 sm:px-6 lg:px-8">
           {error ? (
             <Notice variant="danger" className="mb-4">
               <Notice.Description>{error}</Notice.Description>
             </Notice>
           ) : null}
 
-          <div className="space-y-8">
-            <DashboardHighlightsSections
-              sharedWithYouDocuments={sharedWithYouDocuments}
-              teamActivityDocuments={teamActivityDocuments}
-              recentDocuments={recentDocuments}
-              currentUserId={currentUserId}
-              onOpenDocument={(id) => void openDocument(id)}
-            />
-
-            <DashboardDocumentsSection
-              documents={processedDocuments}
-              viewMode={viewMode}
-              loading={loading}
-              onOpenDocument={(id) => void openDocument(id)}
-              onRenameDocument={handleOpenRenameModal}
-              onDeleteDocument={(id) => handleOpenDeleteModal(id)}
-              onCreateDocument={handleOpenCreateModal}
-            />
-          </div>
+          <DashboardDocumentsSection
+            collectionId={activeCollectionDetails.id}
+            collectionLabel={activeCollectionDetails.label}
+            collectionDescription={activeCollectionDetails.description}
+            collectionTotal={activeCollectionDetails.documents.length}
+            documents={processedDocuments}
+            viewMode={viewMode}
+            loading={loading}
+            onOpenDocument={(id) => void openDocument(id)}
+            onRenameDocument={handleOpenRenameModal}
+            onDeleteDocument={(id) => handleOpenDeleteModal(id)}
+            onCreateDocument={handleOpenCreateModal}
+          />
         </div>
       </DashboardLayout>
 

@@ -30,10 +30,11 @@ export default function SortDropdown() {
         <button
           type="button"
           className="
-                        inline-flex h-9 w-43 items-center justify-center gap-2
-                        rounded-lg px-3 text-sm font-medium text-(--fg)
-                        transition-[background-color,color] duration-150
-                        hover:bg-(--bg) active:bg-(--bg)
+                        inline-flex h-10 w-43 items-center justify-center gap-2
+                        rounded-xl border border-(--border) bg-white px-3
+                        text-sm font-semibold text-(--fg)
+                        shadow-sm transition-[background-color,border-color,color] duration-150
+                        hover:border-(--accent) hover:text-(--accent)
                     "
           aria-label="Sort documents"
         >
