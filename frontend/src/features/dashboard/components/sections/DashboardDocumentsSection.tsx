@@ -1,4 +1,4 @@
-import { Section, SectionHeader } from "@/shared/components/layout";
+import { Section } from "@/shared/components/layout";
 
 import type { Document } from "@/features/documents";
 
@@ -32,34 +32,41 @@ export default function DashboardDocumentsSection({
   onCreateDocument,
 }: Props) {
   return (
-    <Section variant="subtle" fullBleed>
-      <SectionHeader
-        title="All Documents"
-        description="Browse and manage your documents"
-        right={
-          <div
-            className="
-              flex h-11 items-center gap-1 rounded-xl border border-(--border)
-              bg-(--bg-elevated) p-1
-              shadow-[0_2px_8px_rgba(60,64,67,0.08)]
-            "
-          >
-            <SortDropdown />
-            <FilterDropdown />
-            <ViewDropdown />
-          </div>
+    <Section.Root variant="subtle" fullBleed>
+      <Section.Header
+        actions={
+          <Section.Actions>
+            <div
+              className="
+                flex h-11 items-center gap-1 rounded-xl border border-(--border)
+                bg-(--bg-elevated) p-1
+                shadow-[0_2px_8px_rgba(60,64,67,0.08)]
+              "
+            >
+              <SortDropdown />
+              <FilterDropdown />
+              <ViewDropdown />
+            </div>
+          </Section.Actions>
         }
-      />
+      >
+        <Section.Title>All Documents</Section.Title>
+        <Section.Description>
+          Browse and manage your documents
+        </Section.Description>
+      </Section.Header>
 
-      <DocumentsContainer
-        documents={documents}
-        viewMode={viewMode}
-        loading={loading}
-        onOpen={onOpenDocument}
-        onRename={onRenameDocument}
-        onDelete={onDeleteDocument}
-        onCreate={onCreateDocument}
-      />
-    </Section>
+      <Section.Body>
+        <DocumentsContainer
+          documents={documents}
+          viewMode={viewMode}
+          loading={loading}
+          onOpen={onOpenDocument}
+          onRename={onRenameDocument}
+          onDelete={onDeleteDocument}
+          onCreate={onCreateDocument}
+        />
+      </Section.Body>
+    </Section.Root>
   );
 }

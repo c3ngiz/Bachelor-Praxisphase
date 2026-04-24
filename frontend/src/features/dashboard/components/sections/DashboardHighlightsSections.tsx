@@ -1,4 +1,4 @@
-import { Section, SectionHeader } from "@/shared/components/layout";
+import { Section } from "@/shared/components/layout";
 
 import type { Document } from "@/features/documents";
 
@@ -27,46 +27,58 @@ export default function DashboardHighlightsSections({
   return (
     <>
       {sharedWithYouDocuments.length > 0 ? (
-        <Section>
-          <SectionHeader
-            title="Shared with You"
-            description="Documents teammates recently shared or updated for you"
-          />
+        <Section.Root>
+          <Section.Header>
+            <Section.Title>Shared with You</Section.Title>
+            <Section.Description>
+              Documents teammates recently shared or updated for you
+            </Section.Description>
+          </Section.Header>
 
-          <SharedWithYouDocuments
-            documents={sharedWithYouDocuments}
-            currentUserId={currentUserId}
-            onOpenDocument={onOpenDocument}
-          />
-        </Section>
+          <Section.Body>
+            <SharedWithYouDocuments
+              documents={sharedWithYouDocuments}
+              currentUserId={currentUserId}
+              onOpenDocument={onOpenDocument}
+            />
+          </Section.Body>
+        </Section.Root>
       ) : null}
 
       {teamActivityDocuments.length > 0 ? (
-        <Section>
-          <SectionHeader
-            title="Recent Team Activity"
-            description="See what your teammates edited across shared documents"
-          />
+        <Section.Root>
+          <Section.Header>
+            <Section.Title>Recent Team Activity</Section.Title>
+            <Section.Description>
+              See what your teammates edited across shared documents
+            </Section.Description>
+          </Section.Header>
 
-          <TeamActivityFeed
-            documents={teamActivityDocuments}
-            onOpenDocument={onOpenDocument}
-          />
-        </Section>
+          <Section.Body>
+            <TeamActivityFeed
+              documents={teamActivityDocuments}
+              onOpenDocument={onOpenDocument}
+            />
+          </Section.Body>
+        </Section.Root>
       ) : null}
 
       {recentDocuments.length > 0 ? (
-        <Section>
-          <SectionHeader
-            title="Your Recent Documents"
-            description="Jump back into the documents you opened most recently"
-          />
+        <Section.Root>
+          <Section.Header>
+            <Section.Title>Your Recent Documents</Section.Title>
+            <Section.Description>
+              Jump back into the documents you opened most recently
+            </Section.Description>
+          </Section.Header>
 
-          <RecentDocuments
-            documents={recentDocuments}
-            onOpenDocument={onOpenDocument}
-          />
-        </Section>
+          <Section.Body>
+            <RecentDocuments
+              documents={recentDocuments}
+              onOpenDocument={onOpenDocument}
+            />
+          </Section.Body>
+        </Section.Root>
       ) : null}
     </>
   );

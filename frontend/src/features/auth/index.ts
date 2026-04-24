@@ -2,6 +2,7 @@ export * from "./types";
 
 export { default as AuthForm } from "./components/AuthForm";
 export { default as ProtectedRoute } from "./components/ProtectedRoute";
+export { default as AuthLayout } from "./layouts/AuthLayout";
 
 export { AuthProvider } from "./context/AuthProvider";
 export { AuthContext } from "./context/AuthContext";

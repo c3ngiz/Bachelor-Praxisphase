@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react";
 
-import { PageContainer } from "@/shared/components/layout";
 import { useAuth } from "@/features/auth";
 import { Notice } from "@/shared/components/ui";
 
@@ -127,31 +126,33 @@ export default function DashboardPage() {
   return (
     <>
       <DashboardLayout documents={documents}>
-        <PageContainer title="">
+        <div className="mx-auto w-full max-w-[1200px] px-6 py-6">
           {error ? (
             <Notice variant="danger" className="mb-4">
               <Notice.Description>{error}</Notice.Description>
             </Notice>
           ) : null}
 
-          <DashboardHighlightsSections
-            sharedWithYouDocuments={sharedWithYouDocuments}
-            teamActivityDocuments={teamActivityDocuments}
-            recentDocuments={recentDocuments}
-            currentUserId={currentUserId}
-            onOpenDocument={(id) => void openDocument(id)}
-          />
+          <div className="space-y-8">
+            <DashboardHighlightsSections
+              sharedWithYouDocuments={sharedWithYouDocuments}
+              teamActivityDocuments={teamActivityDocuments}
+              recentDocuments={recentDocuments}
+              currentUserId={currentUserId}
+              onOpenDocument={(id) => void openDocument(id)}
+            />
 
-          <DashboardDocumentsSection
-            documents={processedDocuments}
-            viewMode={viewMode}
-            loading={loading}
-            onOpenDocument={(id) => void openDocument(id)}
-            onRenameDocument={handleOpenRenameModal}
-            onDeleteDocument={(id) => handleOpenDeleteModal(id)}
-            onCreateDocument={handleOpenCreateModal}
-          />
-        </PageContainer>
+            <DashboardDocumentsSection
+              documents={processedDocuments}
+              viewMode={viewMode}
+              loading={loading}
+              onOpenDocument={(id) => void openDocument(id)}
+              onRenameDocument={handleOpenRenameModal}
+              onDeleteDocument={(id) => handleOpenDeleteModal(id)}
+              onCreateDocument={handleOpenCreateModal}
+            />
+          </div>
+        </div>
       </DashboardLayout>
 
       {selectedCount > 0 ? (
