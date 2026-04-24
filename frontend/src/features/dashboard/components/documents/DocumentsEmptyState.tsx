@@ -1,4 +1,5 @@
-import Button from "@/shared/components/ui/Button";
+import { Button, EmptyState } from "@/shared/components/ui";
+import { FileText } from "lucide-react";
 
 type Props = {
     onCreateDocument?: () => void;
@@ -9,18 +10,17 @@ type Props = {
  */
 export default function DocumentsEmptyState({ onCreateDocument }: Props) {
     return (
-        <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-            <div className="mb-4 text-lg font-semibold text-(--fg)">
-                No documents yet
-            </div>
-
-            <p className="mb-6 max-w-md text-sm text-(--fg-muted)">
+        <EmptyState>
+            <EmptyState.Icon>
+                <FileText size={20} />
+            </EmptyState.Icon>
+            <EmptyState.Title>No documents yet</EmptyState.Title>
+            <EmptyState.Description>
                 Create your first document to start writing and collaborating.
-            </p>
-
-            <Button onClick={onCreateDocument}>
-                Create Document
-            </Button>
-        </div>
+            </EmptyState.Description>
+            <EmptyState.Actions>
+                <Button onClick={onCreateDocument}>Create Document</Button>
+            </EmptyState.Actions>
+        </EmptyState>
     );
 }

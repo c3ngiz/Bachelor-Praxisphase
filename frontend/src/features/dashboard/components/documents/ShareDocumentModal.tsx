@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link2, MailPlus } from "lucide-react";
 
-import { Button, Input, Modal, Select } from "@/shared/components/ui";
+import { Button, Input, Modal, Notice, Select } from "@/shared/components/ui";
 import type { Document } from "@/features/documents";
 
 type Props = {
@@ -44,15 +44,22 @@ export default function ShareDocumentModal({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Share “${document.title}”`}
-    >
-      <div className="space-y-4">
-        <div className="rounded-xl border border-(--border) bg-(--bg) px-4 py-3 text-sm text-(--fg-muted)">
-          Invite teammates and manage access for this document.
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal.Header>
+        <div>
+          <Modal.Title>{`Share “${document.title}”`}</Modal.Title>
+          <Modal.Description>
+            Invite teammates and manage access for this document.
+          </Modal.Description>
         </div>
+      </Modal.Header>
+
+      <Modal.Body>
+        <Notice>
+          <Notice.Description>
+            Invite teammates and manage access for this document.
+          </Notice.Description>
+        </Notice>
 
         <Input
           label="Invite by email"
@@ -77,7 +84,7 @@ export default function ShareDocumentModal({
           options={ACCESS_OPTIONS}
         />
 
-        <div className="rounded-xl border border-(--border) bg-(--bg) px-4 py-3">
+        <Notice className="space-y-3">
           <div className="mb-2 text-sm font-medium text-(--fg)">
             People with access
           </div>
@@ -110,26 +117,28 @@ export default function ShareDocumentModal({
               </div>
             ))}
           </div>
-        </div>
+        </Notice>
+      </Modal.Body>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <Modal.Footer className="flex-wrap justify-between">
+        <div className="mr-auto">
           <Button variant="ghost" onClick={handleCopyLink}>
             <Link2 size={16} />
             Copy link
           </Button>
-
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-
-            <Button onClick={handleInvite} disabled={!email.trim()}>
-              <MailPlus size={16} />
-              Invite
-            </Button>
-          </div>
         </div>
-      </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+
+          <Button onClick={handleInvite} disabled={!email.trim()}>
+            <MailPlus size={16} />
+            Invite
+          </Button>
+        </div>
+      </Modal.Footer>
     </Modal>
   );
 }

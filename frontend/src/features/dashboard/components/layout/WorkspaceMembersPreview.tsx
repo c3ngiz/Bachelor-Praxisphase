@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+
+import { AvatarStack } from "@/shared/components/ui";
 import { useAuth } from "@/features/auth";
 import type { Document } from "@/features/documents";
 
@@ -59,20 +61,15 @@ export default function WorkspaceMembersPreview({ documents }: Props) {
 
   return (
     <div className="hidden items-center gap-2 lg:flex">
-      <div className="flex -space-x-2">
-        {members.slice(0, 4).map((member) => (
-          <div
-            key={member.id}
-            title={member.name}
-            className={[
-              "inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-(--bg-elevated) text-[11px] font-semibold text-white",
-              member.color,
-            ].join(" ")}
-          >
-            {member.initials}
-          </div>
-        ))}
-      </div>
+      <AvatarStack
+        items={members.map((member) => ({
+          id: member.id,
+          name: member.name,
+          initials: member.initials,
+          colorClassName: member.color,
+        }))}
+        max={4}
+      />
 
       <span className="text-sm text-(--fg-muted)">
         {members.length} workspace member{members.length === 1 ? "" : "s"}

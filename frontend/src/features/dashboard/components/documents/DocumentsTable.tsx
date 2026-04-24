@@ -1,3 +1,4 @@
+import Card from "@/shared/components/ui/Card";
 import type { Document } from "@/features/documents";
 import DocumentRow from "./DocumentRow";
 
@@ -20,7 +21,7 @@ export default function DocumentsTable({
 }: Props) {
     return (
         <div className="w-full">
-            <div className="overflow-hidden rounded-xl border border-(--border) bg-(--bg-elevated)">
+            <Card padding="none" hoverable={false} className="overflow-hidden">
                 <table className="w-full text-sm">
                     <thead className="border-b border-(--border) text-left text-(--fg-muted)">
                         <tr>
@@ -45,7 +46,7 @@ export default function DocumentsTable({
                         ))}
                     </tbody>
                 </table>
-            </div>
+            </Card>
         </div>
     );
 }

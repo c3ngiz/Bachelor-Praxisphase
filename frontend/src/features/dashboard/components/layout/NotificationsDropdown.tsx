@@ -6,7 +6,7 @@ import {
   UserPlus,
 } from "lucide-react";
 
-import Popover from "@/shared/components/ui/Popover";
+import { Popover } from "@/shared/components/ui";
 import { useMemo } from "react";
 import type { Document } from "@/features/documents";
 
@@ -75,29 +75,22 @@ export default function NotificationsDropdown({ documents, currentUserId }: Prop
       });
   }, [currentUserId, documents]);
   return (
-    <Popover
-      align="right"
-      offset={10}
-      className="w-80 overflow-hidden"
-      trigger={({ toggle, open }) => (
+    <Popover.Root>
+      <Popover.Trigger>
         <button
           type="button"
-          onClick={toggle}
           aria-label="Notifications"
-          aria-expanded={open}
           className={[
             "inline-flex h-9 w-9 items-center justify-center rounded-lg",
             "transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-(--focus-ring)",
-            open
-              ? "bg-(--bg) text-(--fg)"
-              : "text-(--fg-muted) hover:bg-(--bg) hover:text-(--fg)",
+            "text-(--fg-muted) hover:bg-(--bg) hover:text-(--fg)",
           ].join(" ")}
         >
           <Bell size={18} />
         </button>
-      )}
-    >
-      {({ close }) => (
+      </Popover.Trigger>
+
+      <Popover.Content align="right" offset={10} className="w-80 overflow-hidden p-0">
         <div>
           <div className="flex items-center justify-between border-b border-(--border) px-4 py-3">
             <div>
@@ -109,13 +102,14 @@ export default function NotificationsDropdown({ documents, currentUserId }: Prop
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={close}
-              className="rounded-lg px-2 py-1 text-xs font-medium text-(--fg-muted) transition-colors hover:bg-(--bg) hover:text-(--fg)"
-            >
-              Close
-            </button>
+            <Popover.Close>
+              <button
+                type="button"
+                className="rounded-lg px-2 py-1 text-xs font-medium text-(--fg-muted) transition-colors hover:bg-(--bg) hover:text-(--fg)"
+              >
+                Close
+              </button>
+            </Popover.Close>
           </div>
 
           {notifications.length > 0 ? (
@@ -150,17 +144,18 @@ export default function NotificationsDropdown({ documents, currentUserId }: Prop
           )}
 
           <div className="border-t border-(--border) px-4 py-3">
-            <button
-              type="button"
-              onClick={close}
-              className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-(--fg-muted) transition-colors hover:bg-(--bg) hover:text-(--fg)"
-            >
-              <CheckCheck size={16} />
-              Mark all as read
-            </button>
+            <Popover.Close>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-(--fg-muted) transition-colors hover:bg-(--bg) hover:text-(--fg)"
+              >
+                <CheckCheck size={16} />
+                Mark all as read
+              </button>
+            </Popover.Close>
           </div>
         </div>
-      )}
-    </Popover>
+      </Popover.Content>
+    </Popover.Root>
   );
 }

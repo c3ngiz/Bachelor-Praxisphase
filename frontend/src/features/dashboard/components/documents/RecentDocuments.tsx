@@ -1,6 +1,6 @@
 import { ArrowUpRight, Clock3, FileText } from "lucide-react";
 
-import Card from "@/shared/components/ui/Card";
+import { Badge, Card } from "@/shared/components/ui";
 import type { Document } from "@/features/documents";
 
 type Props = {
@@ -61,27 +61,26 @@ export default function RecentDocuments({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <span
-                                className={[
-                                    "rounded-md px-2 py-1 text-[11px] font-semibold",
+                            <Badge
+                                variant={
                                     doc.visibility === "workspace"
-                                        ? "bg-emerald-100 text-emerald-700"
+                                        ? "success"
                                         : doc.visibility === "shared"
-                                            ? "bg-sky-100 text-sky-700"
-                                            : "bg-slate-100 text-slate-600",
-                                ].join(" ")}
+                                            ? "info"
+                                            : "subtle"
+                                }
                             >
                                 {doc.visibility === "workspace"
                                     ? "Team"
                                     : doc.visibility === "shared"
                                         ? "Shared"
                                         : "Private"}
-                            </span>
+                            </Badge>
 
-                            <div className="inline-flex items-center gap-1 rounded-lg bg-(--bg-subtle) px-2.5 py-1 text-xs font-medium text-(--fg-muted)">
+                            <Badge variant="subtle" size="md" className="font-medium">
                                 <Clock3 size={13} />
                                 Recent
-                            </div>
+                            </Badge>
                         </div>
                     </Card.Header>
 

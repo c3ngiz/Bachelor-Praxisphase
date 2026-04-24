@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Modal, Input, Button } from "@/shared/components/ui";
+import { Button, Input, Modal } from "@/shared/components/ui";
 
 type Props = {
   isOpen: boolean;
@@ -61,27 +61,38 @@ export default function RenameDocumentModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Rename Document">
-      <Input
-        label="New Name"
-        value={name}
-        onChange={(e) => {
-          setName(e.target.value);
-          if (error) setError(null);
-        }}
-        error={error ?? undefined}
-        autoFocus
-        disabled={isSubmitting}
-      />
+    <Modal isOpen={isOpen} onClose={handleClose}>
+      <Modal.Header>
+        <div>
+          <Modal.Title>Rename Document</Modal.Title>
+          <Modal.Description>
+            Update the document title used across the workspace.
+          </Modal.Description>
+        </div>
+      </Modal.Header>
 
-      <div className="flex justify-end gap-2">
+      <Modal.Body>
+        <Input
+          label="New Name"
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            if (error) setError(null);
+          }}
+          error={error ?? undefined}
+          autoFocus
+          disabled={isSubmitting}
+        />
+      </Modal.Body>
+
+      <Modal.Footer>
         <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
           Cancel
         </Button>
         <Button onClick={() => void handleSubmit()} disabled={isSubmitting}>
           {isSubmitting ? "Saving..." : "Save"}
         </Button>
-      </div>
+      </Modal.Footer>
     </Modal>
   );
 }

@@ -1,3 +1,6 @@
+import Card from "@/shared/components/ui/Card";
+import Skeleton from "@/shared/components/ui/Skeleton";
+
 /**
  * DocumentSkeletonList component.
  */
@@ -6,42 +9,42 @@ export default function DocumentSkeletonList() {
 
     return (
         <div className="px-6 py-6">
-            <div className="overflow-hidden rounded-xl border border-(--border) bg-(--bg-elevated)">
+            <Card padding="none" hoverable={false} className="overflow-hidden">
                 <table className="w-full">
                     <tbody>
                         {rows.map((_, i) => (
                             <tr key={i} className="animate-pulse border-b border-(--border)">
                                 <td className="px-4 py-4">
-                                    <div className="h-4 w-4 rounded bg-(--border)" />
+                                    <Skeleton className="h-4 w-4" />
                                 </td>
 
                                 <td className="px-4 py-4">
-                                    <div className="h-4 w-48 rounded bg-(--border)" />
+                                    <Skeleton.Text className="w-48" />
                                 </td>
 
                                 <td className="px-4 py-4">
-                                    <div className="h-4 w-24 rounded bg-(--border)" />
+                                    <Skeleton.Text className="w-24" />
                                 </td>
 
                                 <td className="px-4 py-4">
-                                    <div className="h-4 w-20 rounded bg-(--border)" />
+                                    <Skeleton.Text className="w-20" />
                                 </td>
 
                                 <td className="px-4 py-4">
-                                    <div className="h-4 w-20 rounded bg-(--border)" />
+                                    <Skeleton.Text className="w-20" />
                                 </td>
 
                                 <td className="px-4 py-4">
                                     <div className="flex gap-2">
-                                        <div className="h-7 w-16 rounded bg-(--border)" />
-                                        <div className="h-7 w-16 rounded bg-(--border)" />
+                                        <Skeleton.Block className="h-7 w-16" />
+                                        <Skeleton.Block className="h-7 w-16" />
                                     </div>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-            </div>
+            </Card>
         </div>
     );
 }

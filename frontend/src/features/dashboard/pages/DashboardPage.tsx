@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 
 import PageContainer from "@/shared/components/layout/PageContainer";
 import { useAuth } from "@/features/auth";
+import { Notice } from "@/shared/components/ui";
 
 import { DashboardLayout } from "../components/layout";
 import {
@@ -128,9 +129,9 @@ export default function DashboardPage() {
       <DashboardLayout documents={documents}>
         <PageContainer title="">
           {error ? (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
+            <Notice variant="danger" className="mb-4">
+              <Notice.Description>{error}</Notice.Description>
+            </Notice>
           ) : null}
 
           <DashboardHighlightsSections

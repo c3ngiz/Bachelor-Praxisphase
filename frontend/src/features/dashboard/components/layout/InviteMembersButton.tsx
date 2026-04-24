@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MailPlus, UserPlus } from "lucide-react";
 
-import { Button, Input, Modal, Select } from "@/shared/components/ui";
+import { Button, Input, Modal, Notice, Select } from "@/shared/components/ui";
 
 const ROLE_OPTIONS = [
   { value: "editor", label: "Editor" },
@@ -35,12 +35,24 @@ export default function InviteMembersButton() {
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="Invite people to workspace"
       >
-        <div className="space-y-4">
-          <div className="rounded-xl border border-(--border) bg-(--bg) px-4 py-3 text-sm text-(--fg-muted)">
-            Add teammates to <span className="font-medium text-(--fg)">DocFlow Team</span> and let them collaborate across shared documents.
+        <Modal.Header>
+          <div>
+            <Modal.Title>Invite people to workspace</Modal.Title>
+            <Modal.Description>
+              Add teammates to DocFlow Team and configure their access.
+            </Modal.Description>
           </div>
+        </Modal.Header>
+
+        <Modal.Body>
+          <Notice>
+            <Notice.Description>
+              Add teammates to{" "}
+              <span className="font-medium text-(--fg)">DocFlow Team</span> and
+              let them collaborate across shared documents.
+            </Notice.Description>
+          </Notice>
 
           <Input
             label="Email address"
@@ -55,18 +67,18 @@ export default function InviteMembersButton() {
             onChange={(event) => setRole(event.target.value)}
             options={ROLE_OPTIONS}
           />
+        </Modal.Body>
 
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" onClick={() => setIsOpen(false)}>
-              Cancel
-            </Button>
+        <Modal.Footer>
+          <Button variant="ghost" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
 
-            <Button onClick={handleInvite} disabled={!email.trim()}>
-              <MailPlus size={16} />
-              Send invite
-            </Button>
-          </div>
-        </div>
+          <Button onClick={handleInvite} disabled={!email.trim()}>
+            <MailPlus size={16} />
+            Send invite
+          </Button>
+        </Modal.Footer>
       </Modal>
     </>
   );

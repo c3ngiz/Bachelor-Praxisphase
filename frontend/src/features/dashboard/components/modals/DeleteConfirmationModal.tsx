@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Button, Input } from "@/shared/components/ui";
+import { Button, Input, Modal, Notice } from "@/shared/components/ui";
 
 type Props = {
   isOpen: boolean;
@@ -69,55 +69,56 @@ export default function DeleteConfirmationModal({
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={isBulkDelete ? "Delete Documents" : "Delete Document"}
-    >
-      {isBulkDelete ? (
-        <div className="space-y-2 text-sm text-(--fg)">
-          <p>
-            This action <span className="font-semibold text-red-600">cannot</span>{" "}
-            be undone.
-          </p>
+    <Modal isOpen={isOpen} onClose={handleClose}>
+      <Modal.Header>
+        <div>
+          <Modal.Title>
+            {isBulkDelete ? "Delete Documents" : "Delete Document"}
+          </Modal.Title>
+          <Modal.Description>
+            Review the confirmation details before deleting.
+          </Modal.Description>
+        </div>
+      </Modal.Header>
 
-          <p>
+      <Modal.Body>
+        <Notice variant="danger">
+          <Notice.Description>
+            This action <span className="font-semibold">cannot</span> be undone.
+          </Notice.Description>
+        </Notice>
+
+        {isBulkDelete ? (
+          <p className="text-sm text-(--fg)">
             Are you sure you want to permanently delete{" "}
             <span className="font-medium">{bulkCount} documents</span>?
           </p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-2 text-sm text-(--fg)">
-            <p>
-              This action <span className="font-semibold text-red-600">cannot</span>{" "}
-              be undone.
-            </p>
-
-            <p>
+        ) : (
+          <>
+            <p className="text-sm text-(--fg)">
               To confirm, type{" "}
               <span className="rounded bg-(--bg) px-1 font-medium">
                 {expectedText || "the document name"}
               </span>{" "}
-              below:
+              below.
             </p>
-          </div>
 
-          <Input
-            label="Document Name"
-            value={confirmationText}
-            onChange={(e) => {
-              setConfirmationText(e.target.value);
-              if (error) setError(null);
-            }}
-            error={error ?? undefined}
-            autoFocus
-            disabled={isSubmitting}
-          />
-        </>
-      )}
+            <Input
+              label="Document Name"
+              value={confirmationText}
+              onChange={(e) => {
+                setConfirmationText(e.target.value);
+                if (error) setError(null);
+              }}
+              error={error ?? undefined}
+              autoFocus
+              disabled={isSubmitting}
+            />
+          </>
+        )}
+      </Modal.Body>
 
-      <div className="flex justify-end gap-2">
+      <Modal.Footer>
         <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
           Cancel
         </Button>
@@ -128,7 +129,7 @@ export default function DeleteConfirmationModal({
         >
           {isSubmitting ? "Deleting..." : "Delete"}
         </Button>
-      </div>
+      </Modal.Footer>
     </Modal>
   );
 }

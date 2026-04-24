@@ -1,6 +1,6 @@
 import { ArrowUpRight, Share2, Users } from "lucide-react";
 
-import Card from "@/shared/components/ui/Card";
+import { Badge, Card } from "@/shared/components/ui";
 import type { Document } from "@/features/documents";
 
 type Props = {
@@ -83,10 +83,10 @@ export default function SharedWithYouDocuments({
               <Share2 size={18} />
             </div>
 
-            <div className="inline-flex items-center gap-1 rounded-lg bg-(--bg-subtle) px-2.5 py-1 text-xs font-medium text-(--fg-muted)">
+            <Badge variant="subtle" size="md" className="font-medium">
               <Users size={13} />
               {getVisibilityLabel(doc)}
-            </div>
+            </Badge>
           </Card.Header>
 
           <Card.Content padding="md" className="flex-1 pt-0">

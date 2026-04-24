@@ -1,3 +1,6 @@
+import Card from "@/shared/components/ui/Card";
+import Skeleton from "@/shared/components/ui/Skeleton";
+
 /**
  * DocumentSkeletonGrid component.
  */
@@ -18,40 +21,25 @@ export default function DocumentSkeletonGrid() {
     "
         >
             {items.map((_, i) => (
-                <div
-                    key={i}
-                    className="
-            animate-pulse
-            rounded-xl
-            border border-(--border)
-            bg-(--bg-elevated)
-            p-4
-            flex flex-col
-            gap-3
-          "
-                >
-                    {/* title */}
-                    <div className="h-4 w-3/4 rounded bg-(--border)" />
+                <Card key={i} hoverable={false} className="gap-3">
+                    <Skeleton.Text className="w-3/4" />
 
-                    {/* preview */}
                     <div className="space-y-2">
-                        <div className="h-3 w-full rounded bg-(--border)" />
-                        <div className="h-3 w-5/6 rounded bg-(--border)" />
-                        <div className="h-3 w-2/3 rounded bg-(--border)" />
+                        <Skeleton.Text className="h-3" />
+                        <Skeleton.Text className="h-3 w-5/6" />
+                        <Skeleton.Text className="h-3 w-2/3" />
                     </div>
 
-                    {/* metadata */}
                     <div className="space-y-1 pt-2">
-                        <div className="h-3 w-1/2 rounded bg-(--border)" />
-                        <div className="h-3 w-2/3 rounded bg-(--border)" />
+                        <Skeleton.Text className="h-3 w-1/2" />
+                        <Skeleton.Text className="h-3 w-2/3" />
                     </div>
 
-                    {/* controls */}
                     <div className="flex gap-2 pt-2">
-                        <div className="h-8 flex-1 rounded bg-(--border)" />
-                        <div className="h-8 w-16 rounded bg-(--border)" />
+                        <Skeleton.Block className="flex-1" />
+                        <Skeleton.Block className="w-16" />
                     </div>
-                </div>
+                </Card>
             ))}
         </div>
     );

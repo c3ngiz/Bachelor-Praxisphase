@@ -1,4 +1,4 @@
-import Popover from "@/shared/components/ui/Popover";
+import { Menu } from "@/shared/components/ui";
 import { ArrowDownAZ, CalendarRange, Check, Clock3 } from "lucide-react";
 import { useDashboardViewControls } from "../../hooks/useDashboardViewControls";
 
@@ -25,14 +25,10 @@ export default function SortDropdown() {
   const { sortBy, setSortBy } = useDashboardViewControls();
 
   return (
-    <Popover
-      align="right"
-      offset={10}
-      className="w-56 rounded-xl border border-(--border) bg-(--bg-elevated) py-1 shadow-[0_10px_30px_rgba(15,23,42,0.10)]"
-      trigger={({ toggle }) => (
+    <Menu.Root>
+      <Menu.Trigger>
         <button
           type="button"
-          onClick={toggle}
           className="
                         inline-flex h-9 w-43 items-center justify-center gap-2
                         rounded-lg px-3 text-sm font-medium text-(--fg)
@@ -44,24 +40,22 @@ export default function SortDropdown() {
           <Clock3 size={16} />
           <span className="truncate">{getCurrentSortLabel(sortBy)}</span>
         </button>
-      )}
-    >
-      {({ close }) => (
+      </Menu.Trigger>
+
+      <Menu.Content className="w-56">
         <div>
           {SORT_OPTIONS.map((option) => {
             const Icon = option.icon;
             const isActive = option.value === sortBy;
 
             return (
-              <button
+              <Menu.Item
                 key={option.value}
-                type="button"
                 onClick={() => {
                   setSortBy(option.value);
-                  close();
                 }}
                 className={[
-                  "mx-1 flex w-[calc(100%-0.5rem)] items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                  "justify-between",
                   isActive
                     ? "bg-(--bg) text-(--fg)"
                     : "text-(--fg) hover:bg-(--bg)",
@@ -75,11 +69,11 @@ export default function SortDropdown() {
                 {isActive ? (
                   <Check size={16} className="text-(--accent)" />
                 ) : null}
-              </button>
+              </Menu.Item>
             );
           })}
         </div>
-      )}
-    </Popover>
+      </Menu.Content>
+    </Menu.Root>
   );
 }

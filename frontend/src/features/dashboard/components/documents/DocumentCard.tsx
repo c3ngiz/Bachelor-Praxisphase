@@ -1,8 +1,7 @@
 import { useState } from "react";
-import type { Document, DocumentCollaborator } from "@/features/documents";
+import type { Document } from "@/features/documents";
 import { useDashboardSelectionState } from "../../hooks/useDashboardSelectionState";
-import Card from "@/shared/components/ui/Card";
-import Popover from "@/shared/components/ui/Popover";
+import { AvatarStack, Badge, Card, Menu } from "@/shared/components/ui";
 import {
     ExternalLink,
     FileText,
@@ -38,19 +37,15 @@ function getVisibilityLabel(document: Document) {
     }
 }
 
-function getVisibilityClasses(document: Document) {
+function getVisibilityVariant(document: Document) {
     switch (document.visibility) {
         case "workspace":
-            return "bg-emerald-100 text-emerald-700";
+            return "success";
         case "shared":
-            return "bg-sky-100 text-sky-700";
+            return "info";
         default:
-            return "bg-slate-100 text-slate-600";
+            return "subtle";
     }
-}
-
-function getVisibleCollaborators(collaborators?: DocumentCollaborator[]) {
-    return (collaborators ?? []).slice(0, 3);
 }
 
 /**
@@ -69,7 +64,6 @@ export default function DocumentCard({
 
     const isSelected = selectedDocuments.has(document.id);
     const collaborators = document.collaborators ?? [];
-    const visibleCollaborators = getVisibleCollaborators(collaborators);
 
     return (
         <>
@@ -101,125 +95,98 @@ export default function DocumentCard({
                             </div>
                         </div>
 
-                        <Popover
-                            align="right"
-                            offset={8}
-                            open={isMenuOpen}
-                            onOpenChange={setIsMenuOpen}
-                            trigger={({ toggle, open }) => (
+                        <Menu.Root open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                            <Menu.Trigger>
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        toggle();
                                     }}
                                     className={[
                                         "shrink-0 rounded-md p-1 text-(--fg-muted)",
-                                        open ? "bg-(--bg)" : "hover:bg-(--bg)",
+                                        isMenuOpen ? "bg-(--bg)" : "hover:bg-(--bg)",
                                     ].join(" ")}
                                     aria-label={`Open menu for ${document.title}`}
-                                    aria-expanded={open}
                                 >
                                     <MoreVertical size={16} />
                                 </button>
-                            )}
-                        >
-                            {({ close }) => (
-                                <div className="w-48 py-1">
-                                    <button
-                                        onClick={() => {
-                                            onOpen?.(document.id);
-                                            close();
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
-                                    >
-                                        <FolderOpen size={14} />
-                                        Open
-                                    </button>
+                            </Menu.Trigger>
 
-                                    <button
-                                        onClick={() => {
-                                            onRename?.(document.id);
-                                            close();
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
-                                    >
-                                        <Pencil size={14} />
-                                        Rename
-                                    </button>
+                            <Menu.Content className="w-48">
+                                <Menu.Item
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onOpen?.(document.id);
+                                    }}
+                                >
+                                    <FolderOpen size={14} />
+                                    Open
+                                </Menu.Item>
 
-                                    <button
-                                        onClick={() => {
-                                            setIsShareOpen(true);
-                                            close();
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
-                                    >
-                                        <Share2 size={14} />
-                                        Share
-                                    </button>
+                                <Menu.Item
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onRename?.(document.id);
+                                    }}
+                                >
+                                    <Pencil size={14} />
+                                    Rename
+                                </Menu.Item>
 
-                                    <button
-                                        onClick={() => {
-                                            onDelete?.(document.id);
-                                            close();
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-(--bg)"
-                                    >
-                                        <Trash size={14} />
-                                        Delete
-                                    </button>
+                                <Menu.Item
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setIsShareOpen(true);
+                                    }}
+                                >
+                                    <Share2 size={14} />
+                                    Share
+                                </Menu.Item>
 
-                                    <button
-                                        onClick={() => {
-                                            window.open(`/document/${document.id}`, "_blank");
-                                            close();
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-(--bg)"
-                                    >
-                                        <ExternalLink size={14} />
-                                        Open in new tab
-                                    </button>
-                                </div>
-                            )}
-                        </Popover>
+                                <Menu.Item
+                                    danger
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onDelete?.(document.id);
+                                    }}
+                                >
+                                    <Trash size={14} />
+                                    Delete
+                                </Menu.Item>
+
+                                <Menu.Item
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        window.open(`/document/${document.id}`, "_blank");
+                                    }}
+                                >
+                                    <ExternalLink size={14} />
+                                    Open in new tab
+                                </Menu.Item>
+                            </Menu.Content>
+                        </Menu.Root>
                     </div>
 
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
-                            <span
-                                className={[
-                                    "rounded-md px-2 py-1 text-[11px] font-semibold",
-                                    getVisibilityClasses(document),
-                                ].join(" ")}
-                            >
+                            <Badge variant={getVisibilityVariant(document)}>
                                 {getVisibilityLabel(document)}
-                            </span>
+                            </Badge>
 
                             <span className="text-xs text-(--fg-muted)">
                                 {collaborators.length} collaborator{collaborators.length === 1 ? "" : "s"}
                             </span>
                         </div>
 
-                        <div className="flex -space-x-2">
-                            {visibleCollaborators.map((collaborator) => (
-                                <div
-                                    key={collaborator.id}
-                                    title={`${collaborator.name} · ${collaborator.role}`}
-                                    className={[
-                                        "inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-(--bg-elevated) text-[10px] font-semibold text-white",
-                                        collaborator.color,
-                                    ].join(" ")}
-                                >
-                                    {collaborator.initials}
-                                </div>
-                            ))}
-
-                            {collaborators.length > visibleCollaborators.length ? (
-                                <div className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-(--bg-elevated) bg-slate-200 text-[10px] font-semibold text-slate-700">
-                                    +{collaborators.length - visibleCollaborators.length}
-                                </div>
-                            ) : null}
-                        </div>
+                        <AvatarStack
+                            size="sm"
+                            max={3}
+                            items={collaborators.map((collaborator) => ({
+                                id: collaborator.id,
+                                name: `${collaborator.name} · ${collaborator.role}`,
+                                initials: collaborator.initials,
+                                colorClassName: collaborator.color,
+                            }))}
+                        />
                     </div>
                 </Card.Content>
             </Card>
