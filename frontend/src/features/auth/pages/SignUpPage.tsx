@@ -1,8 +1,7 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 
-import Input from "@/shared/components/ui/Input"
-import Button from "@/shared/components/ui/Button"
+import { Button, Input } from "@/shared/components/ui"
 
 import AuthForm from "../components/AuthForm"
 import useAuth from "../hooks/useAuth"

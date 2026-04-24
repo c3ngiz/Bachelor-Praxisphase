@@ -1,6 +1,6 @@
 import { Clock3, FileText, PencilLine } from "lucide-react";
 
-import Card from "@/shared/components/ui/Card";
+import { Card } from "@/shared/components/ui";
 import type { Document } from "@/features/documents";
 
 type Props = {

@@ -1,5 +1,5 @@
 import { ChevronDown, Users } from "lucide-react";
-import Popover from "@/shared/components/ui/Popover";
+import { Popover } from "@/shared/components/ui";
 
 const WORKSPACES = [
   { id: "w-docflow", name: "DocFlow Team", subtitle: "Design & Product" },

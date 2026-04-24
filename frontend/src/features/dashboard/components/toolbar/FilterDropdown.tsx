@@ -1,5 +1,4 @@
-import { Checkbox, Select } from "@/shared/components/ui";
-import Popover from "@/shared/components/ui/Popover";
+import { Checkbox, Popover, Select } from "@/shared/components/ui";
 import { Funnel, SlidersHorizontal } from "lucide-react";
 import { useMemo } from "react";
 

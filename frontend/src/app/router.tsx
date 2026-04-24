@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
-import AuthLayout from "@/shared/components/layout/AuthLayout"
+import { AuthLayout } from "@/shared/components/layout"
 
 import {
   ProtectedRoute,

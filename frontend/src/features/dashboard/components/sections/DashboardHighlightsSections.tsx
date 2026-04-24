@@ -1,5 +1,4 @@
-import Section from "@/shared/components/layout/Section";
-import SectionHeader from "@/shared/components/layout/SectionHeader";
+import { Section, SectionHeader } from "@/shared/components/layout";
 
 import type { Document } from "@/features/documents";
 

@@ -1,6 +1,6 @@
 import { Editor } from "@tiptap/react"
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Italic, Underline, List, ListOrdered } from "lucide-react"
-import Divider from "@/shared/components/ui/Divider"
+import { Divider } from "@/shared/components/ui"
 import FontFamilyDropdown from "./toolbar/FontFamilyDropdown"
 import FontSizeDropdown from "./toolbar/FontSizeDropdown"
 import HighlightColorPicker from "./toolbar/HighlightColorPicker.tsx"

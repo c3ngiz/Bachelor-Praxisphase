@@ -1,6 +1,6 @@
 import type { Document } from "@/features/documents";
 import { useDashboardSelectionState } from "../../hooks/useDashboardSelectionState";
-import Button from "@/shared/components/ui/Button";
+import { Button } from "@/shared/components/ui";
 
 type Props = {
     document: Document;

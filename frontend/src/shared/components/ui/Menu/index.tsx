@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactElement, ReactNode } from "react";
 
-import Popover, { type PopoverContentProps } from "@/shared/components/ui/Popover";
-import { usePopoverContext } from "@/shared/components/ui/Popover/context";
+import Popover, { type PopoverContentProps } from "../Popover";
+import { usePopoverContext } from "../Popover/context";
 import { cn } from "@/shared/lib/ui/cn";
 
 type MenuRootProps = {
@@ -15,7 +15,11 @@ function MenuRoot(props: MenuRootProps) {
   return <Popover.Root {...props} />;
 }
 
-function MenuTrigger({ children }: { children: ReactElement<any> }) {
+function MenuTrigger({
+  children,
+}: {
+  children: ReactElement<Record<string, unknown>>;
+}) {
   return <Popover.Trigger>{children}</Popover.Trigger>;
 }
 

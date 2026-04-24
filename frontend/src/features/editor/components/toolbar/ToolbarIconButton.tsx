@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import Button from "@/shared/components/ui/Button";
+import { Button } from "@/shared/components/ui";
 
 type Props = {
     isActive: boolean;

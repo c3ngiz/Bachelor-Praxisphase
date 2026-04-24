@@ -1,5 +1,4 @@
-import Card from "@/shared/components/ui/Card";
-import Skeleton from "@/shared/components/ui/Skeleton";
+import { Card, Skeleton } from "@/shared/components/ui";
 
 /**
  * DocumentSkeletonList component.

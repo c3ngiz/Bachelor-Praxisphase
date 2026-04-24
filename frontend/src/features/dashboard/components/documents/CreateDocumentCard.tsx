@@ -1,4 +1,4 @@
-import Card from "@/shared/components/ui/Card";
+import { Card } from "@/shared/components/ui";
 import { FilePlus } from "lucide-react";
 
 type Props = {

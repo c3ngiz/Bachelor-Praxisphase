@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 
-import PageContainer from "@/shared/components/layout/PageContainer";
+import { PageContainer } from "@/shared/components/layout";
 import { useAuth } from "@/features/auth";
 import { Notice } from "@/shared/components/ui";
 

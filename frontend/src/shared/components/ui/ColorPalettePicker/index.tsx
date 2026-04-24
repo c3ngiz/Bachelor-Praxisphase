@@ -1,7 +1,7 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 
-import Button from "@/shared/components/ui/Button";
-import Popover from "@/shared/components/ui/Popover";
+import Button from "../Button";
+import Popover from "../Popover";
 import { cn } from "@/shared/lib/ui/cn";
 
 type Props = {

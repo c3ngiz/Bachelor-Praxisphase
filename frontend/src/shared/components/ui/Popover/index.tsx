@@ -111,7 +111,7 @@ function PopoverRoot({
 }
 
 type PopoverTriggerProps = {
-  children: ReactElement<any>;
+  children: ReactElement<TriggerChildProps & Record<string, unknown>>;
 };
 
 type TriggerChildProps = {

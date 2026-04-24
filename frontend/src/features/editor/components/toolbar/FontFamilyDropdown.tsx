@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import Select from "@/shared/components/ui/Select";
+import { Select } from "@/shared/components/ui";
 
 type Props = {
     editor: Editor;

@@ -1,4 +1,4 @@
-import Card from "@/shared/components/ui/Card";
+import { Card } from "@/shared/components/ui";
 import type { Document } from "@/features/documents";
 import DocumentRow from "./DocumentRow";
 

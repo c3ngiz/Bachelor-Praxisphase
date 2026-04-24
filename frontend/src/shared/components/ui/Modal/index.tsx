@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-import Button from "@/shared/components/ui/Button";
+import Button from "../Button";
 import { cn } from "@/shared/lib/ui/cn";
 
 type ModalContextValue = {
