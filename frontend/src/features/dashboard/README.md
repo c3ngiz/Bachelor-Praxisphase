@@ -22,13 +22,17 @@ Hooks use the `use` prefix and describe one domain concern.
 - `useDashboardDocumentActions`
 - `useDashboardModalState`
 - `useDashboardSectionDocuments`
-- `useDocumentSelection`
+- `useDashboardSelectionState`
 
 ## Module Boundaries
 
 - `pages/`: thin route-level coordinators.
-- `components/sections/`: section composition blocks used by pages.
-- `components/`: reusable dashboard UI elements.
+- `components/layout/`: navbar, layout shell, workspace and user chrome.
+- `components/sections/`: page-level section composition blocks.
+- `components/documents/`: document cards, rows, lists, and document-specific UI.
+- `components/toolbar/`: search/sort/filter/view and selection toolbar controls.
+- `components/modals/`: create/rename/delete dialog components.
+- `components/index.ts`: optional barrel export for dashboard component domains.
 - `hooks/`: isolated dashboard behavior and state orchestration.
 - `store/dashboardViewStore.ts`: search, sort, filters and view mode.
 - `store/dashboardSelectionStore.ts`: selection state for multi-select flows.

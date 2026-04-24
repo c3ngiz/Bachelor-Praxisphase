@@ -1,4 +1,4 @@
-import SearchBar from "./toolbar/SearchBar";
+import SearchBar from "../toolbar/SearchBar";
 import AvatarDropdown from "./AvatarDropdown";
 import NotificationsDropdown from "./NotificationsDropdown";
 import AppLogo from "./AppLogo";

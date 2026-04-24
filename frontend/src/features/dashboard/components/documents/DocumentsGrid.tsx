@@ -1,6 +1,6 @@
 import type { Document } from "@/features/documents";
-import CreateDocumentCard from "../CreateDocumentCard";
-import DocumentCard from "../DocumentCard";
+import CreateDocumentCard from "./CreateDocumentCard";
+import DocumentCard from "./DocumentCard";
 
 type Props = {
     documents: Document[];

@@ -3,9 +3,9 @@ import SectionHeader from "@/shared/components/layout/SectionHeader";
 
 import type { Document } from "@/features/documents";
 
-import RecentDocuments from "../RecentDocuments";
-import SharedWithYouDocuments from "../SharedWithYouDocuments";
-import TeamActivityFeed from "../TeamActivityFeed";
+import RecentDocuments from "../documents/RecentDocuments";
+import SharedWithYouDocuments from "../documents/SharedWithYouDocuments";
+import TeamActivityFeed from "../documents/TeamActivityFeed";
 
 type Props = {
   sharedWithYouDocuments: Document[];

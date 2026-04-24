@@ -1,10 +1,10 @@
 import type { Document } from "@/features/documents";
 
-import DocumentsEmptyState from "../DocumentsEmptyState";
-import DocumentsGrid from "../DocumentsGrid";
-import DocumentSkeletonGrid from "../DocumentSkeleton/DocumentSkeletonGrid";
-import DocumentSkeletonList from "../DocumentSkeleton/DocumentSkeletonList";
-import DocumentsTable from "../DocumentsTable";
+import DocumentsEmptyState from "./DocumentsEmptyState";
+import DocumentsGrid from "./DocumentsGrid";
+import DocumentSkeletonGrid from "./DocumentSkeletonGrid";
+import DocumentSkeletonList from "./DocumentSkeletonList";
+import DocumentsTable from "./DocumentsTable";
 
 type ViewMode = "grid" | "list";
 

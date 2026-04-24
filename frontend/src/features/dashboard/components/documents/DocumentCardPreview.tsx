@@ -5,7 +5,7 @@ import {
     type PreviewBlock,
     type PreviewContent,
     type PreviewSegment,
-} from "../utils/generateDocumentPreview";
+} from "../../utils/generateDocumentPreview";
 
 type Props = {
     document: Document;

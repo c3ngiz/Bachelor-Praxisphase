@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Document, DocumentCollaborator } from "@/features/documents";
-import { useDashboardSelectionState } from "../hooks/useDashboardSelectionState";
+import { useDashboardSelectionState } from "../../hooks/useDashboardSelectionState";
 import Card from "@/shared/components/ui/Card";
 import Popover from "@/shared/components/ui/Popover";
 import {

@@ -3,7 +3,7 @@ import SectionHeader from "@/shared/components/layout/SectionHeader";
 
 import type { Document } from "@/features/documents";
 
-import DocumentsContainer from "../DocumentsContainer";
+import DocumentsContainer from "../documents/DocumentsContainer";
 import FilterDropdown from "../toolbar/FilterDropdown";
 import SortDropdown from "../toolbar/SortDropdown";
 import ViewDropdown from "../toolbar/ViewDropdown";

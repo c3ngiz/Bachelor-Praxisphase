@@ -1,5 +1,5 @@
 import type { Document } from "@/features/documents";
-import DocumentRow from "../DocumentRow";
+import DocumentRow from "./DocumentRow";
 
 type Props = {
     documents: Document[];

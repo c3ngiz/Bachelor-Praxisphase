@@ -3,14 +3,18 @@ import { useEffect, useMemo } from "react";
 import PageContainer from "@/shared/components/layout/PageContainer";
 import { useAuth } from "@/features/auth";
 
-import DashboardLayout from "../components/DashboardLayout";
-import DashboardDocumentsSection from "../components/sections/DashboardDocumentsSection";
-import DashboardHighlightsSections from "../components/sections/DashboardHighlightsSections";
+import { DashboardLayout } from "../components/layout";
+import {
+  DashboardDocumentsSection,
+  DashboardHighlightsSections,
+} from "../components/sections";
 
-import CreateDocumentModal from "../components/modals/CreateDocumentModal";
-import RenameDocumentModal from "../components/modals/RenameDocumentModal";
-import DeleteConfirmationModal from "../components/modals/DeleteConfirmationModal";
-import MultiSelectToolbar from "../components/MultiSelectToolbar";
+import {
+  CreateDocumentModal,
+  DeleteConfirmationModal,
+  RenameDocumentModal,
+} from "../components/modals";
+import { MultiSelectToolbar } from "../components/toolbar";
 
 import {
   selectProcessedDocuments,
