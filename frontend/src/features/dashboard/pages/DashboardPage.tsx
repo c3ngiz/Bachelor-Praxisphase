@@ -16,7 +16,7 @@ import {
   selectProcessedDocuments,
   useDocumentsStore,
 } from "@/features/documents";
-import { useDocumentSelection } from "../hooks/useDocumentSelection";
+import { useDashboardSelectionState } from "../hooks/useDashboardSelectionState";
 import { useDashboardDocumentActions } from "../hooks/useDashboardDocumentActions";
 import { useDashboardModalState } from "../hooks/useDashboardModalState";
 import { useDashboardSectionDocuments } from "../hooks/useDashboardSectionDocuments";
@@ -37,7 +37,7 @@ export default function DashboardPage() {
   } = useDocumentsStore();
 
   const { selectedDocuments, selectedCount, clearSelection } =
-    useDocumentSelection();
+    useDashboardSelectionState();
 
   const { searchQuery, sortBy, filters, viewMode } = useDashboardViewControls();
   const currentUserId = user?.id ?? null;

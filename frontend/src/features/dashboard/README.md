@@ -32,7 +32,6 @@ Hooks use the `use` prefix and describe one domain concern.
 - `hooks/`: isolated dashboard behavior and state orchestration.
 - `store/dashboardViewStore.ts`: search, sort, filters and view mode.
 - `store/dashboardSelectionStore.ts`: selection state for multi-select flows.
-- `store/dashboardStore.tsx`: compatibility facade only (avoid for new code).
 
 ## JSDoc Standard
 
