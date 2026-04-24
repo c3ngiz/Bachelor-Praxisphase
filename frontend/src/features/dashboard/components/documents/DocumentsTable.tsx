@@ -1,4 +1,4 @@
-import { Card } from "@/shared/components/ui";
+import { Card, Table } from "@/shared/components/ui";
 import type { Document } from "@/features/documents";
 import DocumentRow from "./DocumentRow";
 
@@ -26,19 +26,19 @@ export default function DocumentsTable({
                 hoverable={false}
                 className="overflow-hidden bg-white/82 shadow-[0_14px_38px_rgba(68,71,95,0.10)]"
             >
-                <table className="w-full text-sm">
-                    <thead className="border-b border-(--border)/60 bg-(--bg-subtle) text-left text-(--fg-muted)">
-                        <tr>
-                            <th className="w-10 px-4 py-3"></th>
-                            <th className="px-4 py-3">Title</th>
-                            <th className="px-4 py-3">Author</th>
-                            <th className="px-4 py-3">Created</th>
-                            <th className="px-4 py-3">Updated</th>
-                            <th className="w-48 px-4 py-3">Actions</th>
-                        </tr>
-                    </thead>
+                <Table>
+                    <Table.Header>
+                        <Table.Row>
+                            <Table.Head className="w-10" />
+                            <Table.Head>Title</Table.Head>
+                            <Table.Head>Author</Table.Head>
+                            <Table.Head>Created</Table.Head>
+                            <Table.Head>Updated</Table.Head>
+                            <Table.Head className="w-48">Actions</Table.Head>
+                        </Table.Row>
+                    </Table.Header>
 
-                    <tbody>
+                    <Table.Body>
                         {documents.map((doc) => (
                             <DocumentRow
                                 key={doc.id}
@@ -48,8 +48,8 @@ export default function DocumentsTable({
                                 onDelete={onDelete}
                             />
                         ))}
-                    </tbody>
-                </table>
+                    </Table.Body>
+                </Table>
             </Card>
         </div>
     );

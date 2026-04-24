@@ -1,3 +1,4 @@
+import { Grid } from "@/shared/components/ui";
 import type { Document } from "@/features/documents";
 import DocumentCard from "./DocumentCard";
 
@@ -18,14 +19,7 @@ export default function DocumentsGrid({
     onDelete,
 }: Props) {
     return (
-        <div
-            className="
-                grid
-                grid-cols-[repeat(auto-fill,minmax(230px,1fr))]
-                gap-x-5 gap-y-7
-                items-start
-            "
-        >
+        <Grid>
             {documents.map((doc) => (
                 <DocumentCard
                     key={doc.id}
@@ -35,6 +29,6 @@ export default function DocumentsGrid({
                     onDelete={onDelete}
                 />
             ))}
-        </div>
+        </Grid>
     );
 }

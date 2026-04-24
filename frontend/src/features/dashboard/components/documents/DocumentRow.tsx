@@ -1,6 +1,6 @@
 import type { Document } from "@/features/documents";
 import { useDashboardSelectionState } from "../../hooks/useDashboardSelectionState";
-import { Button } from "@/shared/components/ui";
+import { Button, Table } from "@/shared/components/ui";
 
 type Props = {
     document: Document;
@@ -28,13 +28,8 @@ export default function DocumentRow({
     const isSelectionMode = selectedDocuments.size > 0;
 
     return (
-        <tr
-            className={[
-                "border-b border-(--border)/55 hover:bg-(--bg-subtle)",
-                isSelected ? "bg-[rgba(73,67,190,0.10)]" : "",
-            ].join(" ")}
-        >
-            <td className="px-4 py-3">
+        <Table.Row selected={isSelected}>
+            <Table.Cell>
                 <div onClick={(event) => event.stopPropagation()}>
                     <input
                         type="checkbox"
@@ -44,21 +39,25 @@ export default function DocumentRow({
                         aria-label={`Select document ${document.title}`}
                     />
                 </div>
-            </td>
+            </Table.Cell>
 
-            <td className="px-4 py-3 font-medium text-(--fg)">{document.title}</td>
+            <Table.Cell className="font-medium text-(--fg)">
+                {document.title}
+            </Table.Cell>
 
-            <td className="px-4 py-3 text-(--fg-muted)">{document.author}</td>
+            <Table.Cell className="text-(--fg-muted)">
+                {document.author}
+            </Table.Cell>
 
-            <td className="px-4 py-3 text-(--fg-muted)">
+            <Table.Cell className="text-(--fg-muted)">
                 {formatDate(document.createdAt)}
-            </td>
+            </Table.Cell>
 
-            <td className="px-4 py-3 text-(--fg-muted)">
+            <Table.Cell className="text-(--fg-muted)">
                 {formatDate(document.updatedAt)}
-            </td>
+            </Table.Cell>
 
-            <td className="px-4 py-3">
+            <Table.Cell>
                 <div className="flex gap-2">
                     <Button
                         variant="primary"
@@ -87,7 +86,7 @@ export default function DocumentRow({
                         Delete
                     </Button>
                 </div>
-            </td>
-        </tr>
+            </Table.Cell>
+        </Table.Row>
     );
 }

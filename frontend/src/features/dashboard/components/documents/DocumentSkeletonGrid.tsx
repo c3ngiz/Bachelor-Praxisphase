@@ -1,4 +1,4 @@
-import { Card, Skeleton } from "@/shared/components/ui";
+import { Card, Grid, Skeleton } from "@/shared/components/ui";
 
 /**
  * DocumentSkeletonGrid component.
@@ -7,13 +7,7 @@ export default function DocumentSkeletonGrid() {
     const items = Array.from({ length: 8 });
 
     return (
-        <div
-            className="
-      grid
-      grid-cols-[repeat(auto-fill,minmax(230px,1fr))]
-      gap-x-5 gap-y-7
-    "
-        >
+        <Grid>
             {items.map((_, i) => (
                 <Card
                     key={i}
@@ -35,6 +29,6 @@ export default function DocumentSkeletonGrid() {
                     </div>
                 </Card>
             ))}
-        </div>
+        </Grid>
     );
 }
