@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from "react";
+import type { CSSProperties, HTMLAttributes } from "react";
 
 import Avatar from "@/shared/components/ui/Avatar";
 import { cn } from "@/shared/lib/ui/cn";
@@ -8,6 +8,7 @@ export type AvatarStackItem = {
   name: string;
   initials: string;
   colorClassName?: string;
+  colorStyle?: CSSProperties;
   src?: string;
 };
 
@@ -38,8 +39,9 @@ export default function AvatarStack({
           initials={item.initials}
           src={item.src}
           size={size}
-          className="border-2 border-(--bg-elevated) text-white"
+          className="border-2 border-white shadow-sm"
           colorClassName={item.colorClassName}
+          style={item.colorStyle}
         />
       ))}
 

@@ -48,6 +48,23 @@ function getVisibilityVariant(document: Document) {
     }
 }
 
+const AVATAR_COLORS = [
+    "#4943be",
+    "#2563eb",
+    "#0891b2",
+    "#059669",
+    "#ca8a04",
+    "#dc2626",
+    "#9333ea",
+    "#be185d",
+];
+
+function getAvatarBackground(id: string) {
+    const total = Array.from(id).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+    return AVATAR_COLORS[total % AVATAR_COLORS.length];
+}
+
 /**
  * DocumentCard component.
  */
@@ -191,7 +208,10 @@ export default function DocumentCard({
                                 id: collaborator.id,
                                 name: `${collaborator.name} · ${collaborator.role}`,
                                 initials: collaborator.initials,
-                                colorClassName: collaborator.color,
+                                colorClassName: "text-white",
+                                colorStyle: {
+                                    backgroundColor: getAvatarBackground(collaborator.id),
+                                },
                             }))}
                         />
                     </div>

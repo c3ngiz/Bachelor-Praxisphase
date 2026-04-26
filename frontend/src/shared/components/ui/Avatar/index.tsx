@@ -28,7 +28,7 @@ const shapeClasses: Record<AvatarShape, string> = {
 export default function Avatar({
   alt,
   className,
-  colorClassName = "bg-(--bg-subtle) text-(--fg-muted)",
+  colorClassName = "bg-(--accent) text-white",
   initials,
   shape = "circle",
   size = "md",
