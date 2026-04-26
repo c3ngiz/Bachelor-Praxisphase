@@ -206,6 +206,16 @@ export async function inviteWorkspaceMember(
     },
   });
 
+  await prisma.document.updateMany({
+    where: {
+      workspaceId,
+      visibility: "private",
+    },
+    data: {
+      visibility: "workspace",
+    },
+  });
+
   const updatedWorkspace = await prisma.workspace.findUniqueOrThrow({
     where: { id: workspaceId },
     include: workspaceInclude,

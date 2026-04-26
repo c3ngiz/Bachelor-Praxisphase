@@ -21,7 +21,7 @@ const ROLE_OPTIONS = [
 const ACCESS_OPTIONS = [
   { value: "private", label: "Private" },
   { value: "shared", label: "Shared with invited people" },
-  { value: "workspace", label: "Anyone in workspace" },
+  { value: "workspace", label: "Workspace" },
 ];
 
 /**
@@ -43,6 +43,16 @@ export default function ShareDocumentModal({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const collaborators = document.collaborators ?? [];
+  const accessOptions = activeWorkspace?.isDefault
+    ? ACCESS_OPTIONS.map((option) =>
+        option.value === "workspace"
+          ? {
+              ...option,
+              label: "Anyone in private workspace (only you)",
+            }
+          : option,
+      )
+    : ACCESS_OPTIONS.filter((option) => option.value !== "private");
 
   async function handleInvite() {
     if (!token) return;
@@ -118,18 +128,7 @@ export default function ShareDocumentModal({
           onChange={(event) =>
             setAccess(event.target.value as Document["visibility"])
           }
-          options={
-            activeWorkspace?.isDefault
-              ? ACCESS_OPTIONS.map((option) =>
-                  option.value === "workspace"
-                    ? {
-                        ...option,
-                        label: "Anyone in private workspace (only you)",
-                      }
-                    : option,
-                )
-              : ACCESS_OPTIONS
-          }
+          options={accessOptions}
         />
 
         {activeWorkspace?.isDefault ? (

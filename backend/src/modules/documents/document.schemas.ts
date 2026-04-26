@@ -8,7 +8,11 @@ const collaboratorSchema = z.object({
   role: z.enum(["owner", "editor", "viewer"]),
 });
 
-const visibilitySchema = z.enum(["private", "shared", "workspace"]);
+const visibilitySchema = z.enum([
+  "private",
+  "shared",
+  "workspace",
+]);
 
 export const createDocumentSchema = z.object({
   title: z.string().trim().min(1).max(200),

@@ -142,13 +142,9 @@ async function canAccessDocument(document: {
     return true;
   }
 
-  if (document.visibility !== 'workspace') {
-    return false;
-  }
-
   const membership = await getWorkspaceMembership(document.workspaceId, userId);
 
-  return Boolean(membership);
+  return Boolean(membership && !membership.workspace.isDefault);
 }
 
 async function canEditDocument(document: {
@@ -170,13 +166,12 @@ async function canEditDocument(document: {
     return true;
   }
 
-  if (document.visibility !== 'workspace') {
-    return false;
-  }
-
   const membership = await getWorkspaceMembership(document.workspaceId, authUser.id);
 
-  return membership?.role === 'owner' || membership?.role === 'editor';
+  return (
+    !membership?.workspace.isDefault &&
+    (membership?.role === 'owner' || membership?.role === 'editor')
+  );
 }
 
 export async function listDocuments(userId: string, workspaceId?: string): Promise<DocumentDto[]> {
@@ -237,12 +232,17 @@ export async function createDocument(
     throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have permission to create documents.');
   }
 
+  const visibility =
+    !membership.workspace.isDefault && input.visibility === 'private'
+      ? 'workspace'
+      : input.visibility;
+
   const document = await prisma.document.create({
     data: {
       title: input.title,
       content: input.content === null ? Prisma.JsonNull : toPrismaNonNullJsonValue(input.content),
       author: authUser.name,
-      visibility: input.visibility,
+      visibility,
       workspaceId,
       ownerId: authUser.id,
       ownerName: authUser.name,
@@ -279,6 +279,11 @@ export async function updateDocument(
   const collaborators = input.collaborators
     ? normalizeCollaborators(input.collaborators, authUser)
     : existingCollaborators;
+  const membership = await getWorkspaceMembership(existingDocument.workspaceId, authUser.id);
+  const visibility =
+    input.visibility === 'private' && membership && !membership.workspace.isDefault
+      ? 'workspace'
+      : input.visibility;
 
   const updatedDocument = await prisma.document.update({
     where: { id: documentId },
@@ -290,7 +295,7 @@ export async function updateDocument(
           : input.content === null
             ? Prisma.JsonNull
             : toPrismaNonNullJsonValue(input.content),
-      visibility: input.visibility,
+      visibility,
       collaborators,
       lastOpenedAt:
         input.lastOpenedAt === undefined

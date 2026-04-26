@@ -29,7 +29,7 @@ function formatEditedAt(date?: string) {
 function getVisibilityLabel(document: Document) {
     switch (document.visibility) {
         case "workspace":
-            return "Team";
+            return "Workspace";
         case "shared":
             return "Shared";
         default:
@@ -40,7 +40,7 @@ function getVisibilityLabel(document: Document) {
 function getVisibilityVariant(document: Document) {
     switch (document.visibility) {
         case "workspace":
-            return "success";
+            return "info";
         case "shared":
             return "info";
         default:

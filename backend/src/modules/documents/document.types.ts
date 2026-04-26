@@ -1,5 +1,8 @@
 export type DocumentRole = "owner" | "editor" | "viewer";
-export type DocumentVisibility = "private" | "shared" | "workspace";
+export type DocumentVisibility =
+  | "private"
+  | "shared"
+  | "workspace";
 
 export type DocumentCollaborator = {
   id: string;
