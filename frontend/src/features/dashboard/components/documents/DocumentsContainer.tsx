@@ -1,4 +1,5 @@
 import type { Document } from "@/features/documents";
+import type { WorkspaceMember } from "@/features/workspaces";
 
 import DocumentsEmptyState from "./DocumentsEmptyState";
 import DocumentsGrid from "./DocumentsGrid";
@@ -15,6 +16,7 @@ type Props = {
     emptyDescription?: string;
     emptyShowCreateAction?: boolean;
     emptyTitle?: string;
+    workspaceMembers?: WorkspaceMember[];
     onOpen?: (id: string) => void;
     onRename?: (id: string) => void;
     onDelete?: (id: string) => void;
@@ -31,6 +33,7 @@ export default function DocumentsContainer({
     emptyDescription,
     emptyShowCreateAction,
     emptyTitle,
+    workspaceMembers = [],
     onOpen,
     onRename,
     onDelete,
@@ -59,6 +62,7 @@ export default function DocumentsContainer({
         return (
             <DocumentsGrid
                 documents={documents}
+                workspaceMembers={workspaceMembers}
                 onOpen={onOpen}
                 onRename={onRename}
                 onDelete={onDelete}

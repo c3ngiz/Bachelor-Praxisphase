@@ -4,6 +4,7 @@ import { Section } from "@/shared/components/layout";
 import { Button } from "@/shared/components/ui";
 
 import type { Document } from "@/features/documents";
+import type { WorkspaceMember } from "@/features/workspaces";
 import type { DashboardCollectionId } from "../../utils/dashboardCollections";
 
 import DocumentsContainer from "../documents/DocumentsContainer";
@@ -25,6 +26,7 @@ type Props = {
   onRenameDocument: (id: string) => void;
   onDeleteDocument: (id?: string) => void;
   onCreateDocument: () => void;
+  workspaceMembers: WorkspaceMember[];
   workspaceName?: string;
 };
 
@@ -43,6 +45,7 @@ export default function DashboardDocumentsSection({
   onRenameDocument,
   onDeleteDocument,
   onCreateDocument,
+  workspaceMembers,
   workspaceName,
 }: Props) {
   const isAllDocuments = collectionId === "all";
@@ -91,6 +94,7 @@ export default function DashboardDocumentsSection({
           emptyTitle={emptyCopy.title}
           emptyDescription={emptyCopy.description}
           emptyShowCreateAction={isAllDocuments}
+          workspaceMembers={workspaceMembers}
           onOpen={onOpenDocument}
           onRename={onRenameDocument}
           onDelete={onDeleteDocument}

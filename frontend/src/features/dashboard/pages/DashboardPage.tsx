@@ -166,6 +166,7 @@ export default function DashboardPage() {
             collectionDescription={activeCollectionDetails.description}
             collectionTotal={activeCollectionDetails.documents.length}
             workspaceName={activeWorkspace?.name}
+            workspaceMembers={activeWorkspace?.members ?? []}
             documents={processedDocuments}
             viewMode={viewMode}
             loading={loading}

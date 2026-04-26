@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Document } from "@/features/documents";
+import type { WorkspaceMember } from "@/features/workspaces";
 import { useDashboardSelectionState } from "../../hooks/useDashboardSelectionState";
 import { AvatarStack, Badge, Card, Menu } from "@/shared/components/ui";
 import {
@@ -16,6 +17,7 @@ import ShareDocumentModal from "./ShareDocumentModal";
 
 type Props = {
     document: Document;
+    workspaceMembers?: WorkspaceMember[];
     onOpen?: (id: string) => void;
     onRename?: (id: string) => void;
     onDelete?: (id: string) => void;
@@ -70,6 +72,7 @@ function getAvatarBackground(id: string) {
  */
 export default function DocumentCard({
     document,
+    workspaceMembers = [],
     onOpen,
     onRename,
     onDelete,
@@ -80,7 +83,15 @@ export default function DocumentCard({
     const [isShareOpen, setIsShareOpen] = useState(false);
 
     const isSelected = selectedDocuments.has(document.id);
-    const collaborators = document.collaborators ?? [];
+    const collaborators =
+        document.visibility === "workspace" && workspaceMembers.length > 0
+            ? workspaceMembers.map((member) => ({
+                id: member.userId,
+                name: member.name,
+                initials: member.initials,
+                role: member.role,
+            }))
+            : document.collaborators ?? [];
 
     return (
         <>
