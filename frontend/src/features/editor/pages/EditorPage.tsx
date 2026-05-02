@@ -1,26 +1,21 @@
-import { useParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 
-import { useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
-
 import Color from "@tiptap/extension-color";
-import { TextStyle } from "@tiptap/extension-text-style";
-import FontSize from "@tiptap/extension-text-style/font-size";
+import FontFamily from "@tiptap/extension-font-family";
 import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
-import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
-import FontFamily from "@tiptap/extension-font-family";
+import OrderedList from "@tiptap/extension-ordered-list";
+import TextAlign from "@tiptap/extension-text-align";
+import FontSize from "@tiptap/extension-text-style/font-size";
+import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 
-import EditorToolbar from "../components/EditorToolbar";
-import EditorArea from "../components/EditorArea";
-import PresenceBar from "../components/PresenceBar";
-import EditorTitleBar from "../components/EditorTitleBar";
-
+import { useAuth } from "@/features/auth";
 import {
   getConflictDocument,
   normalizeDocument,
@@ -28,8 +23,10 @@ import {
   type UpdateDocumentInput,
   useDocumentsStore,
 } from "@/features/documents";
-import { useAuth } from "@/features/auth";
-import { useEditorSessionStore } from "../store/editorSessionStore";
+import EditorArea from "../components/EditorArea";
+import EditorTitleBar from "../components/EditorTitleBar";
+import EditorToolbar from "../components/EditorToolbar";
+import PresenceBar from "../components/PresenceBar";
 import {
   createGraphqlSubscriptionClient,
   createRestPollingClient,
@@ -37,20 +34,8 @@ import {
   type SyncMetricsEvent,
   type SyncMode,
 } from "../services/documentSync";
-
-type SyncMetrics = {
-  requests: number;
-  messagesReceived: number;
-  writesSent: number;
-  conflicts: number;
-  lastLatencyMs: number | null;
-  samples: Array<{
-    mode: SyncMode;
-    type: SyncMetricsEvent["type"];
-    timestamp: string;
-    latencyMs?: number;
-  }>;
-};
+import { useEditorSessionStore } from "../store/editorSessionStore";
+import type { EditorSyncMetrics } from "../types";
 
 const emptyDocumentContent = { type: "doc", content: [] };
 
@@ -81,10 +66,20 @@ function calculateLatency(sentAt?: string): number | null {
   return Date.now() - sentAtMs;
 }
 
+function createInitialMetrics(): EditorSyncMetrics {
+  return {
+    requests: 0,
+    messagesReceived: 0,
+    writesSent: 0,
+    conflicts: 0,
+    lastLatencyMs: null,
+    samples: [],
+  };
+}
+
 export default function EditorPage() {
   const { id } = useParams();
   const { token } = useAuth();
-
   const { documents, updateDocument, refreshDocument } = useDocumentsStore();
 
   const sessionDocumentId = useEditorSessionStore((s) => s.documentId);
@@ -100,14 +95,7 @@ export default function EditorPage() {
   const [syncMode, setSyncMode] = useState<SyncMode>("websocket");
   const [pollIntervalMs, setPollIntervalMs] = useState(2000);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
-  const [metrics, setMetrics] = useState<SyncMetrics>({
-    requests: 0,
-    messagesReceived: 0,
-    writesSent: 0,
-    conflicts: 0,
-    lastLatencyMs: null,
-    samples: [],
-  });
+  const [metrics, setMetrics] = useState<EditorSyncMetrics>(createInitialMetrics);
 
   const titleRef = useRef("");
   const idRef = useRef(id);
@@ -164,22 +152,19 @@ export default function EditorPage() {
     });
   }, []);
 
-  const applyIncomingDocument = useCallback(
-    (incomingDocument: Document) => {
-      const normalizedDocument = normalizeDocument(incomingDocument);
+  const applyIncomingDocument = useCallback((incomingDocument: Document) => {
+    const normalizedDocument = normalizeDocument(incomingDocument);
 
-      if (normalizedDocument.revision < revisionRef.current) {
-        return;
-      }
+    if (normalizedDocument.revision < revisionRef.current) {
+      return;
+    }
 
-      revisionRef.current = normalizedDocument.revision;
-      titleRef.current = normalizedDocument.title;
-      useDocumentsStore.setState((state) => ({
-        documents: upsertDocument(state.documents, normalizedDocument),
-      }));
-    },
-    [],
-  );
+    revisionRef.current = normalizedDocument.revision;
+    titleRef.current = normalizedDocument.title;
+    useDocumentsStore.setState((state) => ({
+      documents: upsertDocument(state.documents, normalizedDocument),
+    }));
+  }, []);
 
   const saveDocument = useCallback(
     (input: Omit<UpdateDocumentInput, "expectedRevision">) => {
@@ -187,46 +172,48 @@ export default function EditorPage() {
         return;
       }
 
-      saveChainRef.current = saveChainRef.current.catch(() => undefined).then(async () => {
-        const sentAt = new Date().toISOString();
-        setIsSaving(true);
-        recordMetric({ type: "sent", mode: syncMode, sentAt });
-        recordMetric({ type: "request", mode: syncMode, timestamp: sentAt });
+      saveChainRef.current = saveChainRef.current
+        .catch(() => undefined)
+        .then(async () => {
+          const sentAt = new Date().toISOString();
+          setIsSaving(true);
+          recordMetric({ type: "sent", mode: syncMode, sentAt });
+          recordMetric({ type: "request", mode: syncMode, timestamp: sentAt });
 
-        try {
-          const updatedDocument = await updateDocument(
-            idRef.current!,
-            {
-              ...input,
-              expectedRevision: revisionRef.current,
-            },
-            token,
-          );
+          try {
+            const updatedDocument = await updateDocument(
+              idRef.current!,
+              {
+                ...input,
+                expectedRevision: revisionRef.current,
+              },
+              token,
+            );
 
-          revisionRef.current = updatedDocument.revision;
-          setConflictMessage(null);
-          markSaved();
-        } catch (error) {
-          const conflictDocument = getConflictDocument(error);
+            revisionRef.current = updatedDocument.revision;
+            setConflictMessage(null);
+            markSaved();
+          } catch (error) {
+            const conflictDocument = getConflictDocument(error);
 
-          if (conflictDocument) {
-            revisionRef.current = conflictDocument.revision;
-            titleRef.current = conflictDocument.title;
-            setConflictMessage("Conflict resolved with server revision.");
-            recordMetric({
-              type: "conflict",
-              mode: syncMode,
-              timestamp: new Date().toISOString(),
-            });
-            applyIncomingDocument(conflictDocument);
-            return;
+            if (conflictDocument) {
+              revisionRef.current = conflictDocument.revision;
+              titleRef.current = conflictDocument.title;
+              setConflictMessage("Conflict resolved with server revision.");
+              recordMetric({
+                type: "conflict",
+                mode: syncMode,
+                timestamp: new Date().toISOString(),
+              });
+              applyIncomingDocument(conflictDocument);
+              return;
+            }
+
+            console.error(error);
+          } finally {
+            setIsSaving(false);
           }
-
-          console.error(error);
-        } finally {
-          setIsSaving(false);
-        }
-      });
+        });
     },
     [
       applyIncomingDocument,
@@ -241,6 +228,7 @@ export default function EditorPage() {
 
   useEffect(() => {
     titleRef.current = currentDocument?.title ?? "";
+
     if (id && currentDocument) {
       startSession(id, currentDocument.title);
     }
@@ -290,55 +278,41 @@ export default function EditorPage() {
         bulletList: false,
         orderedList: false,
       }),
-
       BulletList.configure({
         keepMarks: true,
         keepAttributes: false,
       }),
-
       OrderedList.configure({
         keepMarks: true,
         keepAttributes: false,
       }),
-
       TextStyle,
       Color,
-
       Highlight.configure({
         multicolor: true,
       }),
-
       Image,
-
       Link.configure({
         openOnClick: false,
       }),
-
       Underline,
-
       FontFamily,
       FontSize,
-
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
     ],
-
     content: "",
-
     onUpdate({ editor }) {
-      const json = editor.getJSON();
-
       saveDocument({
         title: titleRef.current,
-        content: json,
+        content: editor.getJSON(),
       });
     },
   });
 
   useEffect(() => {
-    if (!currentDocument) return;
-    if (!editor) return;
+    if (!currentDocument || !editor) return;
 
     const currentJSON = currentDocument.content ?? emptyDocumentContent;
     const editorJSON = editor.getJSON();
@@ -350,19 +324,17 @@ export default function EditorPage() {
     }
   }, [currentDocument, editor]);
 
+  const displayedTitle =
+    sessionDocumentId === id ? titleDraft : currentDocument?.title ?? "";
+
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col bg-(--bg)">
       <EditorTitleBar
-        title={
-          sessionDocumentId === id
-            ? titleDraft
-            : currentDocument?.title ?? ""
-        }
+        title={displayedTitle}
         isSaving={isSaving}
         lastSavedAt={lastSavedAt}
+        revision={currentDocument?.revision}
         syncMode={syncMode}
-        pollIntervalMs={pollIntervalMs}
-        metrics={metrics}
         conflictMessage={conflictMessage}
         onTitleChange={(value) => {
           titleRef.current = value;
@@ -379,19 +351,20 @@ export default function EditorPage() {
           });
         }}
         onSyncModeChange={setSyncMode}
-        onPollIntervalChange={(intervalMs) => {
-          setPollIntervalMs(Math.max(500, intervalMs || 500));
-        }}
         onExportMetrics={() => {
           console.table(metrics.samples);
         }}
       />
 
       <EditorToolbar editor={editor} />
-
       <EditorArea editor={editor} />
-
-      <PresenceBar />
+      <PresenceBar
+        metrics={metrics}
+        pollIntervalMs={pollIntervalMs}
+        onPollIntervalChange={(intervalMs) => {
+          setPollIntervalMs(Math.max(500, intervalMs || 500));
+        }}
+      />
     </div>
   );
 }
