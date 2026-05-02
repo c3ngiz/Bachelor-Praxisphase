@@ -74,6 +74,7 @@ model Document {
   id             String             @id @default(cuid())
   title          String
   content        Json
+  revision       Int                @default(1)
   author         String
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
@@ -97,5 +98,6 @@ model Document {
   @@index([ownerId])
   @@index([workspaceId])
   @@index([lastEditedById])
+  @@index([revision])
   @@index([updatedAt])
 }

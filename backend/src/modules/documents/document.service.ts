@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
+import { publishDocumentUpdate } from '../../sync/documentSync.js';
 import { ApiError } from '../../utils/apiError.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { getDefaultWorkspaceId, getWorkspaceMembership } from '../workspaces/workspace.service.js';
@@ -59,7 +60,7 @@ function toPrismaNonNullJsonValue(value: unknown): Prisma.InputJsonValue {
 
 function normalizeCollaborators(
   collaborators: DocumentCollaborator[],
-  authUser: AuthUser,
+  authUser: Pick<AuthUser, 'id' | 'name' | 'initials' | 'avatarColor'>,
 ): DocumentCollaborator[] {
   const ownerEntry: DocumentCollaborator = {
     id: authUser.id,
@@ -88,6 +89,7 @@ function toDocumentDto(document: {
   id: string;
   title: string;
   content: unknown;
+  revision: number;
   author: string;
   createdAt: Date;
   updatedAt: Date;
@@ -105,6 +107,7 @@ function toDocumentDto(document: {
     id: document.id,
     title: document.title,
     content: document.content,
+    revision: document.revision,
     author: document.author,
     createdAt: document.createdAt.toISOString(),
     updatedAt: document.updatedAt.toISOString(),
@@ -172,6 +175,16 @@ async function canEditDocument(document: {
     !membership?.workspace.isDefault &&
     (membership?.role === 'owner' || membership?.role === 'editor')
   );
+}
+
+function createConflictError(expectedRevision: number, currentDocument: DocumentDto): ApiError {
+  return new ApiError(StatusCodes.CONFLICT, 'Document revision conflict.', {
+    conflict: {
+      expectedRevision,
+      actualRevision: currentDocument.revision,
+    },
+    document: currentDocument,
+  });
 }
 
 export async function listDocuments(userId: string, workspaceId?: string): Promise<DocumentDto[]> {
@@ -276,6 +289,10 @@ export async function updateDocument(
     throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have permission to edit this document.');
   }
 
+  if (input.expectedRevision !== existingDocument.revision) {
+    throw createConflictError(input.expectedRevision, toDocumentDto(existingDocument));
+  }
+
   const collaborators = input.collaborators
     ? normalizeCollaborators(input.collaborators, authUser)
     : existingCollaborators;
@@ -285,8 +302,11 @@ export async function updateDocument(
       ? 'workspace'
       : input.visibility;
 
-  const updatedDocument = await prisma.document.update({
-    where: { id: documentId },
+  const updateResult = await prisma.document.updateMany({
+    where: {
+      id: documentId,
+      revision: input.expectedRevision,
+    },
     data: {
       title: input.title,
       content:
@@ -303,13 +323,41 @@ export async function updateDocument(
           : input.lastOpenedAt === null
             ? null
             : new Date(input.lastOpenedAt),
+      revision: { increment: 1 },
       lastEditedById: authUser.id,
       lastEditedByName: authUser.name,
       lastEditedAt: new Date(),
     },
   });
 
-  return toDocumentDto(updatedDocument);
+  const currentDocument = await prisma.document.findUnique({
+    where: { id: documentId },
+  });
+
+  if (!currentDocument) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Document not found.');
+  }
+
+  if (updateResult.count === 0) {
+    throw createConflictError(input.expectedRevision, toDocumentDto(currentDocument));
+  }
+
+  const documentDto = toDocumentDto(currentDocument);
+  publishDocumentUpdate({
+    type: 'document.updated',
+    documentId: documentDto.id,
+    version: documentDto.revision,
+    userId: authUser.id,
+    timestamp: documentDto.updatedAt,
+    operation: {
+      kind: 'replace-document',
+      title: documentDto.title,
+      content: documentDto.content,
+    },
+    document: documentDto,
+  });
+
+  return documentDto;
 }
 
 export async function inviteDocumentCollaborator(
@@ -357,7 +405,6 @@ export async function inviteDocumentCollaborator(
     ],
     {
       id: existingDocument.ownerId,
-      email: '',
       name: existingDocument.ownerName,
       initials:
         existingCollaborators.find((collaborator) => collaborator.id === existingDocument.ownerId)
@@ -365,8 +412,6 @@ export async function inviteDocumentCollaborator(
       avatarColor:
         existingCollaborators.find((collaborator) => collaborator.id === existingDocument.ownerId)
           ?.color ?? 'bg-violet-500',
-      createdAt: '',
-      updatedAt: '',
     },
   );
 
@@ -375,13 +420,28 @@ export async function inviteDocumentCollaborator(
     data: {
       collaborators: nextCollaborators,
       visibility: existingDocument.visibility === 'private' ? 'shared' : existingDocument.visibility,
+      revision: { increment: 1 },
       lastEditedById: authUser.id,
       lastEditedByName: authUser.name,
       lastEditedAt: new Date(),
     },
   });
 
-  return toDocumentDto(updatedDocument);
+  const documentDto = toDocumentDto(updatedDocument);
+  publishDocumentUpdate({
+    type: 'document.updated',
+    documentId: documentDto.id,
+    version: documentDto.revision,
+    userId: authUser.id,
+    timestamp: documentDto.updatedAt,
+    operation: {
+      kind: 'collaborators-updated',
+      collaborators: documentDto.collaborators,
+    },
+    document: documentDto,
+  });
+
+  return documentDto;
 }
 
 export async function deleteDocument(documentId: string, authUser: AuthUser): Promise<void> {

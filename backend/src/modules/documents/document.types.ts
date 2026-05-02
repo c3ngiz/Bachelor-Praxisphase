@@ -16,6 +16,7 @@ export type DocumentDto = {
   id: string;
   title: string;
   content: unknown;
+  revision: number;
   author: string;
   createdAt: string;
   updatedAt: string;
@@ -28,4 +29,17 @@ export type DocumentDto = {
   lastEditedById: string;
   lastEditedByName: string;
   lastEditedAt: string;
+};
+
+export type DocumentUpdateEvent = {
+  type: 'document.updated';
+  documentId: string;
+  version: number;
+  userId: string;
+  timestamp: string;
+  operation: {
+    kind: string;
+    [key: string]: unknown;
+  };
+  document: DocumentDto;
 };

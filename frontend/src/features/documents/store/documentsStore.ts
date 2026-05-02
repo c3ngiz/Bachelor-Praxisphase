@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   createDocumentRequest,
   deleteDocumentRequest,
+  getConflictDocument,
   getDocument,
   inviteDocumentCollaboratorRequest,
   listDocuments,
@@ -141,6 +142,16 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
 
       return response.document;
     } catch (error) {
+      const conflictDocument = getConflictDocument(error);
+
+      if (conflictDocument) {
+        set((state) => ({
+          documents: upsertDocument(state.documents, conflictDocument),
+          error: "Document revision conflict.",
+        }));
+        throw error;
+      }
+
       const message =
         error instanceof Error ? error.message : "Failed to update document.";
       set({ error: message });

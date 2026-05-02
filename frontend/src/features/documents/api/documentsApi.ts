@@ -1,4 +1,5 @@
 import { apiRequest } from "@/shared/lib/api";
+import { ApiError } from "@/shared/lib/api";
 import type {
   CreateDocumentInput,
   Document,
@@ -6,6 +7,28 @@ import type {
   UpdateDocumentInput,
 } from "../types/document.types";
 import { normalizeDocument, normalizeDocuments } from "../types/document.types";
+
+type DocumentConflictPayload = {
+  conflict?: {
+    expectedRevision: number;
+    actualRevision: number;
+  };
+  document?: Document;
+};
+
+export function getConflictDocument(error: unknown): Document | null {
+  if (!(error instanceof ApiError) || error.status !== 409) {
+    return null;
+  }
+
+  const payload = error.data as DocumentConflictPayload | null;
+
+  if (!payload?.document) {
+    return null;
+  }
+
+  return normalizeDocument(payload.document);
+}
 
 export async function listDocuments(
   token: string,

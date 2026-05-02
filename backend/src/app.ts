@@ -30,6 +30,17 @@ app.use("/api/auth", authRouter);
 app.use("/api/documents", documentRouter);
 app.use("/api/workspaces", workspaceRouter);
 
+app.post("/api/graphql", (_request, response) => {
+  return response.status(StatusCodes.OK).json({
+    data: {
+      schema: {
+        subscription:
+          "subscription DocumentUpdated($documentId: ID!) { documentUpdated(documentId: $documentId) { documentId version userId timestamp operation document } }",
+      },
+    },
+  });
+});
+
 app.use((_request, response) => {
   return response.status(StatusCodes.NOT_FOUND).json({
     message: "Route not found.",
@@ -47,6 +58,7 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
   if (error instanceof ApiError) {
     return response.status(error.statusCode).json({
       message: error.message,
+      ...(error.data && typeof error.data === "object" ? error.data : {}),
     });
   }
 

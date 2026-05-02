@@ -17,6 +17,7 @@ export interface Document {
 
   title: string;
   content: unknown;
+  revision: number;
 
   author: string;
 
@@ -49,7 +50,9 @@ export type UpdateDocumentInput = Partial<
     Document,
     "title" | "content" | "visibility" | "collaborators" | "lastOpenedAt"
   >
->;
+> & {
+  expectedRevision: number;
+};
 
 export type InviteDocumentCollaboratorInput = {
   email: string;
@@ -63,6 +66,7 @@ export interface DocumentPreview {
 export function normalizeDocument(document: Document): Document {
   return {
     ...document,
+    revision: document.revision ?? 1,
     collaborators: document.collaborators ?? [],
   };
 }

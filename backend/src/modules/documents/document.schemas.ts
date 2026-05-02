@@ -23,6 +23,7 @@ export const createDocumentSchema = z.object({
 });
 
 export const updateDocumentSchema = z.object({
+  expectedRevision: z.number().int().positive(),
   title: z.string().trim().min(1).max(200).optional(),
   content: z.unknown().optional(),
   visibility: visibilitySchema.optional(),

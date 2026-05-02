@@ -75,6 +75,7 @@ export function useDashboardDocumentActions({
       await updateDocument(
         doc.id,
         {
+          expectedRevision: doc.revision,
           lastOpenedAt: new Date().toISOString(),
         },
         token,
@@ -94,6 +95,7 @@ export function useDashboardDocumentActions({
     await updateDocument(
       selectedDocument.id,
       {
+        expectedRevision: selectedDocument.revision,
         title: newName,
       },
       token,
