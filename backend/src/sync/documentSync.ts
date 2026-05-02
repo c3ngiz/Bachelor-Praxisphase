@@ -5,12 +5,7 @@ import { prisma } from '../lib/prisma.js';
 import { verifyAccessToken } from '../lib/jwt.js';
 import type { AuthUser } from '../modules/auth/auth.types.js';
 import type { DocumentCollaborator, DocumentUpdateEvent } from '../modules/documents/document.types.js';
-import {
-  handleGraphqlSubscriptionMessage,
-  sendGraphqlDocumentUpdate,
-} from './graphqlSubscriptionAdapter.js';
-
-type ClientMode = 'websocket' | 'graphql-subscription';
+import { subscribeToDocumentUpdates } from '../apis/sync/providers/documentEventProvider.js';
 
 type PresenceUser = {
   id: string;
@@ -23,7 +18,6 @@ type SyncClient = {
   id: string;
   socket: WebSocket;
   user: AuthUser;
-  mode: ClientMode;
   documentId: string | null;
 };
 
@@ -284,14 +278,9 @@ function handleWebSocketMessage(client: SyncClient, raw: Buffer): void {
   }
 }
 
-export function publishDocumentUpdate(event: DocumentUpdateEvent): void {
+function sendDocumentUpdate(event: DocumentUpdateEvent): void {
   for (const client of clients) {
     if (client.documentId !== event.documentId) {
-      continue;
-    }
-
-    if (client.mode === 'graphql-subscription') {
-      sendGraphqlDocumentUpdate(client.socket, event, sendJson);
       continue;
     }
 
@@ -301,17 +290,16 @@ export function publishDocumentUpdate(event: DocumentUpdateEvent): void {
 
 export function attachDocumentSync(server: Server): void {
   const websocketServer = new WebSocketServer({ noServer: true });
+  const unsubscribe = subscribeToDocumentUpdates(sendDocumentUpdate);
+
+  server.on('close', () => {
+    unsubscribe();
+  });
 
   server.on('upgrade', (request, socket, head) => {
     const url = new URL(request.url ?? '/', 'http://localhost');
-    const mode: ClientMode | null =
-      url.pathname === '/sync/documents'
-        ? 'websocket'
-        : url.pathname === '/graphql'
-          ? 'graphql-subscription'
-          : null;
 
-    if (!mode) {
+    if (url.pathname !== '/sync/documents') {
       return;
     }
 
@@ -327,7 +315,6 @@ export function attachDocumentSync(server: Server): void {
           id: createClientId(),
           socket: websocket,
           user,
-          mode,
           documentId: null,
         };
 
@@ -335,16 +322,6 @@ export function attachDocumentSync(server: Server): void {
 
         websocket.on('message', (raw) => {
           const buffer = Buffer.isBuffer(raw) ? raw : Buffer.from(raw as ArrayBuffer);
-
-          if (mode === 'graphql-subscription') {
-            handleGraphqlSubscriptionMessage({
-              client,
-              raw: buffer,
-              joinDocument: (documentId) => joinDocument(client, documentId),
-              sendJson,
-            });
-            return;
-          }
 
           handleWebSocketMessage(client, buffer);
         });

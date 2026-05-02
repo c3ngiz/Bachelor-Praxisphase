@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { prisma } from "../lib/prisma.js";
-import { verifyAccessToken } from "../lib/jwt.js";
+import { getAuthUserFromToken } from "../apis/shared/providers/authUserProvider.js";
 
 export async function requireAuth(request: Request, response: Response, next: NextFunction) {
   const authorization = request.headers.authorization;
@@ -14,20 +13,7 @@ export async function requireAuth(request: Request, response: Response, next: Ne
 
   try {
     const token = authorization.slice("Bearer ".length);
-    const payload = verifyAccessToken(token);
-
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        initials: true,
-        avatarColor: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const user = await getAuthUserFromToken(token);
 
     if (!user) {
       return response.status(StatusCodes.UNAUTHORIZED).json({
@@ -35,11 +21,7 @@ export async function requireAuth(request: Request, response: Response, next: Ne
       });
     }
 
-    request.authUser = {
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    };
+    request.authUser = user;
 
     return next();
   } catch {

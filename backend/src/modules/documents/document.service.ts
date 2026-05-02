@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
-import { publishDocumentUpdate } from '../../sync/documentSync.js';
+import { publishDocumentUpdate } from '../../apis/sync/providers/documentEventProvider.js';
 import { ApiError } from '../../utils/apiError.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { getDefaultWorkspaceId, getWorkspaceMembership } from '../workspaces/workspace.service.js';

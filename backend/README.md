@@ -10,6 +10,7 @@ This is a minimal TypeScript backend for the collaboration app.
 - Docker Compose for the local database
 - JWT authentication
 - Zod request validation
+- REST, GraphQL, and webhook API modules
 
 ## What is included
 
@@ -19,6 +20,7 @@ This is a minimal TypeScript backend for the collaboration app.
 - persistent documents in PostgreSQL
 - document CRUD with owner/editor/viewer authorization
 - document shape aligned with the current frontend document type
+- runtime API modes via `API_MODE=rest|graphql|all`
 
 ## Local development setup
 
@@ -62,6 +64,14 @@ npm run prisma:migrate -- --name init
 npm run dev
 ```
 
+`npm run dev` starts REST mode by default. You can also start a specific API mode:
+
+```bash
+npm run dev:rest
+npm run dev:graphql
+npm run dev:all
+```
+
 ## Useful database commands
 
 ```bash
@@ -72,6 +82,14 @@ npm run db:reset
 ```
 
 ## API
+
+The server always exposes `GET /health`, which returns the active `apiMode`.
+
+Set `API_MODE` to choose which API surface is mounted:
+
+- `rest`: REST routes plus native document sync WebSocket at `/sync/documents`
+- `graphql`: GraphQL HTTP and subscriptions at `/graphql`
+- `all`: REST, GraphQL, webhooks, and both realtime transports
 
 ### Auth
 
@@ -86,6 +104,19 @@ npm run db:reset
 - `POST /api/documents`
 - `PATCH /api/documents/:documentId`
 - `DELETE /api/documents/:documentId`
+
+### GraphQL
+
+- HTTP endpoint: `POST /graphql`
+- WebSocket subscriptions: `/graphql`
+- Queries: `me`, `documents`, `document`, `workspaces`
+- Mutations: `register`, `login`, `createDocument`, `updateDocument`, `inviteDocumentCollaborator`, `deleteDocument`, `createWorkspace`, `inviteWorkspaceMember`
+- Subscription: `documentUpdated(documentId: ID!)`
+
+### Webhooks
+
+- `GET /api/webhooks/health`
+- `POST /api/webhooks/test`
 
 ## Notes
 
