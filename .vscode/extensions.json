@@ -1,0 +1,29 @@
+{
+	"recommendations": [
+		"dbaeumer.vscode-eslint",
+		"esbenp.prettier-vscode",
+		"editorconfig.editorconfig",
+		"christian-kohler.path-intellisense",
+		"wix.vscode-import-cost",
+		"usernamehw.errorlens",
+		"christian-kohler.npm-intellisense",
+		"davidanson.vscode-markdownlint",
+		"streetsidesoftware.code-spell-checker",
+		"eamodio.gitlens",
+		"prisma.prisma",
+		"bradlc.vscode-tailwindcss",
+		"heybourn.headwind",
+		"ms-vscode.vscode-typescript-next",
+		"formulahendry.auto-rename-tag",
+		"dsznajder.es7-react-js-snippets",
+		"naumovs.color-highlight",
+		"mikestead.dotenv",
+		"redhat.vscode-yaml",
+		"ms-azuretools.vscode-docker",
+		"humao.rest-client",
+		"visualstudioexptteam.vscodeintellicode",
+		"yoavbls.pretty-ts-errors",
+		"ms-vsliveshare.vsliveshare"
+	],
+	"unwantedRecommendations": []
+}

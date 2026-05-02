@@ -4,7 +4,8 @@
   // ========================
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.tabSize": 2,
@@ -26,6 +27,7 @@
   // ========================
   // Prettier
   // ========================
+  "prettier.useEditorConfig": true,
   "prettier.singleQuote": true,
   "prettier.semi": true,
   "prettier.trailingComma": "all",
@@ -37,6 +39,7 @@
   // ========================
   "eslint.enable": true,
   "eslint.run": "onSave",
+  "eslint.workingDirectories": [{ "mode": "auto" }],
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
 
   // ========================
@@ -73,6 +76,9 @@
     "**/dist": true,
     "**/build": true
   },
+  "files.associations": {
+    ".env*": "dotenv"
+  },
 
   // ========================
   // Terminal
@@ -102,6 +108,43 @@
   "tailwindCSS.includeLanguages": {
     "javascript": "javascriptreact",
     "typescript": "typescriptreact"
+  },
+
+  // ========================
+  // Language Formatters
+  // ========================
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "prisma.prisma"
   },
 
   // ========================
