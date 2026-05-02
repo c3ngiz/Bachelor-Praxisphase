@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 
 import AppLogo from "@/features/dashboard/components/layout/AppLogo";
 import { Button } from "@/shared/components/ui";
-import type { SyncMode } from "../services/documentSync";
+import type {
+  SyncConnectionState,
+  SyncMode,
+} from "../services/documentSync";
 import EditorDocumentTitle from "./EditorDocumentTitle";
 import SyncDiagnosticsPanel from "./SyncDiagnosticsPanel";
 
@@ -13,10 +16,12 @@ type Props = {
   lastSavedAt?: string | null;
   revision?: number;
   syncMode: SyncMode;
+  connectionState: SyncConnectionState;
   conflictMessage: string | null;
   onTitleChange: (value: string) => void;
   onSyncModeChange: (mode: SyncMode) => void;
   onExportMetrics: () => void;
+  onResetMetrics: () => void;
 };
 
 export default function EditorHeader({
@@ -25,10 +30,12 @@ export default function EditorHeader({
   lastSavedAt,
   revision,
   syncMode,
+  connectionState,
   conflictMessage,
   onTitleChange,
   onSyncModeChange,
   onExportMetrics,
+  onResetMetrics,
 }: Props) {
   const navigate = useNavigate();
 
@@ -65,9 +72,11 @@ export default function EditorHeader({
 
         <SyncDiagnosticsPanel
           syncMode={syncMode}
+          connectionState={connectionState}
           conflictMessage={conflictMessage}
           onSyncModeChange={onSyncModeChange}
           onExportMetrics={onExportMetrics}
+          onResetMetrics={onResetMetrics}
         />
       </div>
     </header>

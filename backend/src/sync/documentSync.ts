@@ -5,10 +5,22 @@ import { prisma } from '../lib/prisma.js';
 import { verifyAccessToken } from '../lib/jwt.js';
 import type { AuthUser } from '../modules/auth/auth.types.js';
 import type { DocumentCollaborator, DocumentUpdateEvent } from '../modules/documents/document.types.js';
+import {
+  handleGraphqlSubscriptionMessage,
+  sendGraphqlDocumentUpdate,
+} from './graphqlSubscriptionAdapter.js';
 
 type ClientMode = 'websocket' | 'graphql-subscription';
 
+type PresenceUser = {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
+};
+
 type SyncClient = {
+  id: string;
   socket: WebSocket;
   user: AuthUser;
   mode: ClientMode;
@@ -16,6 +28,10 @@ type SyncClient = {
 };
 
 const clients = new Set<SyncClient>();
+
+function createClientId(): string {
+  return `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 function parseBearerToken(request: IncomingMessage): string | null {
   const url = new URL(request.url ?? '/', 'http://localhost');
@@ -82,7 +98,77 @@ function sendJson(socket: WebSocket, payload: unknown): void {
   }
 }
 
-async function joinDocument(client: SyncClient, documentId: string): Promise<void> {
+function getPresenceUser(client: SyncClient): PresenceUser {
+  return {
+    id: client.user.id,
+    name: client.user.name,
+    initials: client.user.initials,
+    color: client.user.avatarColor,
+  };
+}
+
+function getDocumentClients(documentId: string): SyncClient[] {
+  return Array.from(clients).filter((client) => client.documentId === documentId);
+}
+
+function sendPresenceSnapshot(client: SyncClient): void {
+  if (!client.documentId) {
+    return;
+  }
+
+  const users = getDocumentClients(client.documentId)
+    .filter((roomClient) => roomClient.id !== client.id)
+    .map(getPresenceUser);
+
+  sendJson(client.socket, {
+    type: 'presence.snapshot',
+    documentId: client.documentId,
+    users,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+function broadcastToDocument(documentId: string, payload: unknown, exceptClientId?: string): void {
+  for (const client of getDocumentClients(documentId)) {
+    if (client.id === exceptClientId) {
+      continue;
+    }
+
+    sendJson(client.socket, payload);
+  }
+}
+
+function broadcastPresenceJoined(client: SyncClient): void {
+  if (!client.documentId) {
+    return;
+  }
+
+  broadcastToDocument(
+    client.documentId,
+    {
+      type: 'presence.joined',
+      documentId: client.documentId,
+      user: getPresenceUser(client),
+      timestamp: new Date().toISOString(),
+    },
+    client.id,
+  );
+}
+
+function broadcastPresenceLeft(client: SyncClient, documentId: string): void {
+  broadcastToDocument(
+    documentId,
+    {
+      type: 'presence.left',
+      documentId,
+      userId: client.user.id,
+      timestamp: new Date().toISOString(),
+    },
+    client.id,
+  );
+}
+
+async function canJoinDocument(client: SyncClient, documentId: string): Promise<boolean> {
   const document = await prisma.document.findUnique({
     where: { id: documentId },
     select: {
@@ -93,7 +179,7 @@ async function joinDocument(client: SyncClient, documentId: string): Promise<voi
   });
 
   if (!document) {
-    throw new Error('Document not found.');
+    return false;
   }
 
   const collaborators = Array.isArray(document.collaborators)
@@ -101,26 +187,38 @@ async function joinDocument(client: SyncClient, documentId: string): Promise<voi
     : [];
   const isCollaborator = collaborators.some((collaborator) => collaborator.id === client.user.id);
 
-  if (document.ownerId !== client.user.id && !isCollaborator) {
-    const membership = await prisma.workspaceMember.findUnique({
-      where: {
-        workspaceId_userId: {
-          workspaceId: document.workspaceId,
-          userId: client.user.id,
-        },
-      },
-      select: {
-        workspace: {
-          select: {
-            isDefault: true,
-          },
-        },
-      },
-    });
+  if (document.ownerId === client.user.id || isCollaborator) {
+    return true;
+  }
 
-    if (!membership || membership.workspace.isDefault) {
-      throw new Error('Forbidden.');
-    }
+  const membership = await prisma.workspaceMember.findUnique({
+    where: {
+      workspaceId_userId: {
+        workspaceId: document.workspaceId,
+        userId: client.user.id,
+      },
+    },
+    select: {
+      workspace: {
+        select: {
+          isDefault: true,
+        },
+      },
+    },
+  });
+
+  return Boolean(membership && !membership.workspace.isDefault);
+}
+
+async function joinDocument(client: SyncClient, documentId: string): Promise<void> {
+  if (!(await canJoinDocument(client, documentId))) {
+    throw new Error('Unable to join document.');
+  }
+
+  const previousDocumentId = client.documentId;
+
+  if (previousDocumentId && previousDocumentId !== documentId) {
+    broadcastPresenceLeft(client, previousDocumentId);
   }
 
   client.documentId = documentId;
@@ -130,6 +228,31 @@ async function joinDocument(client: SyncClient, documentId: string): Promise<voi
     userId: client.user.id,
     timestamp: new Date().toISOString(),
   });
+  sendPresenceSnapshot(client);
+  broadcastPresenceJoined(client);
+}
+
+function handleCursorMessage(client: SyncClient, message: { anchor?: unknown; head?: unknown }): void {
+  if (!client.documentId) {
+    return;
+  }
+
+  if (typeof message.anchor !== 'number' || typeof message.head !== 'number') {
+    return;
+  }
+
+  broadcastToDocument(
+    client.documentId,
+    {
+      type: 'presence.cursor',
+      documentId: client.documentId,
+      user: getPresenceUser(client),
+      anchor: message.anchor,
+      head: message.head,
+      timestamp: new Date().toISOString(),
+    },
+    client.id,
+  );
 }
 
 function handleWebSocketMessage(client: SyncClient, raw: Buffer): void {
@@ -142,70 +265,22 @@ function handleWebSocketMessage(client: SyncClient, raw: Buffer): void {
     return;
   }
 
-  const typedMessage = message as { type?: unknown; documentId?: unknown };
-
-  if (typedMessage.type === 'join' && typeof typedMessage.documentId === 'string') {
-    const documentId = typedMessage.documentId;
-    void joinDocument(client, documentId).catch(() => {
-      sendJson(client.socket, { type: 'error', message: 'Unable to join document.' });
-    });
-  }
-}
-
-function handleGraphqlMessage(client: SyncClient, raw: Buffer): void {
-  let message: unknown;
-
-  try {
-    message = JSON.parse(raw.toString());
-  } catch {
-    sendJson(client.socket, { type: 'error', payload: { message: 'Invalid JSON message.' } });
-    return;
-  }
-
-  if (typeof message !== 'object' || message === null || !('type' in message)) {
-    return;
-  }
-
   const typedMessage = message as {
-    id?: string;
-    type?: string;
-    payload?: {
-      query?: string;
-      variables?: {
-        documentId?: string;
-      };
-    };
+    type?: unknown;
+    documentId?: unknown;
+    anchor?: unknown;
+    head?: unknown;
   };
 
-  if (typedMessage.type === 'connection_init') {
-    sendJson(client.socket, { type: 'connection_ack' });
+  if (typedMessage.type === 'join' && typeof typedMessage.documentId === 'string') {
+    void joinDocument(client, typedMessage.documentId).catch(() => {
+      sendJson(client.socket, { type: 'error', message: 'Unable to join document.' });
+    });
     return;
   }
 
-  if (typedMessage.type === 'subscribe' && typedMessage.payload?.variables?.documentId) {
-    void joinDocument(client, typedMessage.payload.variables.documentId)
-      .then(() => {
-        sendJson(client.socket, {
-          id: typedMessage.id,
-          type: 'next',
-          payload: {
-            data: {
-              documentSubscriptionReady: true,
-            },
-          },
-        });
-      })
-      .catch(() => {
-        sendJson(client.socket, {
-          id: typedMessage.id,
-          type: 'error',
-          payload: { message: 'Unable to subscribe to document updates.' },
-        });
-      });
-  }
-
-  if (typedMessage.type === 'complete') {
-    client.documentId = null;
+  if (typedMessage.type === 'presence.cursor') {
+    handleCursorMessage(client, typedMessage);
   }
 }
 
@@ -216,14 +291,7 @@ export function publishDocumentUpdate(event: DocumentUpdateEvent): void {
     }
 
     if (client.mode === 'graphql-subscription') {
-      sendJson(client.socket, {
-        type: 'next',
-        payload: {
-          data: {
-            documentUpdated: event,
-          },
-        },
-      });
+      sendGraphqlDocumentUpdate(client.socket, event, sendJson);
       continue;
     }
 
@@ -256,6 +324,7 @@ export function attachDocumentSync(server: Server): void {
 
       websocketServer.handleUpgrade(request, socket, head, (websocket) => {
         const client: SyncClient = {
+          id: createClientId(),
           socket: websocket,
           user,
           mode,
@@ -268,15 +337,34 @@ export function attachDocumentSync(server: Server): void {
           const buffer = Buffer.isBuffer(raw) ? raw : Buffer.from(raw as ArrayBuffer);
 
           if (mode === 'graphql-subscription') {
-            handleGraphqlMessage(client, buffer);
+            handleGraphqlSubscriptionMessage({
+              client,
+              raw: buffer,
+              joinDocument: (documentId) => joinDocument(client, documentId),
+              sendJson,
+            });
             return;
           }
 
           handleWebSocketMessage(client, buffer);
         });
 
-        websocket.on('close', () => {
+        websocket.on('error', () => {
+          const documentId = client.documentId;
           clients.delete(client);
+
+          if (documentId) {
+            broadcastPresenceLeft(client, documentId);
+          }
+        });
+
+        websocket.on('close', () => {
+          const documentId = client.documentId;
+          clients.delete(client);
+
+          if (documentId) {
+            broadcastPresenceLeft(client, documentId);
+          }
         });
       });
     });

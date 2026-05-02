@@ -16,71 +16,27 @@ import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
 import { useAuth } from "@/features/auth";
-import {
-  getConflictDocument,
-  normalizeDocument,
-  type Document,
-  type UpdateDocumentInput,
-  useDocumentsStore,
-} from "@/features/documents";
+import { useDocumentsStore } from "@/features/documents";
 import EditorArea from "../components/EditorArea";
 import EditorTitleBar from "../components/EditorTitleBar";
 import EditorToolbar from "../components/EditorToolbar";
 import PresenceBar from "../components/PresenceBar";
 import {
-  createGraphqlSubscriptionClient,
-  createRestPollingClient,
-  createWebSocketClient,
-  type SyncMetricsEvent,
-  type SyncMode,
-} from "../services/documentSync";
+  RemoteCursorExtension,
+  setRemoteCursors,
+} from "../extensions/RemoteCursorExtension";
+import { useDocumentSyncSession } from "../hooks/useDocumentSyncSession";
+import { useEditorAutosave } from "../hooks/useEditorAutosave";
+import { useSyncMetrics } from "../hooks/useSyncMetrics";
 import { useEditorSessionStore } from "../store/editorSessionStore";
-import type { EditorSyncMetrics } from "../types";
+import type { SyncMode } from "../services/documentSync";
 
 const emptyDocumentContent = { type: "doc", content: [] };
-
-function upsertDocument(documents: Document[], incoming: Document): Document[] {
-  const normalizedDocument = normalizeDocument(incoming);
-  const index = documents.findIndex((doc) => doc.id === normalizedDocument.id);
-
-  if (index === -1) {
-    return [normalizedDocument, ...documents];
-  }
-
-  const nextDocuments = [...documents];
-  nextDocuments[index] = normalizedDocument;
-  return nextDocuments;
-}
-
-function calculateLatency(sentAt?: string): number | null {
-  if (!sentAt) {
-    return null;
-  }
-
-  const sentAtMs = new Date(sentAt).getTime();
-
-  if (Number.isNaN(sentAtMs)) {
-    return null;
-  }
-
-  return Date.now() - sentAtMs;
-}
-
-function createInitialMetrics(): EditorSyncMetrics {
-  return {
-    requests: 0,
-    messagesReceived: 0,
-    writesSent: 0,
-    conflicts: 0,
-    lastLatencyMs: null,
-    samples: [],
-  };
-}
 
 export default function EditorPage() {
   const { id } = useParams();
   const { token } = useAuth();
-  const { documents, updateDocument, refreshDocument } = useDocumentsStore();
+  const { documents, refreshDocument } = useDocumentsStore();
 
   const sessionDocumentId = useEditorSessionStore((s) => s.documentId);
   const titleDraft = useEditorSessionStore((s) => s.titleDraft);
@@ -95,139 +51,64 @@ export default function EditorPage() {
   const [syncMode, setSyncMode] = useState<SyncMode>("websocket");
   const [pollIntervalMs, setPollIntervalMs] = useState(2000);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
-  const [metrics, setMetrics] = useState<EditorSyncMetrics>(createInitialMetrics);
-
+  const [localRevision, setLocalRevision] = useState(1);
   const titleRef = useRef("");
-  const idRef = useRef(id);
-  const revisionRef = useRef(1);
-  const saveChainRef = useRef<Promise<void>>(Promise.resolve());
-
-  useEffect(() => {
-    idRef.current = id;
-  }, [id]);
+  const cursorSendTimerRef = useRef<number | null>(null);
+  const appliedEditorRevisionRef = useRef<number | null>(null);
 
   const currentDocument = useMemo(() => {
     if (!id) return undefined;
     return documents.find((doc) => doc.id === id);
   }, [documents, id]);
 
-  useEffect(() => {
-    revisionRef.current = currentDocument?.revision ?? revisionRef.current;
-  }, [currentDocument?.revision]);
+  const {
+    metrics,
+    recordMetric,
+    recordModeSwitch,
+    resetMetrics,
+    exportMetrics,
+  } = useSyncMetrics(syncMode, id ?? null);
 
-  const recordMetric = useCallback((event: SyncMetricsEvent) => {
-    setMetrics((currentMetrics) => {
-      const latencyMs =
-        event.type === "received" ? calculateLatency(event.sentAt) : undefined;
-      const timestamp =
-        event.type === "sent"
-          ? event.sentAt
-          : event.type === "received"
-            ? event.receivedAt
-            : event.timestamp;
-
-      return {
-        requests:
-          currentMetrics.requests + (event.type === "request" ? 1 : 0),
-        messagesReceived:
-          currentMetrics.messagesReceived + (event.type === "received" ? 1 : 0),
-        writesSent:
-          currentMetrics.writesSent + (event.type === "sent" ? 1 : 0),
-        conflicts:
-          currentMetrics.conflicts + (event.type === "conflict" ? 1 : 0),
-        lastLatencyMs:
-          latencyMs === undefined || latencyMs === null
-            ? currentMetrics.lastLatencyMs
-            : latencyMs,
-        samples: [
-          ...currentMetrics.samples,
-          {
-            mode: event.mode,
-            type: event.type,
-            timestamp,
-            latencyMs: latencyMs ?? undefined,
-          },
-        ].slice(-500),
-      };
-    });
+  const handleRemoteTitleChange = useCallback((title: string) => {
+    titleRef.current = title;
   }, []);
 
-  const applyIncomingDocument = useCallback((incomingDocument: Document) => {
-    const normalizedDocument = normalizeDocument(incomingDocument);
+  const {
+    applyDocumentEvent,
+    connectionState,
+    presenceUsers,
+    remoteCursors,
+    sendCursor,
+  } = useDocumentSyncSession({
+    documentId: id,
+    token,
+    syncMode,
+    pollIntervalMs,
+    localRevision,
+    onRevisionChange: setLocalRevision,
+    onTitleChange: handleRemoteTitleChange,
+    onMetric: recordMetric,
+  });
 
-    if (normalizedDocument.revision < revisionRef.current) {
-      return;
-    }
-
-    revisionRef.current = normalizedDocument.revision;
-    titleRef.current = normalizedDocument.title;
-    useDocumentsStore.setState((state) => ({
-      documents: upsertDocument(state.documents, normalizedDocument),
-    }));
-  }, []);
-
-  const saveDocument = useCallback(
-    (input: Omit<UpdateDocumentInput, "expectedRevision">) => {
-      if (!idRef.current || !token) {
-        return;
-      }
-
-      saveChainRef.current = saveChainRef.current
-        .catch(() => undefined)
-        .then(async () => {
-          const sentAt = new Date().toISOString();
-          setIsSaving(true);
-          recordMetric({ type: "sent", mode: syncMode, sentAt });
-          recordMetric({ type: "request", mode: syncMode, timestamp: sentAt });
-
-          try {
-            const updatedDocument = await updateDocument(
-              idRef.current!,
-              {
-                ...input,
-                expectedRevision: revisionRef.current,
-              },
-              token,
-            );
-
-            revisionRef.current = updatedDocument.revision;
-            setConflictMessage(null);
-            markSaved();
-          } catch (error) {
-            const conflictDocument = getConflictDocument(error);
-
-            if (conflictDocument) {
-              revisionRef.current = conflictDocument.revision;
-              titleRef.current = conflictDocument.title;
-              setConflictMessage("Conflict resolved with server revision.");
-              recordMetric({
-                type: "conflict",
-                mode: syncMode,
-                timestamp: new Date().toISOString(),
-              });
-              applyIncomingDocument(conflictDocument);
-              return;
-            }
-
-            console.error(error);
-          } finally {
-            setIsSaving(false);
-          }
-        });
-    },
-    [
-      applyIncomingDocument,
-      markSaved,
-      recordMetric,
-      setIsSaving,
-      syncMode,
-      token,
-      updateDocument,
-    ],
-  );
+  const { hasPendingLocalChanges, scheduleSave } = useEditorAutosave({
+    documentId: id,
+    token,
+    syncMode,
+    localRevision,
+    onRevisionChange: setLocalRevision,
+    onConflictMessageChange: setConflictMessage,
+    onDocumentEvent: applyDocumentEvent,
+    onMetric: recordMetric,
+    setIsSaving,
+    markSaved,
+  });
 
   useEffect(() => {
     titleRef.current = currentDocument?.title ?? "";
+
+    if (currentDocument) {
+      setLocalRevision(currentDocument.revision);
+    }
 
     if (id && currentDocument) {
       startSession(id, currentDocument.title);
@@ -244,33 +125,6 @@ export default function EditorPage() {
     if (!id || !token || currentDocument) return;
     void refreshDocument(id, token);
   }, [currentDocument, id, refreshDocument, token]);
-
-  useEffect(() => {
-    if (!id || !token) {
-      return;
-    }
-
-    const options = {
-      documentId: id,
-      token,
-      pollIntervalMs,
-      getLocalRevision: () => revisionRef.current,
-      onDocument: applyIncomingDocument,
-      onMetric: recordMetric,
-    };
-    const client =
-      syncMode === "rest-polling"
-        ? createRestPollingClient(options)
-        : syncMode === "graphql-subscription"
-          ? createGraphqlSubscriptionClient(options)
-          : createWebSocketClient(options);
-
-    client.connect();
-
-    return () => {
-      client.disconnect();
-    };
-  }, [applyIncomingDocument, id, pollIntervalMs, recordMetric, syncMode, token]);
 
   const editor = useEditor({
     extensions: [
@@ -301,31 +155,68 @@ export default function EditorPage() {
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
+      RemoteCursorExtension,
     ],
     content: "",
     onUpdate({ editor }) {
-      saveDocument({
-        title: titleRef.current,
-        content: editor.getJSON(),
+      scheduleSave(() => {
+        return {
+          title: titleRef.current,
+          content: editor.getJSON(),
+        };
       });
+    },
+    onSelectionUpdate({ editor }) {
+      if (cursorSendTimerRef.current !== null) {
+        return;
+      }
+
+      cursorSendTimerRef.current = window.setTimeout(() => {
+        cursorSendTimerRef.current = null;
+        sendCursor(editor.state.selection.anchor, editor.state.selection.head);
+      }, 80);
     },
   });
 
   useEffect(() => {
+    return () => {
+      if (cursorSendTimerRef.current !== null) {
+        window.clearTimeout(cursorSendTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setRemoteCursors(editor, remoteCursors);
+  }, [editor, remoteCursors]);
+
+  useEffect(() => {
     if (!currentDocument || !editor) return;
+    if (hasPendingLocalChanges && editor.isFocused) return;
+    if (appliedEditorRevisionRef.current === currentDocument.revision) return;
 
     const currentJSON = currentDocument.content ?? emptyDocumentContent;
-    const editorJSON = editor.getJSON();
-
-    if (JSON.stringify(editorJSON) !== JSON.stringify(currentJSON)) {
-      editor.commands.setContent(currentJSON, {
-        emitUpdate: false,
-      });
-    }
-  }, [currentDocument, editor]);
+    editor.commands.setContent(currentJSON, {
+      emitUpdate: false,
+    });
+    appliedEditorRevisionRef.current = currentDocument.revision;
+  }, [currentDocument, editor, hasPendingLocalChanges]);
 
   const displayedTitle =
     sessionDocumentId === id ? titleDraft : currentDocument?.title ?? "";
+
+  const handleSyncModeChange = useCallback(
+    (nextMode: SyncMode) => {
+      if (nextMode === syncMode) {
+        return;
+      }
+
+      setSyncMode(nextMode);
+      setConflictMessage(null);
+      recordModeSwitch(nextMode);
+    },
+    [recordModeSwitch, syncMode],
+  );
 
   return (
     <div className="flex h-screen flex-col bg-(--bg)">
@@ -335,6 +226,7 @@ export default function EditorPage() {
         lastSavedAt={lastSavedAt}
         revision={currentDocument?.revision}
         syncMode={syncMode}
+        connectionState={connectionState}
         conflictMessage={conflictMessage}
         onTitleChange={(value) => {
           titleRef.current = value;
@@ -345,15 +237,16 @@ export default function EditorPage() {
             currentDocument?.content ??
             emptyDocumentContent;
 
-          saveDocument({
-            title: value,
-            content: currentContent,
+          scheduleSave(() => {
+            return {
+              title: value,
+              content: currentContent,
+            };
           });
         }}
-        onSyncModeChange={setSyncMode}
-        onExportMetrics={() => {
-          console.table(metrics.samples);
-        }}
+        onSyncModeChange={handleSyncModeChange}
+        onExportMetrics={exportMetrics}
+        onResetMetrics={() => resetMetrics(syncMode)}
       />
 
       <EditorToolbar editor={editor} />
@@ -361,6 +254,8 @@ export default function EditorPage() {
       <PresenceBar
         metrics={metrics}
         pollIntervalMs={pollIntervalMs}
+        connectionState={connectionState}
+        presenceUsers={presenceUsers}
         onPollIntervalChange={(intervalMs) => {
           setPollIntervalMs(Math.max(500, intervalMs || 500));
         }}

@@ -1,4 +1,7 @@
-import type { SyncMode } from "../services/documentSync";
+import type {
+  SyncConnectionState,
+  SyncMode,
+} from "../services/documentSync";
 import EditorHeader from "./EditorHeader";
 
 type Props = {
@@ -7,10 +10,12 @@ type Props = {
   lastSavedAt?: string | null;
   revision?: number;
   syncMode: SyncMode;
+  connectionState: SyncConnectionState;
   conflictMessage: string | null;
   onTitleChange: (value: string) => void;
   onSyncModeChange: (mode: SyncMode) => void;
   onExportMetrics: () => void;
+  onResetMetrics: () => void;
 };
 
 export default function EditorTitleBar(props: Props) {

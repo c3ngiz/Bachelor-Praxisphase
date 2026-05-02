@@ -8,6 +8,12 @@ import type {
 } from "../types/document.types";
 import { normalizeDocument, normalizeDocuments } from "../types/document.types";
 
+export type DocumentConflict = {
+  expectedRevision: number;
+  actualRevision: number;
+  document: Document;
+};
+
 type DocumentConflictPayload = {
   conflict?: {
     expectedRevision: number;
@@ -16,18 +22,26 @@ type DocumentConflictPayload = {
   document?: Document;
 };
 
-export function getConflictDocument(error: unknown): Document | null {
+export function getDocumentConflict(error: unknown): DocumentConflict | null {
   if (!(error instanceof ApiError) || error.status !== 409) {
     return null;
   }
 
   const payload = error.data as DocumentConflictPayload | null;
 
-  if (!payload?.document) {
+  if (!payload?.document || !payload.conflict) {
     return null;
   }
 
-  return normalizeDocument(payload.document);
+  return {
+    expectedRevision: payload.conflict.expectedRevision,
+    actualRevision: payload.conflict.actualRevision,
+    document: normalizeDocument(payload.document),
+  };
+}
+
+export function getConflictDocument(error: unknown): Document | null {
+  return getDocumentConflict(error)?.document ?? null;
 }
 
 export async function listDocuments(
