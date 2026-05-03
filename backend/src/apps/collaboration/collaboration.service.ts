@@ -74,7 +74,11 @@ export async function loadCollaborationDocument(documentName: string): Promise<Y
   }
 
   const document = await findRestDocumentById(documentId);
-  const initialContent = toRestDocument(document!).content ?? emptyDocumentContent;
+  if (!document) {
+    throw new HttpError(StatusCodes.NOT_FOUND, "Document not found.");
+  }
+
+  const initialContent = toRestDocument(document).content ?? emptyDocumentContent;
 
   return TiptapTransformer.toYdoc(
     initialContent,

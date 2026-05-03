@@ -72,7 +72,7 @@ export default function DocumentRow({
                         variant="secondary"
                         className="px-3 py-1 text-xs"
                         onClick={() => onRename?.(document.id)}
-                        disabled={isSelectionMode}
+                        disabled={isSelectionMode || !document.canEdit}
                     >
                         Rename
                     </Button>
@@ -81,7 +81,7 @@ export default function DocumentRow({
                         variant="ghost"
                         className="px-3 py-1 text-xs text-red-500"
                         onClick={() => onDelete?.(document.id)}
-                        disabled={isSelectionMode}
+                        disabled={isSelectionMode || !document.canDelete}
                     >
                         Delete
                     </Button>

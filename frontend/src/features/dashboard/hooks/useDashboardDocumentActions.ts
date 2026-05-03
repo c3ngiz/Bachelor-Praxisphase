@@ -92,6 +92,10 @@ export function useDashboardDocumentActions({
       throw new Error("You must be signed in to rename documents.");
     }
 
+    if (!selectedDocument.canEdit) {
+      throw new Error("You do not have permission to rename this document.");
+    }
+
     await updateDocument(
       selectedDocument.id,
       {
@@ -108,12 +112,26 @@ export function useDashboardDocumentActions({
     }
 
     if (selectedCount > 1) {
-      await deleteDocuments(selectedDocumentIds, token);
+      const deletableIds = documents
+        .filter((document) => selectedDocumentIds.includes(document.id) && document.canDelete)
+        .map((document) => document.id);
+
+      if (deletableIds.length !== selectedDocumentIds.length) {
+        throw new Error("Only document owners can delete selected documents.");
+      }
+
+      await deleteDocuments(deletableIds, token);
       clearSelection();
       return;
     }
 
     if (selectedDocumentId) {
+      const document = documents.find((item) => item.id === selectedDocumentId);
+
+      if (!document?.canDelete) {
+        throw new Error("Only the owner can delete this document.");
+      }
+
       await deleteDocument(selectedDocumentId, token);
       clearSelection();
     }

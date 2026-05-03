@@ -66,6 +66,10 @@ export type GraphqlDocument = {
   ownerId: string;
   ownerName: string;
   collaborators: GraphqlDocumentCollaborator[];
+  currentUserRole: GraphqlDocumentRole | null;
+  canEdit: boolean;
+  canShare: boolean;
+  canDelete: boolean;
   lastEditedById: string;
   lastEditedByName: string;
   lastEditedAt: string;

@@ -31,9 +31,11 @@ npm run prisma:migrate
 ```bash
 npm run dev:rest
 npm run dev:graphql
+npm run dev:collaboration
 ```
 
-`npm run dev` defaults to the REST backend.
+`npm run dev` defaults to the REST backend. Start `dev:collaboration` beside REST
+or GraphQL when using the editor's Live sync mode.
 
 Production entrypoints:
 
@@ -41,6 +43,7 @@ Production entrypoints:
 npm run build
 npm run start:rest
 npm run start:graphql
+npm run start:collaboration
 ```
 
 ## REST Backend

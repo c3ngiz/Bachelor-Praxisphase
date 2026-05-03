@@ -109,9 +109,11 @@ export function useDocumentSyncSession({
     const connectionId = connectionIdRef.current;
 
     if (!documentId || !token) {
-      setConnectionState("disconnected");
-      setPresenceUsers([]);
-      setRemoteCursors([]);
+      queueMicrotask(() => {
+        setConnectionState("disconnected");
+        setPresenceUsers([]);
+        setRemoteCursors([]);
+      });
       return;
     }
 
@@ -158,8 +160,14 @@ export function useDocumentSyncSession({
       );
     };
 
-    setPresenceUsers([]);
-    setRemoteCursors([]);
+    queueMicrotask(() => {
+      if (connectionIdRef.current !== connectionId) {
+        return;
+      }
+
+      setPresenceUsers([]);
+      setRemoteCursors([]);
+    });
 
     const options = {
       documentId,

@@ -2,7 +2,11 @@ import { Prisma } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { GraphqlBackendError } from "../common/errors.js";
 import type { GraphqlAuthUser } from "../auth/auth.dto.js";
-import type { GraphqlDocument, GraphqlDocumentCollaborator } from "./document.dto.js";
+import type {
+  GraphqlDocument,
+  GraphqlDocumentCollaborator,
+  GraphqlDocumentRole,
+} from "./document.dto.js";
 
 export type GraphqlDocumentRecord = {
   id: string;
@@ -99,8 +103,25 @@ export function normalizeGraphqlCollaborators(
   return Array.from(deduped.values());
 }
 
+export type GraphqlDocumentCapabilities = {
+  currentUserRole: GraphqlDocumentRole | null;
+  canEdit: boolean;
+  canShare: boolean;
+  canDelete: boolean;
+};
+
+const defaultGraphqlDocumentCapabilities: GraphqlDocumentCapabilities = {
+  currentUserRole: null,
+  canEdit: false,
+  canShare: false,
+  canDelete: false,
+};
+
 /** Maps a document database record into the GraphQL document shape. */
-export function toGraphqlDocument(document: GraphqlDocumentRecord): GraphqlDocument {
+export function toGraphqlDocument(
+  document: GraphqlDocumentRecord,
+  capabilities: GraphqlDocumentCapabilities = defaultGraphqlDocumentCapabilities,
+): GraphqlDocument {
   return {
     id: document.id,
     title: document.title,
@@ -115,6 +136,10 @@ export function toGraphqlDocument(document: GraphqlDocumentRecord): GraphqlDocum
     ownerId: document.ownerId,
     ownerName: document.ownerName,
     collaborators: getGraphqlDocumentCollaborators(document.collaborators),
+    currentUserRole: capabilities.currentUserRole,
+    canEdit: capabilities.canEdit,
+    canShare: capabilities.canShare,
+    canDelete: capabilities.canDelete,
     lastEditedById: document.lastEditedById,
     lastEditedByName: document.lastEditedByName,
     lastEditedAt: document.lastEditedAt.toISOString(),

@@ -31,6 +31,10 @@ export interface Document {
   ownerName: string;
 
   collaborators: DocumentCollaborator[];
+  currentUserRole: DocumentRole | null;
+  canEdit: boolean;
+  canShare: boolean;
+  canDelete: boolean;
 
   lastEditedById: string;
   lastEditedByName: string;
@@ -68,6 +72,10 @@ export function normalizeDocument(document: Document): Document {
     ...document,
     revision: document.revision ?? 1,
     collaborators: document.collaborators ?? [],
+    currentUserRole: document.currentUserRole ?? null,
+    canEdit: document.canEdit ?? false,
+    canShare: document.canShare ?? false,
+    canDelete: document.canDelete ?? false,
   };
 }
 

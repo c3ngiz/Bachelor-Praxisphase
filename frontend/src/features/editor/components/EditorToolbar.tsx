@@ -24,6 +24,7 @@ import ToolbarIconButton from "./toolbar/ToolbarIconButton";
 
 type Props = {
   editor: Editor | null;
+  canEdit: boolean;
 };
 
 type ToolbarGroupProps = {
@@ -136,40 +137,45 @@ function ExportGroup() {
   );
 }
 
-export default function EditorToolbar({ editor }: Props) {
+export default function EditorToolbar({ editor, canEdit }: Props) {
   if (!editor) return null;
 
   return (
     <div className="docflow-editor-toolbar border-b border-(--border) bg-(--bg-subtle)/95 px-4 py-2 sm:px-6">
       <div className="mx-auto flex max-w-7xl justify-center overflow-x-auto overflow-y-visible">
         <div className="inline-flex min-w-max items-center gap-2 px-1">
-          <ToolbarGroup className="w-44">
-            <TextStyleDropdown editor={editor} />
-          </ToolbarGroup>
+          <fieldset
+            disabled={!canEdit}
+            className="contents disabled:pointer-events-none disabled:opacity-55"
+          >
+            <ToolbarGroup className="w-44">
+              <TextStyleDropdown editor={editor} />
+            </ToolbarGroup>
 
-          <Divider vertical className="h-7 shrink-0" />
+            <Divider vertical className="h-7 shrink-0" />
 
-          <ToolbarGroup className="w-44">
-            <FontFamilyDropdown editor={editor} />
-          </ToolbarGroup>
+            <ToolbarGroup className="w-44">
+              <FontFamilyDropdown editor={editor} />
+            </ToolbarGroup>
 
-          <ToolbarGroup className="w-32">
-            <FontSizeDropdown editor={editor} />
-          </ToolbarGroup>
+            <ToolbarGroup className="w-32">
+              <FontSizeDropdown editor={editor} />
+            </ToolbarGroup>
 
-          <Divider vertical className="h-7 shrink-0" />
+            <Divider vertical className="h-7 shrink-0" />
 
-          <TextFormatGroup editor={editor} />
+            <TextFormatGroup editor={editor} />
 
-          <Divider vertical className="h-7 shrink-0" />
+            <Divider vertical className="h-7 shrink-0" />
 
-          <ListGroup editor={editor} />
+            <ListGroup editor={editor} />
 
-          <Divider vertical className="h-7 shrink-0" />
+            <Divider vertical className="h-7 shrink-0" />
 
-          <AlignmentGroup editor={editor} />
+            <AlignmentGroup editor={editor} />
 
-          <Divider vertical className="h-7 shrink-0" />
+            <Divider vertical className="h-7 shrink-0" />
+          </fieldset>
 
           <ExportGroup />
         </div>

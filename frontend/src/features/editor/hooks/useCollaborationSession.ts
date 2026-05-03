@@ -101,15 +101,21 @@ export function useCollaborationSession({
 
   useEffect(() => {
     if (!enabled || !documentId || !token || !collaborationUser) {
-      setDocument(null);
-      setProvider(null);
-      setPresenceUsers([]);
-      setConnectionState("disconnected");
+      queueMicrotask(() => {
+        setDocument(null);
+        setProvider(null);
+        setPresenceUsers([]);
+        setConnectionState("disconnected");
+      });
       return;
     }
 
+    let isDisposed = false;
     const ydoc = new Y.Doc();
-    const persistence = new IndexeddbPersistence(`docflow:${documentId}`, ydoc);
+    const persistence = new IndexeddbPersistence(
+      `docflow:${collaborationUser.id}:${documentId}`,
+      ydoc,
+    );
     const hocuspocusProvider = new HocuspocusProvider({
       url: COLLABORATION_WS_URL,
       name: `document:${documentId}`,
@@ -133,10 +139,16 @@ export function useCollaborationSession({
     });
 
     hocuspocusProvider.setAwarenessField("user", collaborationUser);
-    setDocument(ydoc);
-    setProvider(hocuspocusProvider);
+    queueMicrotask(() => {
+      if (isDisposed) return;
+
+      setDocument(ydoc);
+      setProvider(hocuspocusProvider);
+    });
 
     return () => {
+      isDisposed = true;
+
       if (typingTimerRef.current !== null) {
         window.clearTimeout(typingTimerRef.current);
         typingTimerRef.current = null;

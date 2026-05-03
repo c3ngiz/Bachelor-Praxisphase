@@ -4,6 +4,7 @@ type Props = {
   count: number;
   onClear: () => void;
   onDelete: () => void;
+  canDelete?: boolean;
 };
 
 /**
@@ -13,6 +14,7 @@ export default function MultiSelectToolbar({
   count,
   onClear,
   onDelete,
+  canDelete = true,
 }: Props) {
   return (
     <div
@@ -33,7 +35,7 @@ export default function MultiSelectToolbar({
           Clear
         </Button>
 
-        <Button variant="danger" onClick={onDelete}>
+        <Button variant="danger" onClick={onDelete} disabled={!canDelete}>
           Delete
         </Button>
       </div>

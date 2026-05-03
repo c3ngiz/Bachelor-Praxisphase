@@ -104,6 +104,13 @@ export default function DashboardPage() {
   });
 
   const isBulkDelete = selectedCount > 1;
+  const canDeleteSelection = useMemo(() => {
+    if (selectedCount === 0) return false;
+
+    return selectedDocumentIds.every((id) => {
+      return documents.find((document) => document.id === id)?.canDelete;
+    });
+  }, [documents, selectedCount, selectedDocumentIds]);
 
   const activeCollectionDetails = useMemo(() => {
     return getDashboardCollection(
@@ -183,6 +190,7 @@ export default function DashboardPage() {
           count={selectedCount}
           onClear={clearSelection}
           onDelete={() => handleOpenDeleteModal()}
+          canDelete={canDeleteSelection}
         />
       ) : null}
 

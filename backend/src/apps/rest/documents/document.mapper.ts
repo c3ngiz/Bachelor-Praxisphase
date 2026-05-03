@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { HttpError } from "../common/errors/httpError.js";
 import type { RestAuthUser } from "../auth/auth.dto.js";
-import type { RestDocument, RestDocumentCollaborator } from "./document.dto.js";
+import type { RestDocument, RestDocumentCollaborator, RestDocumentRole } from "./document.dto.js";
 
 export type RestDocumentRecord = {
   id: string;
@@ -99,8 +99,25 @@ export function normalizeRestCollaborators(
   return Array.from(deduped.values());
 }
 
+export type RestDocumentCapabilities = {
+  currentUserRole: RestDocumentRole | null;
+  canEdit: boolean;
+  canShare: boolean;
+  canDelete: boolean;
+};
+
+const defaultRestDocumentCapabilities: RestDocumentCapabilities = {
+  currentUserRole: null,
+  canEdit: false,
+  canShare: false,
+  canDelete: false,
+};
+
 /** Maps a document database record into the REST document response shape. */
-export function toRestDocument(document: RestDocumentRecord): RestDocument {
+export function toRestDocument(
+  document: RestDocumentRecord,
+  capabilities: RestDocumentCapabilities = defaultRestDocumentCapabilities,
+): RestDocument {
   return {
     id: document.id,
     title: document.title,
@@ -115,6 +132,10 @@ export function toRestDocument(document: RestDocumentRecord): RestDocument {
     ownerId: document.ownerId,
     ownerName: document.ownerName,
     collaborators: getRestDocumentCollaborators(document.collaborators),
+    currentUserRole: capabilities.currentUserRole,
+    canEdit: capabilities.canEdit,
+    canShare: capabilities.canShare,
+    canDelete: capabilities.canDelete,
     lastEditedById: document.lastEditedById,
     lastEditedByName: document.lastEditedByName,
     lastEditedAt: document.lastEditedAt.toISOString(),

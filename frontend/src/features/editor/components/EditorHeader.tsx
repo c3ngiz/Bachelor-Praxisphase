@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import AppLogo from "@/features/dashboard/components/layout/AppLogo";
+import { AppLogo } from "@/features/dashboard";
 import { Button } from "@/shared/components/ui";
 import type {
   SyncConnectionState,
@@ -15,6 +15,7 @@ type Props = {
   isSaving?: boolean;
   lastSavedAt?: string | null;
   revision?: number;
+  canEdit: boolean;
   syncMode: SyncMode;
   connectionState: SyncConnectionState;
   conflictMessage: string | null;
@@ -29,6 +30,7 @@ export default function EditorHeader({
   isSaving = false,
   lastSavedAt,
   revision,
+  canEdit,
   syncMode,
   connectionState,
   conflictMessage,
@@ -67,6 +69,7 @@ export default function EditorHeader({
           isSaving={isSaving}
           lastSavedAt={lastSavedAt}
           revision={revision}
+          canEdit={canEdit}
           onTitleChange={onTitleChange}
         />
 

@@ -19,7 +19,11 @@ import {
   toGraphqlDocument,
   toGraphqlPrismaNonNullJsonValue,
 } from "./document.mapper.js";
-import { canGraphqlAccessDocument, canGraphqlEditDocument } from "./document.permissions.js";
+import {
+  canGraphqlAccessDocument,
+  canGraphqlEditDocument,
+  getGraphqlDocumentCapabilities,
+} from "./document.permissions.js";
 import {
   createGraphqlDocumentRecord,
   deleteGraphqlDocumentRecord,
@@ -43,6 +47,13 @@ function createGraphqlConflictError(
   });
 }
 
+async function toGraphqlDocumentForUser(
+  document: Parameters<typeof toGraphqlDocument>[0],
+  userId: string,
+) {
+  return toGraphqlDocument(document, await getGraphqlDocumentCapabilities(document, userId));
+}
+
 /** Lists GraphQL documents visible to a user. */
 export async function listGraphqlDocuments(
   userId: string,
@@ -61,7 +72,7 @@ export async function listGraphqlDocuments(
 
   for (const document of documents) {
     if (await canGraphqlAccessDocument(document, userId)) {
-      visibleDocuments.push(toGraphqlDocument(document));
+      visibleDocuments.push(await toGraphqlDocumentForUser(document, userId));
     }
   }
 
@@ -83,7 +94,7 @@ export async function getGraphqlDocumentById(
     throw new GraphqlBackendError(StatusCodes.FORBIDDEN, "You do not have access to this document.");
   }
 
-  return toGraphqlDocument(document);
+  return toGraphqlDocumentForUser(document, userId);
 }
 
 /** Creates a GraphQL document in an accessible workspace. */
@@ -124,7 +135,7 @@ export async function createGraphqlDocument(
     lastOpenedAt: now,
   });
 
-  return toGraphqlDocument(document);
+  return toGraphqlDocumentForUser(document, authUser.id);
 }
 
 /** Updates GraphQL document content or metadata with optimistic revision checks. */
@@ -144,7 +155,10 @@ export async function updateGraphqlDocument(
   }
 
   if (input.expectedRevision !== existingDocument.revision) {
-    throw createGraphqlConflictError(input.expectedRevision, toGraphqlDocument(existingDocument));
+    throw createGraphqlConflictError(
+      input.expectedRevision,
+      await toGraphqlDocumentForUser(existingDocument, authUser.id),
+    );
   }
 
   const existingCollaborators = getGraphqlDocumentCollaborators(existingDocument.collaborators);
@@ -188,10 +202,13 @@ export async function updateGraphqlDocument(
   }
 
   if (updateResult.count === 0) {
-    throw createGraphqlConflictError(input.expectedRevision, toGraphqlDocument(currentDocument));
+    throw createGraphqlConflictError(
+      input.expectedRevision,
+      await toGraphqlDocumentForUser(currentDocument, authUser.id),
+    );
   }
 
-  return toGraphqlDocument(currentDocument);
+  return toGraphqlDocumentForUser(currentDocument, authUser.id);
 }
 
 /** Invites a collaborator to a GraphQL document. */
@@ -247,7 +264,7 @@ export async function inviteGraphqlDocumentCollaborator(
     editorName: authUser.name,
   });
 
-  return toGraphqlDocument(updatedDocument);
+  return toGraphqlDocumentForUser(updatedDocument, authUser.id);
 }
 
 /** Deletes a GraphQL document owned by the current user. */

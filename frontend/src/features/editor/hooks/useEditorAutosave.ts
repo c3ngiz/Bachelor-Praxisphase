@@ -100,6 +100,27 @@ export function useEditorAutosave({
       const conflict = getDocumentConflict(error);
 
       if (conflict) {
+        if (syncMode === "collaboration" && input.content === undefined) {
+          try {
+            const updatedDocument = await updateDocument(
+              documentId,
+              {
+                ...input,
+                expectedRevision: conflict.document.revision,
+              },
+              token,
+            );
+
+            revisionRef.current = updatedDocument.revision;
+            onRevisionChange(updatedDocument.revision);
+            onConflictMessageChange(null);
+            markSaved();
+            return;
+          } catch (retryError) {
+            console.error(retryError);
+          }
+        }
+
         pendingSnapshotFactoryRef.current = null;
         revisionRef.current = conflict.document.revision;
         onRevisionChange(conflict.document.revision);

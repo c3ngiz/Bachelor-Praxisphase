@@ -50,6 +50,10 @@ const documentFields = `
   collaborators {
     ${collaboratorFields}
   }
+  currentUserRole
+  canEdit
+  canShare
+  canDelete
   lastEditedById
   lastEditedByName
   lastEditedAt

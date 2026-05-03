@@ -39,6 +39,10 @@ export const typeDefs = /* GraphQL */ `
     ownerId: ID!
     ownerName: String!
     collaborators: [DocumentCollaborator!]!
+    currentUserRole: String
+    canEdit: Boolean!
+    canShare: Boolean!
+    canDelete: Boolean!
     lastEditedById: ID!
     lastEditedByName: String!
     lastEditedAt: String!

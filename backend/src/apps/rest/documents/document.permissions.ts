@@ -1,6 +1,7 @@
 import type { RestAuthUser } from "../auth/auth.dto.js";
 import { getRestWorkspaceMembership } from "../workspaces/workspace.service.js";
 import { getRestDocumentCollaborators } from "./document.mapper.js";
+import type { RestDocumentCapabilities } from "./document.mapper.js";
 
 type PermissionDocument = {
   ownerId: string;
@@ -51,4 +52,53 @@ export async function canRestEditDocument(
     !membership?.workspace.isDefault &&
     (membership?.role === "owner" || membership?.role === "editor")
   );
+}
+
+/** Computes the current user's document role and UI capabilities. */
+export async function getRestDocumentCapabilities(
+  document: PermissionDocument,
+  userId: string,
+): Promise<RestDocumentCapabilities> {
+  if (document.ownerId === userId) {
+    return {
+      currentUserRole: "owner",
+      canEdit: true,
+      canShare: true,
+      canDelete: true,
+    };
+  }
+
+  const collaborators = getRestDocumentCollaborators(document.collaborators);
+  const collaborator = collaborators.find((item) => item.id === userId);
+
+  if (collaborator) {
+    const canEdit = collaborator.role === "owner" || collaborator.role === "editor";
+
+    return {
+      currentUserRole: collaborator.role,
+      canEdit,
+      canShare: canEdit,
+      canDelete: false,
+    };
+  }
+
+  const membership = await getRestWorkspaceMembership(document.workspaceId, userId);
+
+  if (!membership || membership.workspace.isDefault) {
+    return {
+      currentUserRole: null,
+      canEdit: false,
+      canShare: false,
+      canDelete: false,
+    };
+  }
+
+  const canEdit = membership.role === "owner" || membership.role === "editor";
+
+  return {
+    currentUserRole: membership.role,
+    canEdit,
+    canShare: canEdit,
+    canDelete: false,
+  };
 }

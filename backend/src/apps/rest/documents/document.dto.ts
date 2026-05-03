@@ -64,6 +64,10 @@ export type RestDocument = {
   ownerId: string;
   ownerName: string;
   collaborators: RestDocumentCollaborator[];
+  currentUserRole: RestDocumentRole | null;
+  canEdit: boolean;
+  canShare: boolean;
+  canDelete: boolean;
   lastEditedById: string;
   lastEditedByName: string;
   lastEditedAt: string;

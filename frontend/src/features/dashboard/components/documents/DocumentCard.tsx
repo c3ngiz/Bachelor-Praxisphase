@@ -158,6 +158,8 @@ export default function DocumentCard({
                                 </Menu.Item>
 
                                 <Menu.Item
+                                    disabled={!document.canEdit}
+                                    className="disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                                     onClick={(event) => {
                                         event.stopPropagation();
                                         onRename?.(document.id);
@@ -168,6 +170,8 @@ export default function DocumentCard({
                                 </Menu.Item>
 
                                 <Menu.Item
+                                    disabled={!document.canShare}
+                                    className="disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                                     onClick={(event) => {
                                         event.stopPropagation();
                                         setIsShareOpen(true);
@@ -179,6 +183,8 @@ export default function DocumentCard({
 
                                 <Menu.Item
                                     danger
+                                    disabled={!document.canDelete}
+                                    className="disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
                                     onClick={(event) => {
                                         event.stopPropagation();
                                         onDelete?.(document.id);

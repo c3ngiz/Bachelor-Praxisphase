@@ -1,5 +1,4 @@
-import { getDocument } from "@/features/documents/api/documentsApi";
-import type { Document } from "@/features/documents";
+import { getDocument, type Document } from "@/features/documents";
 
 export type SyncMode = "polling" | "collaboration";
 

@@ -15,6 +15,7 @@ type UseDocumentEditorInput = {
   scheduleSave: (createSnapshot: SnapshotFactory) => void;
   titleRef: MutableRefObject<string>;
   syncMode: SyncMode;
+  canEdit: boolean;
   collaboration: {
     document: Doc | null;
     provider: HocuspocusProvider | null;
@@ -31,6 +32,7 @@ export function useDocumentEditor({
   scheduleSave,
   titleRef,
   syncMode,
+  canEdit,
   collaboration,
 }: UseDocumentEditorInput): Editor | null {
   const appliedEditorSnapshotRef = useRef<string | null>(null);
@@ -58,8 +60,7 @@ export function useDocumentEditor({
     syncMode,
     collaboration.document,
     collaboration.provider,
-    collaboration.user?.name,
-    collaboration.user?.color,
+    collaboration.user,
   ]);
 
   const editor = useEditor(
@@ -69,7 +70,9 @@ export function useDocumentEditor({
         syncMode === "polling"
           ? currentDocument?.content ?? emptyDocumentContent
           : "",
-      editable: syncMode === "polling" || isCollaborationReady,
+      editable:
+        canEdit &&
+        (syncMode === "polling" || isCollaborationReady),
       onUpdate({ editor, transaction }) {
         if (syncMode === "collaboration") {
           if (transaction.docChanged) {
@@ -93,8 +96,17 @@ export function useDocumentEditor({
       collaboration.user?.name,
       collaboration.user?.color,
       currentDocument?.id,
+      canEdit,
     ],
   );
+
+  useEffect(() => {
+    editor?.setEditable(
+      canEdit &&
+        (syncMode === "polling" || isCollaborationReady),
+      false,
+    );
+  }, [canEdit, editor, isCollaborationReady, syncMode]);
 
   useEffect(() => {
     appliedEditorSnapshotRef.current = null;

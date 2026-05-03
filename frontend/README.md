@@ -17,11 +17,18 @@ Copy `.env.example` to `.env`:
 cp .env.example .env
 ```
 
-## Expected backend URL
+## Expected backend URLs
 
 ```env
+VITE_BACKEND_KIND=rest
 VITE_API_URL=http://localhost:4000/api
+VITE_REST_API_URL=http://localhost:4000/api
+VITE_GRAPHQL_API_URL=http://localhost:4000/graphql
+VITE_COLLABORATION_WS_URL=ws://localhost:4100
 ```
+
+Use `VITE_BACKEND_KIND=graphql` to run CRUD flows against the GraphQL backend.
+The editor's Live mode always connects to the collaboration WebSocket URL.
 
 ## Required app wiring
 

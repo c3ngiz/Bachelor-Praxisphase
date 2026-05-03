@@ -16,7 +16,11 @@ import {
   toRestDocument,
   toRestPrismaNonNullJsonValue,
 } from "./document.mapper.js";
-import { canRestAccessDocument, canRestEditDocument } from "./document.permissions.js";
+import {
+  canRestAccessDocument,
+  canRestEditDocument,
+  getRestDocumentCapabilities,
+} from "./document.permissions.js";
 import {
   createRestDocumentRecord,
   deleteRestDocumentRecord,
@@ -37,6 +41,10 @@ function createRestConflictError(expectedRevision: number, currentDocument: Rest
   });
 }
 
+async function toRestDocumentForUser(document: Parameters<typeof toRestDocument>[0], userId: string) {
+  return toRestDocument(document, await getRestDocumentCapabilities(document, userId));
+}
+
 /** Lists REST documents visible to a user. */
 export async function listRestDocuments(
   userId: string,
@@ -55,7 +63,7 @@ export async function listRestDocuments(
 
   for (const document of documents) {
     if (await canRestAccessDocument(document, userId)) {
-      visibleDocuments.push(toRestDocument(document));
+      visibleDocuments.push(await toRestDocumentForUser(document, userId));
     }
   }
 
@@ -77,7 +85,7 @@ export async function getRestDocumentById(
     throw new HttpError(StatusCodes.FORBIDDEN, "You do not have access to this document.");
   }
 
-  return toRestDocument(document);
+  return toRestDocumentForUser(document, userId);
 }
 
 /** Creates a REST document in an accessible workspace. */
@@ -117,7 +125,7 @@ export async function createRestDocument(
     lastOpenedAt: now,
   });
 
-  return toRestDocument(document);
+  return toRestDocumentForUser(document, authUser.id);
 }
 
 /** Updates REST document content or metadata with optimistic revision checks. */
@@ -137,7 +145,10 @@ export async function updateRestDocument(
   }
 
   if (input.expectedRevision !== existingDocument.revision) {
-    throw createRestConflictError(input.expectedRevision, toRestDocument(existingDocument));
+    throw createRestConflictError(
+      input.expectedRevision,
+      await toRestDocumentForUser(existingDocument, authUser.id),
+    );
   }
 
   const existingCollaborators = getRestDocumentCollaborators(existingDocument.collaborators);
@@ -182,10 +193,13 @@ export async function updateRestDocument(
   }
 
   if (updateResult.count === 0) {
-    throw createRestConflictError(input.expectedRevision, toRestDocument(currentDocument));
+    throw createRestConflictError(
+      input.expectedRevision,
+      await toRestDocumentForUser(currentDocument, authUser.id),
+    );
   }
 
-  return toRestDocument(currentDocument);
+  return toRestDocumentForUser(currentDocument, authUser.id);
 }
 
 /** Invites a collaborator to a REST document. */
@@ -241,7 +255,7 @@ export async function inviteRestDocumentCollaborator(
     editorName: authUser.name,
   });
 
-  return toRestDocument(updatedDocument);
+  return toRestDocumentForUser(updatedDocument, authUser.id);
 }
 
 /** Deletes a REST document owned by the current user. */

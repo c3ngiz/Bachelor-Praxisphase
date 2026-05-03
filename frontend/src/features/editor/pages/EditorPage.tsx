@@ -42,6 +42,7 @@ export default function EditorPage() {
     if (!id) return undefined;
     return documents.find((doc) => doc.id === id);
   }, [documents, id]);
+  const canEditCurrentDocument = currentDocument?.canEdit ?? false;
 
   const {
     metrics,
@@ -72,6 +73,16 @@ export default function EditorPage() {
     user,
     enabled: syncMode === "collaboration",
   });
+  const collaborationEditorUser = useMemo(() => {
+    if (!collaborationSession.collaborationUser) {
+      return null;
+    }
+
+    return {
+      name: collaborationSession.collaborationUser.name,
+      color: collaborationSession.collaborationUser.color,
+    };
+  }, [collaborationSession.collaborationUser]);
 
   const { hasPendingLocalChanges, scheduleSave } = useEditorAutosave({
     documentId: id,
@@ -92,15 +103,11 @@ export default function EditorPage() {
     scheduleSave,
     titleRef,
     syncMode,
+    canEdit: canEditCurrentDocument,
     collaboration: {
       document: collaborationSession.document,
       provider: collaborationSession.provider,
-      user: collaborationSession.collaborationUser
-        ? {
-            name: collaborationSession.collaborationUser.name,
-            color: collaborationSession.collaborationUser.color,
-          }
-        : null,
+      user: collaborationEditorUser,
       markTyping: collaborationSession.markTyping,
     },
   });
@@ -109,7 +116,9 @@ export default function EditorPage() {
     titleRef.current = currentDocument?.title ?? "";
 
     if (currentDocument) {
-      setLocalRevision(currentDocument.revision);
+      queueMicrotask(() => {
+        setLocalRevision(currentDocument.revision);
+      });
     }
 
     if (id && currentDocument) {
@@ -160,22 +169,27 @@ export default function EditorPage() {
         isSaving={isSaving}
         lastSavedAt={lastSavedAt}
         revision={currentDocument?.revision}
+        canEdit={canEditCurrentDocument}
         syncMode={syncMode}
         connectionState={connectionState}
         conflictMessage={conflictMessage}
         onTitleChange={(value) => {
+          if (!canEditCurrentDocument) return;
+
           titleRef.current = value;
           setTitleDraft(value);
 
-          const currentContent =
-            editor?.getJSON() ??
-            currentDocument?.content ??
-            emptyDocumentContent;
-
           scheduleSave(() => {
+            if (syncMode === "collaboration") {
+              return { title: value };
+            }
+
             return {
               title: value,
-              content: currentContent,
+              content:
+                editor?.getJSON() ??
+                currentDocument?.content ??
+                emptyDocumentContent,
             };
           });
         }}
@@ -184,7 +198,7 @@ export default function EditorPage() {
         onResetMetrics={() => resetMetrics(syncMode)}
       />
 
-      <EditorToolbar editor={editor} />
+      <EditorToolbar editor={editor} canEdit={canEditCurrentDocument} />
       <EditorArea editor={editor} />
       <PresenceBar
         metrics={metrics}

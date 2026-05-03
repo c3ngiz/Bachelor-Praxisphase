@@ -9,6 +9,7 @@ type Props = {
   isSaving?: boolean;
   lastSavedAt?: string | null;
   revision?: number;
+  canEdit: boolean;
   syncMode: SyncMode;
   connectionState: SyncConnectionState;
   conflictMessage: string | null;

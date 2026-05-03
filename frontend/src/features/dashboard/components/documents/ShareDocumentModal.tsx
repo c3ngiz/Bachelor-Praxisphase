@@ -55,7 +55,7 @@ export default function ShareDocumentModal({
     : ACCESS_OPTIONS.filter((option) => option.value !== "private");
 
   async function handleInvite() {
-    if (!token) return;
+    if (!token || !document.canShare) return;
 
     try {
       setIsSubmitting(true);
@@ -111,7 +111,7 @@ export default function ShareDocumentModal({
             setEmail(event.target.value);
             if (error) setError(null);
           }}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !document.canShare}
         />
 
         <Select
@@ -119,7 +119,7 @@ export default function ShareDocumentModal({
           value={role}
           onChange={(event) => setRole(event.target.value)}
           options={ROLE_OPTIONS}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !document.canShare}
         />
 
         <Select
@@ -129,6 +129,7 @@ export default function ShareDocumentModal({
             setAccess(event.target.value as Document["visibility"])
           }
           options={accessOptions}
+          disabled={!document.canShare}
         />
 
         {activeWorkspace?.isDefault ? (
@@ -197,7 +198,7 @@ export default function ShareDocumentModal({
 
           <Button
             onClick={() => void handleInvite()}
-            disabled={!email.trim() || isSubmitting}
+            disabled={!email.trim() || isSubmitting || !document.canShare}
           >
             <MailPlus size={16} />
             {isSubmitting ? "Inviting..." : "Invite"}

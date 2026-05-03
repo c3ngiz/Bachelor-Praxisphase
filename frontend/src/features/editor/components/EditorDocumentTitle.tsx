@@ -7,6 +7,7 @@ type Props = {
   isSaving?: boolean;
   lastSavedAt?: string | null;
   revision?: number;
+  canEdit: boolean;
   onTitleChange: (value: string) => void;
 };
 
@@ -26,6 +27,7 @@ export default function EditorDocumentTitle({
   isSaving = false,
   lastSavedAt,
   revision,
+  canEdit,
   onTitleChange,
 }: Props) {
   return (
@@ -39,7 +41,8 @@ export default function EditorDocumentTitle({
           aria-label="Document title"
           value={title}
           onChange={(event) => onTitleChange(event.target.value)}
-          className="h-10 w-full rounded-md border border-transparent bg-transparent px-2 text-base font-semibold text-white outline-none transition-[background-color,border-color] placeholder:text-white/45 hover:bg-white/6 focus:border-white/18 focus:bg-white/8 sm:text-lg"
+          readOnly={!canEdit}
+          className="h-10 w-full rounded-md border border-transparent bg-transparent px-2 text-base font-semibold text-white outline-none transition-[background-color,border-color] placeholder:text-white/45 read-only:cursor-default read-only:text-white/78 hover:bg-white/6 focus:border-white/18 focus:bg-white/8 read-only:hover:bg-transparent read-only:focus:border-transparent read-only:focus:bg-transparent sm:text-lg"
         />
       </div>
 
