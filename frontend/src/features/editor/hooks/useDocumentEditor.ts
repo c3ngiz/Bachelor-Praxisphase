@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { type Editor, useEditor } from "@tiptap/react";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type { Doc } from "yjs";
@@ -38,23 +38,37 @@ export function useDocumentEditor({
     syncMode === "collaboration" &&
     Boolean(collaboration.document && collaboration.provider && collaboration.user);
 
-  const extensions =
-    syncMode === "collaboration" &&
-    collaboration.document &&
-    collaboration.provider &&
-    collaboration.user
-      ? createEditorExtensions({
-          mode: "collaboration",
-          document: collaboration.document,
-          provider: collaboration.provider,
-          user: collaboration.user,
-        })
-      : createEditorExtensions({ mode: "polling" });
+  const extensions = useMemo(() => {
+    if (
+      syncMode === "collaboration" &&
+      collaboration.document &&
+      collaboration.provider &&
+      collaboration.user
+    ) {
+      return createEditorExtensions({
+        mode: "collaboration",
+        document: collaboration.document,
+        provider: collaboration.provider,
+        user: collaboration.user,
+      });
+    }
+
+    return createEditorExtensions({ mode: "polling" });
+  }, [
+    syncMode,
+    collaboration.document,
+    collaboration.provider,
+    collaboration.user?.name,
+    collaboration.user?.color,
+  ]);
 
   const editor = useEditor(
     {
       extensions,
-      content: "",
+      content:
+        syncMode === "polling"
+          ? currentDocument?.content ?? emptyDocumentContent
+          : "",
       editable: syncMode === "polling" || isCollaborationReady,
       onUpdate({ editor, transaction }) {
         if (syncMode === "collaboration") {
@@ -78,6 +92,7 @@ export function useDocumentEditor({
       collaboration.provider,
       collaboration.user?.name,
       collaboration.user?.color,
+      currentDocument?.id,
     ],
   );
 
