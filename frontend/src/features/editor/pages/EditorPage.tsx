@@ -48,13 +48,13 @@ export default function EditorPage() {
   const markSaved = useEditorSessionStore((s) => s.markSaved);
   const endSession = useEditorSessionStore((s) => s.endSession);
 
-  const [syncMode, setSyncMode] = useState<SyncMode>("websocket");
+  const [syncMode, setSyncMode] = useState<SyncMode>("polling");
   const [pollIntervalMs, setPollIntervalMs] = useState(2000);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [localRevision, setLocalRevision] = useState(1);
   const titleRef = useRef("");
   const cursorSendTimerRef = useRef<number | null>(null);
-  const appliedEditorRevisionRef = useRef<number | null>(null);
+  const appliedEditorSnapshotRef = useRef<string | null>(null);
 
   const currentDocument = useMemo(() => {
     if (!id) return undefined;
@@ -116,15 +116,19 @@ export default function EditorPage() {
   }, [currentDocument, id, startSession]);
 
   useEffect(() => {
+    appliedEditorSnapshotRef.current = null;
+  }, [id]);
+
+  useEffect(() => {
     return () => {
       endSession();
     };
   }, [endSession]);
 
   useEffect(() => {
-    if (!id || !token || currentDocument) return;
+    if (!id || !token) return;
     void refreshDocument(id, token);
-  }, [currentDocument, id, refreshDocument, token]);
+  }, [id, refreshDocument, token]);
 
   const editor = useEditor({
     extensions: [
@@ -193,13 +197,20 @@ export default function EditorPage() {
   useEffect(() => {
     if (!currentDocument || !editor) return;
     if (hasPendingLocalChanges && editor.isFocused) return;
-    if (appliedEditorRevisionRef.current === currentDocument.revision) return;
+
+    const editorSnapshotKey = [
+      currentDocument.id,
+      currentDocument.revision,
+      currentDocument.updatedAt,
+    ].join(":");
+
+    if (appliedEditorSnapshotRef.current === editorSnapshotKey) return;
 
     const currentJSON = currentDocument.content ?? emptyDocumentContent;
     editor.commands.setContent(currentJSON, {
       emitUpdate: false,
     });
-    appliedEditorRevisionRef.current = currentDocument.revision;
+    appliedEditorSnapshotRef.current = editorSnapshotKey;
   }, [currentDocument, editor, hasPendingLocalChanges]);
 
   const displayedTitle =

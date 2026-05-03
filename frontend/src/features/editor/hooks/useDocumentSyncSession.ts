@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  createGraphqlSubscriptionClient,
-  createRestPollingClient,
-  createWebSocketClient,
+  createPollingClient,
   type DocumentUpdateEvent,
   type PresenceUser,
   type RemoteCursor,
@@ -175,12 +173,7 @@ export function useDocumentSyncSession({
       onPresenceLeft: removeActivePresenceUser,
       onStatus: setActiveConnectionState,
     };
-    const client =
-      syncMode === "rest-polling"
-        ? createRestPollingClient(options)
-        : syncMode === "graphql-subscription"
-          ? createGraphqlSubscriptionClient(options)
-          : createWebSocketClient(options);
+    const client = createPollingClient(options);
 
     clientRef.current = client;
     client.connect();

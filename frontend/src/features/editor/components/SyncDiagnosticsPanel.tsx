@@ -1,4 +1,4 @@
-import { Braces, Download, Radio, RefreshCcw, RotateCcw } from "lucide-react";
+import { Download, RefreshCcw, RotateCcw } from "lucide-react";
 
 import { Badge, Button, SegmentedControl } from "@/shared/components/ui";
 import type { SegmentedControlOption } from "@/shared/components/ui";
@@ -18,19 +18,9 @@ type Props = {
 
 const syncModeOptions: SegmentedControlOption<SyncMode>[] = [
   {
-    value: "rest-polling",
-    label: "REST",
+    value: "polling",
+    label: "Polling",
     icon: <RefreshCcw size={14} />,
-  },
-  {
-    value: "websocket",
-    label: "WebSocket",
-    icon: <Radio size={14} />,
-  },
-  {
-    value: "graphql-subscription",
-    label: "GraphQL",
-    icon: <Braces size={14} />,
   },
 ];
 
@@ -38,7 +28,6 @@ const stateLabel: Record<SyncConnectionState, string> = {
   connected: "Connected",
   disconnected: "Offline",
   polling: "Polling",
-  reconnecting: "Reconnecting",
   error: "Sync error",
 };
 
@@ -46,7 +35,6 @@ const stateClassName: Record<SyncConnectionState, string> = {
   connected: "bg-white/10 text-white/72",
   disconnected: "bg-white/10 text-white/56",
   polling: "bg-indigo-100 text-indigo-700",
-  reconnecting: "bg-amber-100 text-amber-800",
   error: "bg-red-100 text-red-700",
 };
 

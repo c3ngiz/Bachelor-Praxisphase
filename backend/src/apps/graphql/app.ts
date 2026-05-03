@@ -31,6 +31,10 @@ export async function createGraphqlApp() {
   app.use(helmet());
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan("dev"));
+  app.use((_request, response, next) => {
+    response.setHeader("Cache-Control", "no-store");
+    next();
+  });
 
   app.get("/health", (_request, response) => {
     return response.status(StatusCodes.OK).json({ status: "ok", backend: "graphql" });
