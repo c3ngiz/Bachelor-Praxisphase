@@ -94,10 +94,20 @@ model Document {
   lastEditedByName String
   lastEditedAt     DateTime         @default(now())
   lastEditedBy     User             @relation("DocumentLastEditor", fields: [lastEditedById], references: [id], onDelete: Cascade)
+  collaborationState DocumentCollaborationState?
 
   @@index([ownerId])
   @@index([workspaceId])
   @@index([lastEditedById])
   @@index([revision])
   @@index([updatedAt])
+}
+
+model DocumentCollaborationState {
+  documentId String   @id
+  yjsState   Bytes
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }

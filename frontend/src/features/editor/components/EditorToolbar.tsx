@@ -6,6 +6,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  FileDown,
   Italic,
   List,
   ListOrdered,
@@ -122,11 +123,24 @@ function AlignmentGroup({ editor }: { editor: Editor }) {
   );
 }
 
+function ExportGroup() {
+  return (
+    <ToolbarGroup>
+      <ToolbarIconButton
+        label="PDF export"
+        isActive={false}
+        onPress={() => window.print()}
+        icon={FileDown}
+      />
+    </ToolbarGroup>
+  );
+}
+
 export default function EditorToolbar({ editor }: Props) {
   if (!editor) return null;
 
   return (
-    <div className="border-b border-(--border) bg-(--bg-subtle)/95 px-4 py-2 sm:px-6">
+    <div className="docflow-editor-toolbar border-b border-(--border) bg-(--bg-subtle)/95 px-4 py-2 sm:px-6">
       <div className="mx-auto flex max-w-7xl justify-center overflow-x-auto overflow-y-visible">
         <div className="inline-flex min-w-max items-center gap-2 px-1">
           <ToolbarGroup className="w-44">
@@ -154,6 +168,10 @@ export default function EditorToolbar({ editor }: Props) {
           <Divider vertical className="h-7 shrink-0" />
 
           <AlignmentGroup editor={editor} />
+
+          <Divider vertical className="h-7 shrink-0" />
+
+          <ExportGroup />
         </div>
       </div>
     </div>

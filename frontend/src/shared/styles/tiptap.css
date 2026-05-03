@@ -1,7 +1,7 @@
 /* ===== TipTap ===== */
 
 .ProseMirror {
-  min-height: 70vh;
+  min-height: calc(297mm - 48mm);
   outline: none;
 
   --textstyle-normal-size: 1rem;
@@ -43,4 +43,72 @@
 
 .ProseMirror li {
   margin: 0.2rem 0;
+}
+
+.docflow-page-surface {
+  aspect-ratio: 210 / 297;
+}
+
+.collaboration-carets__caret {
+  border-left: 2px solid;
+  border-right: 2px solid;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+.collaboration-carets__label {
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  left: -2px;
+  line-height: 1;
+  max-width: 10rem;
+  overflow: hidden;
+  padding: 0.25rem 0.4rem;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: -1.45rem;
+  white-space: nowrap;
+}
+
+@page {
+  margin: 20mm 18mm;
+  size: A4;
+}
+
+@media print {
+  body {
+    background: white;
+  }
+
+  header,
+  footer,
+  .docflow-editor-toolbar {
+    display: none !important;
+  }
+
+  .docflow-editor-shell {
+    display: block;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .docflow-page-surface {
+    aspect-ratio: auto;
+    border: 0;
+    box-shadow: none;
+    margin: 0;
+    max-width: none;
+    min-height: auto;
+    padding: 0;
+    width: auto;
+  }
+
+  .ProseMirror {
+    min-height: auto;
+  }
 }

@@ -1,41 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import BulletList from "@tiptap/extension-bullet-list";
-import Color from "@tiptap/extension-color";
-import FontFamily from "@tiptap/extension-font-family";
-import Highlight from "@tiptap/extension-highlight";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
-import OrderedList from "@tiptap/extension-ordered-list";
-import TextAlign from "@tiptap/extension-text-align";
-import FontSize from "@tiptap/extension-text-style/font-size";
-import { TextStyle } from "@tiptap/extension-text-style";
-import Underline from "@tiptap/extension-underline";
-import { useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-
 import { useAuth } from "@/features/auth";
 import { useDocumentsStore } from "@/features/documents";
 import EditorArea from "../components/EditorArea";
 import EditorTitleBar from "../components/EditorTitleBar";
 import EditorToolbar from "../components/EditorToolbar";
 import PresenceBar from "../components/PresenceBar";
-import {
-  RemoteCursorExtension,
-  setRemoteCursors,
-} from "../extensions/RemoteCursorExtension";
+import { useCollaborationSession } from "../hooks/useCollaborationSession";
+import { useDocumentEditor } from "../hooks/useDocumentEditor";
 import { useDocumentSyncSession } from "../hooks/useDocumentSyncSession";
 import { useEditorAutosave } from "../hooks/useEditorAutosave";
 import { useSyncMetrics } from "../hooks/useSyncMetrics";
-import { useEditorSessionStore } from "../store/editorSessionStore";
 import type { SyncMode } from "../services/documentSync";
+import { useEditorSessionStore } from "../store/editorSessionStore";
 
 const emptyDocumentContent = { type: "doc", content: [] };
 
 export default function EditorPage() {
   const { id } = useParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { documents, refreshDocument } = useDocumentsStore();
 
   const sessionDocumentId = useEditorSessionStore((s) => s.documentId);
@@ -53,8 +37,6 @@ export default function EditorPage() {
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [localRevision, setLocalRevision] = useState(1);
   const titleRef = useRef("");
-  const cursorSendTimerRef = useRef<number | null>(null);
-  const appliedEditorSnapshotRef = useRef<string | null>(null);
 
   const currentDocument = useMemo(() => {
     if (!id) return undefined;
@@ -73,14 +55,8 @@ export default function EditorPage() {
     titleRef.current = title;
   }, []);
 
-  const {
-    applyDocumentEvent,
-    connectionState,
-    presenceUsers,
-    remoteCursors,
-    sendCursor,
-  } = useDocumentSyncSession({
-    documentId: id,
+  const pollingSession = useDocumentSyncSession({
+    documentId: syncMode === "polling" ? id : undefined,
     token,
     syncMode,
     pollIntervalMs,
@@ -90,6 +66,13 @@ export default function EditorPage() {
     onMetric: recordMetric,
   });
 
+  const collaborationSession = useCollaborationSession({
+    documentId: id,
+    token,
+    user,
+    enabled: syncMode === "collaboration",
+  });
+
   const { hasPendingLocalChanges, scheduleSave } = useEditorAutosave({
     documentId: id,
     token,
@@ -97,10 +80,29 @@ export default function EditorPage() {
     localRevision,
     onRevisionChange: setLocalRevision,
     onConflictMessageChange: setConflictMessage,
-    onDocumentEvent: applyDocumentEvent,
+    onDocumentEvent: pollingSession.applyDocumentEvent,
     onMetric: recordMetric,
     setIsSaving,
     markSaved,
+  });
+
+  const editor = useDocumentEditor({
+    currentDocument,
+    hasPendingLocalChanges,
+    scheduleSave,
+    titleRef,
+    syncMode,
+    collaboration: {
+      document: collaborationSession.document,
+      provider: collaborationSession.provider,
+      user: collaborationSession.collaborationUser
+        ? {
+            name: collaborationSession.collaborationUser.name,
+            color: collaborationSession.collaborationUser.color,
+          }
+        : null,
+      markTyping: collaborationSession.markTyping,
+    },
   });
 
   useEffect(() => {
@@ -116,10 +118,6 @@ export default function EditorPage() {
   }, [currentDocument, id, startSession]);
 
   useEffect(() => {
-    appliedEditorSnapshotRef.current = null;
-  }, [id]);
-
-  useEffect(() => {
     return () => {
       endSession();
     };
@@ -130,91 +128,17 @@ export default function EditorPage() {
     void refreshDocument(id, token);
   }, [id, refreshDocument, token]);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        bulletList: false,
-        orderedList: false,
-      }),
-      BulletList.configure({
-        keepMarks: true,
-        keepAttributes: false,
-      }),
-      OrderedList.configure({
-        keepMarks: true,
-        keepAttributes: false,
-      }),
-      TextStyle,
-      Color,
-      Highlight.configure({
-        multicolor: true,
-      }),
-      Image,
-      Link.configure({
-        openOnClick: false,
-      }),
-      Underline,
-      FontFamily,
-      FontSize,
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
-      RemoteCursorExtension,
-    ],
-    content: "",
-    onUpdate({ editor }) {
-      scheduleSave(() => {
-        return {
-          title: titleRef.current,
-          content: editor.getJSON(),
-        };
-      });
-    },
-    onSelectionUpdate({ editor }) {
-      if (cursorSendTimerRef.current !== null) {
-        return;
-      }
-
-      cursorSendTimerRef.current = window.setTimeout(() => {
-        cursorSendTimerRef.current = null;
-        sendCursor(editor.state.selection.anchor, editor.state.selection.head);
-      }, 80);
-    },
-  });
-
-  useEffect(() => {
-    return () => {
-      if (cursorSendTimerRef.current !== null) {
-        window.clearTimeout(cursorSendTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    setRemoteCursors(editor, remoteCursors);
-  }, [editor, remoteCursors]);
-
-  useEffect(() => {
-    if (!currentDocument || !editor) return;
-    if (hasPendingLocalChanges && editor.isFocused) return;
-
-    const editorSnapshotKey = [
-      currentDocument.id,
-      currentDocument.revision,
-      currentDocument.updatedAt,
-    ].join(":");
-
-    if (appliedEditorSnapshotRef.current === editorSnapshotKey) return;
-
-    const currentJSON = currentDocument.content ?? emptyDocumentContent;
-    editor.commands.setContent(currentJSON, {
-      emitUpdate: false,
-    });
-    appliedEditorSnapshotRef.current = editorSnapshotKey;
-  }, [currentDocument, editor, hasPendingLocalChanges]);
-
   const displayedTitle =
     sessionDocumentId === id ? titleDraft : currentDocument?.title ?? "";
+
+  const connectionState =
+    syncMode === "collaboration"
+      ? collaborationSession.connectionState
+      : pollingSession.connectionState;
+  const presenceUsers =
+    syncMode === "collaboration"
+      ? collaborationSession.presenceUsers
+      : pollingSession.presenceUsers;
 
   const handleSyncModeChange = useCallback(
     (nextMode: SyncMode) => {
@@ -265,6 +189,7 @@ export default function EditorPage() {
       <PresenceBar
         metrics={metrics}
         pollIntervalMs={pollIntervalMs}
+        syncMode={syncMode}
         connectionState={connectionState}
         presenceUsers={presenceUsers}
         onPollIntervalChange={(intervalMs) => {

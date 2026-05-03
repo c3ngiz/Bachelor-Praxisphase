@@ -1,16 +1,19 @@
 import { Clock3, Users } from "lucide-react";
 
 import type {
+  CollaborationPresenceUser,
   PresenceUser,
   SyncConnectionState,
+  SyncMode,
 } from "../services/documentSync";
 import type { EditorSyncMetrics } from "../types";
 
 type Props = {
   metrics: EditorSyncMetrics;
   pollIntervalMs: number;
+  syncMode: SyncMode;
   connectionState: SyncConnectionState;
-  presenceUsers: PresenceUser[];
+  presenceUsers: Array<PresenceUser | CollaborationPresenceUser>;
   onPollIntervalChange: (intervalMs: number) => void;
 };
 
@@ -28,16 +31,30 @@ function MetricItem({
   );
 }
 
-function PresencePill({ user }: { user: PresenceUser }) {
+function getPresenceColor(color: string): string {
+  if (color.startsWith("#") || color.startsWith("rgb") || color.startsWith("hsl")) {
+    return color;
+  }
+
+  return "#4943be";
+}
+
+function PresencePill({ user }: { user: PresenceUser | CollaborationPresenceUser }) {
+  const isTyping = "isTyping" in user && user.isTyping;
+
   return (
     <span className="inline-flex items-center gap-1.5 rounded-md bg-(--bg-subtle) px-2 py-1 text-xs font-semibold text-(--fg)">
       <span
-        className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-(--accent) text-[9px] text-white"
+        className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] text-white"
+        style={{ backgroundColor: getPresenceColor(user.color) }}
         title={user.name}
       >
         {user.initials}
       </span>
       {user.name}
+      {isTyping ? (
+        <span className="font-medium text-(--fg-muted)">typing</span>
+      ) : null}
     </span>
   );
 }
@@ -45,6 +62,7 @@ function PresencePill({ user }: { user: PresenceUser }) {
 export default function PresenceBar({
   metrics,
   pollIntervalMs,
+  syncMode,
   connectionState,
   presenceUsers,
   onPollIntervalChange,
@@ -88,20 +106,24 @@ export default function PresenceBar({
                 : `${Math.round(metrics.averageLatencyMs)}ms`
             }
           />
-          <span className="inline-flex items-center gap-1 whitespace-nowrap">
-            <Clock3 size={14} />
-            Poll
-            <input
-              aria-label="Polling interval in milliseconds"
-              type="number"
-              min={500}
-              step={500}
-              value={pollIntervalMs}
-              onChange={(event) => onPollIntervalChange(Number(event.target.value))}
-              className="h-7 w-20 rounded-md border border-(--border) bg-(--bg-subtle) px-2 text-xs font-semibold text-(--fg) outline-none focus:border-(--accent)"
-            />
-            ms
-          </span>
+          {syncMode === "polling" ? (
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Clock3 size={14} />
+              Poll
+              <input
+                aria-label="Polling interval in milliseconds"
+                type="number"
+                min={500}
+                step={500}
+                value={pollIntervalMs}
+                onChange={(event) =>
+                  onPollIntervalChange(Number(event.target.value))
+                }
+                className="h-7 w-20 rounded-md border border-(--border) bg-(--bg-subtle) px-2 text-xs font-semibold text-(--fg) outline-none focus:border-(--accent)"
+              />
+              ms
+            </span>
+          ) : null}
         </div>
       </div>
     </footer>

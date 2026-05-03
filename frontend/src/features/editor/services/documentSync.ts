@@ -1,7 +1,7 @@
 import { getDocument } from "@/features/documents/api/documentsApi";
 import type { Document } from "@/features/documents";
 
-export type SyncMode = "polling";
+export type SyncMode = "polling" | "collaboration";
 
 export type SyncConnectionState =
   | "connected"
@@ -14,6 +14,10 @@ export type PresenceUser = {
   name: string;
   initials: string;
   color: string;
+};
+
+export type CollaborationPresenceUser = PresenceUser & {
+  isTyping?: boolean;
 };
 
 export type RemoteCursor = {

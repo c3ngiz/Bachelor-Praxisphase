@@ -12,7 +12,10 @@
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
+    "@hocuspocus/provider": "^4.0.0",
     "@tiptap/extension-bullet-list": "^3.20.1",
+    "@tiptap/extension-collaboration": "^3.22.5",
+    "@tiptap/extension-collaboration-caret": "^3.22.5",
     "@tiptap/extension-color": "^3.20.1",
     "@tiptap/extension-font-family": "^3.20.1",
     "@tiptap/extension-highlight": "^3.20.1",
@@ -29,6 +32,8 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.1",
+    "y-indexeddb": "^9.0.12",
+    "yjs": "^13.6.30",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

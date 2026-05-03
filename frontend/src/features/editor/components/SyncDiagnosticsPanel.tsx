@@ -1,4 +1,4 @@
-import { Download, RefreshCcw, RotateCcw } from "lucide-react";
+import { Download, RefreshCcw, RotateCcw, Users } from "lucide-react";
 
 import { Badge, Button, SegmentedControl } from "@/shared/components/ui";
 import type { SegmentedControlOption } from "@/shared/components/ui";
@@ -21,6 +21,11 @@ const syncModeOptions: SegmentedControlOption<SyncMode>[] = [
     value: "polling",
     label: "Polling",
     icon: <RefreshCcw size={14} />,
+  },
+  {
+    value: "collaboration",
+    label: "Live",
+    icon: <Users size={14} />,
   },
 ];
 
