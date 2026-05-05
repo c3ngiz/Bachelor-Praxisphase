@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link2, MailPlus } from "lucide-react";
 
 import { Button, Input, Modal, Notice, Select } from "@/shared/components/ui";
 import { useAuth } from "@/features/auth";
-import type { Document } from "@/features/documents";
+import type { Document, DocumentRole } from "@/features/documents";
 import { useDocumentsStore } from "@/features/documents";
 import { useWorkspacesStore } from "@/features/workspaces";
+import type { WorkspaceRole } from "@/features/workspaces";
 
 type Props = {
   document: Document;
@@ -24,6 +25,15 @@ const ACCESS_OPTIONS = [
   { value: "workspace", label: "Workspace" },
 ];
 
+type AccessPerson = {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
+  role: DocumentRole | WorkspaceRole;
+  accessScope?: "workspace";
+};
+
 /**
  * ShareDocumentModal component.
  */
@@ -37,13 +47,16 @@ export default function ShareDocumentModal({
     (state) => state.inviteDocumentCollaborator,
   );
   const activeWorkspace = useWorkspacesStore((state) => state.activeWorkspace);
+  const workspaces = useWorkspacesStore((state) => state.workspaces);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("editor");
   const [access, setAccess] = useState(document.visibility);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const collaborators = document.collaborators ?? [];
-  const accessOptions = activeWorkspace?.isDefault
+  const documentWorkspace =
+    workspaces.find((workspace) => workspace.id === document.workspaceId) ??
+    activeWorkspace;
+  const accessOptions = documentWorkspace?.isDefault
     ? ACCESS_OPTIONS.map((option) =>
         option.value === "workspace"
           ? {
@@ -53,6 +66,35 @@ export default function ShareDocumentModal({
           : option,
       )
     : ACCESS_OPTIONS.filter((option) => option.value !== "private");
+  const peopleWithAccess = useMemo<AccessPerson[]>(() => {
+    const people = new Map<string, AccessPerson>();
+    const documentCollaborators = document.collaborators ?? [];
+
+    for (const collaborator of documentCollaborators) {
+      people.set(collaborator.id, collaborator);
+    }
+
+    if (access === "workspace" && documentWorkspace && !documentWorkspace.isDefault) {
+      for (const member of documentWorkspace.members) {
+        if (people.has(member.userId)) continue;
+
+        people.set(member.userId, {
+          id: member.userId,
+          name: member.name,
+          initials: member.initials,
+          color: member.avatarColor,
+          role: member.role,
+          accessScope: "workspace",
+        });
+      }
+    }
+
+    return Array.from(people.values());
+  }, [access, document.collaborators, documentWorkspace]);
+
+  useEffect(() => {
+    setAccess(document.visibility);
+  }, [document.id, document.visibility]);
 
   async function handleInvite() {
     if (!token || !document.canShare) return;
@@ -132,7 +174,7 @@ export default function ShareDocumentModal({
           disabled={!document.canShare}
         />
 
-        {activeWorkspace?.isDefault ? (
+        {documentWorkspace?.isDefault ? (
           <Notice>
             <Notice.Description>
               Your default workspace cannot be shared as a whole. Use individual
@@ -153,27 +195,29 @@ export default function ShareDocumentModal({
           </div>
 
           <div className="space-y-2">
-            {collaborators.map((collaborator) => (
+            {peopleWithAccess.map((person) => (
               <div
-                key={collaborator.id}
+                key={person.id}
                 className="flex items-center justify-between gap-3"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <div
                     className={[
                       "inline-flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-semibold text-white",
-                      collaborator.color,
+                      person.color,
                     ].join(" ")}
                   >
-                    {collaborator.initials}
+                    {person.initials}
                   </div>
 
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-(--fg)">
-                      {collaborator.name}
+                      {person.name}
                     </div>
                     <div className="truncate text-xs text-(--fg-muted)">
-                      {collaborator.role}
+                      {person.accessScope === "workspace"
+                        ? `workspace ${person.role}`
+                        : person.role}
                     </div>
                   </div>
                 </div>
