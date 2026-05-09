@@ -3,6 +3,7 @@ import { Building2, Globe } from 'lucide-react';
 
 import { Button, Card, Checkbox, Divider, Input } from '../../../shared/components';
 import { PasswordStrengthIndicator, SocialAuthButton } from '../components';
+import { useAuth } from '../hooks/useAuth';
 import {
   hasNoValidationErrors,
   validateEmail,
@@ -44,6 +45,7 @@ function validateSignUpForm(values: SignUpFormState): SignUpErrors {
 }
 
 export function SignUpPage(): JSX.Element {
+  const { error, isLoading, signUp } = useAuth();
   const [values, setValues] = useState<SignUpFormState>({
     acceptedTerms: false,
     confirmPassword: '',
@@ -53,13 +55,24 @@ export function SignUpPage(): JSX.Element {
   });
   const [errors, setErrors] = useState<SignUpErrors>({});
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     const nextErrors = validateSignUpForm(values);
     setErrors(nextErrors);
 
-    if (hasNoValidationErrors(nextErrors)) {
+    if (!hasNoValidationErrors(nextErrors)) {
+      return;
+    }
+
+    try {
+      await signUp({
+        email: values.email,
+        name: values.fullName,
+        password: values.password,
+      });
       window.location.assign('/dashboard');
+    } catch {
+      // The auth provider exposes normalized errors for this page to render.
     }
   }
 
@@ -78,6 +91,12 @@ export function SignUpPage(): JSX.Element {
       <Card className="shadow-lg shadow-slate-200/70">
         <Card.Content className="p-5 sm:p-6">
           <form className="grid gap-5" noValidate onSubmit={handleSubmit}>
+            {error ? (
+              <p className="m-0 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+                {error.message}
+              </p>
+            ) : null}
+
             <div className="grid gap-4">
               <Input
                 autoComplete="name"
@@ -159,7 +178,7 @@ export function SignUpPage(): JSX.Element {
               }
             />
 
-            <Button className="w-full" size="lg" type="submit">
+            <Button className="w-full" loading={isLoading} size="lg" type="submit">
               Create account
             </Button>
 

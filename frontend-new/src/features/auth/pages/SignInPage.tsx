@@ -3,6 +3,7 @@ import { Building2, Globe } from 'lucide-react';
 
 import { Button, Card, Checkbox, Divider, Input } from '../../../shared/components';
 import { SocialAuthButton } from '../components';
+import { useAuth } from '../hooks/useAuth';
 import {
   hasNoValidationErrors,
   validateEmail,
@@ -25,6 +26,7 @@ function validateSignInForm(values: SignInFormState): SignInErrors {
 }
 
 export function SignInPage(): JSX.Element {
+  const { error, isLoading, signIn } = useAuth();
   const [values, setValues] = useState<SignInFormState>({
     email: '',
     password: '',
@@ -32,13 +34,23 @@ export function SignInPage(): JSX.Element {
   });
   const [errors, setErrors] = useState<SignInErrors>({});
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     const nextErrors = validateSignInForm(values);
     setErrors(nextErrors);
 
-    if (hasNoValidationErrors(nextErrors)) {
+    if (!hasNoValidationErrors(nextErrors)) {
+      return;
+    }
+
+    try {
+      await signIn({
+        email: values.email,
+        password: values.password,
+      });
       window.location.assign('/dashboard');
+    } catch {
+      // The auth provider exposes normalized errors for this page to render.
     }
   }
 
@@ -57,6 +69,12 @@ export function SignInPage(): JSX.Element {
       <Card className="shadow-lg shadow-slate-200/70">
         <Card.Content className="p-5 sm:p-6">
           <form className="grid gap-5" noValidate onSubmit={handleSubmit}>
+            {error ? (
+              <p className="m-0 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+                {error.message}
+              </p>
+            ) : null}
+
             <div className="grid gap-4">
               <Input
                 autoComplete="email"
@@ -104,7 +122,7 @@ export function SignInPage(): JSX.Element {
               </a>
             </div>
 
-            <Button className="w-full" size="lg" type="submit">
+            <Button className="w-full" loading={isLoading} size="lg" type="submit">
               Sign in
             </Button>
 

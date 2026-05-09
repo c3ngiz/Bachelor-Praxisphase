@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
+  const didInitialRefresh = useRef(false);
 
   const runAuthRequest = useCallback(async (request: () => Promise<AuthUser | null>) => {
     setIsLoading(true);
@@ -126,6 +128,12 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   }, [runAuthRequest]);
 
   useEffect(() => {
+    if (didInitialRefresh.current) {
+      return;
+    }
+
+    didInitialRefresh.current = true;
+
     void refreshCurrentUser().catch(() => {
       void authService.signOut();
       setUser(null);
