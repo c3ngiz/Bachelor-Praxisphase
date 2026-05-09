@@ -12,4 +12,3 @@ export * from './RadioGroup';
 export * from './Select';
 export * from './Table';
 export * from './Textarea';
-export * from './examples';
