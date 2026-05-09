@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Building2, Globe } from 'lucide-react';
 
 import { Button, Card, Checkbox, Divider, Input } from '../../../shared/components';
 import { PasswordStrengthIndicator, SocialAuthButton } from '../components';
@@ -172,8 +173,8 @@ export function SignUpPage(): JSX.Element {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <SocialAuthButton mark="G">Google</SocialAuthButton>
-                <SocialAuthButton mark="S">SSO</SocialAuthButton>
+                <SocialAuthButton icon={<Globe className="h-4 w-4" />}>Google</SocialAuthButton>
+                <SocialAuthButton icon={<Building2 className="h-4 w-4" />}>SSO</SocialAuthButton>
               </div>
             </div>
 
