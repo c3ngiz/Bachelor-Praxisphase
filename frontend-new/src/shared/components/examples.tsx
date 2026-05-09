@@ -1,20 +1,29 @@
+import { Avatar } from './Avatar';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { Card } from './Card';
 import { Checkbox } from './Checkbox';
 import { Divider } from './Divider';
 import { Dropdown } from './Dropdown';
+import { Field } from './Field';
+import { Input } from './Input';
 import { Modal } from './Modal';
+import { RadioGroup } from './RadioGroup';
+import { Select } from './Select';
 import { Table } from './Table';
+import { Textarea } from './Textarea';
 
 export function SharedComponentsExample(): JSX.Element {
   return (
     <div className="space-y-8 p-6">
       <Card.Root hoverable>
         <Card.Header>
-          <div>
+          <div className="flex items-center gap-3">
+            <Avatar fallback="SC" alt="Shared components" />
+            <div>
             <h2 className="text-lg font-semibold text-slate-950">Shared components</h2>
             <p className="mt-1 text-sm text-slate-500">Composable primitives for application screens.</p>
+            </div>
           </div>
           <Badge variant="success">Ready</Badge>
         </Card.Header>
@@ -55,6 +64,55 @@ export function SharedComponentsExample(): JSX.Element {
             description="Send updates when documents change."
             defaultChecked
           />
+
+          <Divider />
+
+          <section className="grid gap-4 md:grid-cols-2" aria-labelledby="form-examples">
+            <h3 id="form-examples" className="text-sm font-semibold text-slate-950 md:col-span-2">
+              Form controls
+            </h3>
+            <Input
+              label="Project name"
+              name="projectName"
+              placeholder="Bachelor thesis"
+              description="Use a clear, recognizable name."
+            />
+            <Select
+              label="Status"
+              name="status"
+              defaultValue=""
+              placeholder="Select a status"
+              options={[
+                { label: 'Draft', value: 'draft' },
+                { label: 'In review', value: 'review' },
+                { label: 'Published', value: 'published' },
+              ]}
+            />
+            <Textarea
+              className="md:col-span-2"
+              label="Summary"
+              name="summary"
+              placeholder="Write a short summary..."
+            />
+            <RadioGroup.Root
+              className="md:col-span-2"
+              label="Visibility"
+              name="visibility"
+              description="Choose who can access this item."
+            >
+              <RadioGroup.Inline>
+                <RadioGroup.Item value="private" label="Private" description="Only you" defaultChecked />
+                <RadioGroup.Item value="team" label="Team" description="Workspace members" />
+              </RadioGroup.Inline>
+            </RadioGroup.Root>
+            <Field.Root className="md:col-span-2" id="custom-field" error="This custom field shows an error.">
+              <Field.Label>Custom composition</Field.Label>
+              <Field.Control>
+                <input className="h-10 rounded-lg border border-red-500 px-3 text-sm" />
+              </Field.Control>
+              <Field.Error />
+            </Field.Root>
+          </section>
 
           <Divider />
 
