@@ -1,6 +1,5 @@
 import { DashboardSummary } from '../components/DashboardSummary';
 import { useDashboard } from '../hooks/useDashboard';
-import { SharedComponentsExample } from '../../../shared/components';
 
 /** Dashboard landing page for authenticated users. */
 export function DashboardPage(): JSX.Element {

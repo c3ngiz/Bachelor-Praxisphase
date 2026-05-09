@@ -15,7 +15,7 @@ export function AppLayout({ routes, children }: AppLayoutProps): JSX.Element {
     <div className="app-shell">
       <nav className="app-nav" aria-label="Primary">
         {routes
-          .filter((route) => route.path !== '/login')
+          .filter((route) => route.path !== '/sign-in' && route.path !== '/sign-up')
           .map((route) => (
             <a href={route.path} key={route.path}>
               {route.label}

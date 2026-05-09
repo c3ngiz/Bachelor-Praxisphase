@@ -11,7 +11,6 @@ import {
   Modal,
   RadioGroup,
   Select,
-  SharedComponentsExample,
   Table,
   Textarea,
 } from '../../../shared/components';

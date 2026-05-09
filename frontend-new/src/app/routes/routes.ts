@@ -1,4 +1,4 @@
-import { LoginPage } from '../../features/auth';
+import { SignInPage, SignUpPage } from '../../features/auth';
 import { DashboardPage } from '../../features/dashboard';
 import { DocumentsPage } from '../../features/documents';
 import { EditorPage } from '../../features/editor';
@@ -7,7 +7,15 @@ import { ProfilePage } from '../../features/profile';
 import { SettingsPage } from '../../features/settings';
 
 /** Supported application route paths. */
-export type AppRoutePath = '/login' | '/dashboard' | '/documents' | '/editor' | '/example' | '/profile' | '/settings';
+export type AppRoutePath =
+  | '/sign-in'
+  | '/sign-up'
+  | '/dashboard'
+  | '/documents'
+  | '/editor'
+  | '/example'
+  | '/profile'
+  | '/settings';
 
 /** Route configuration entry used by the application router. */
 export interface AppRoute {
@@ -21,7 +29,8 @@ export interface AppRoute {
 
 /** Centralized application route configuration. */
 export const appRoutes: AppRoute[] = [
-  { path: '/login', label: 'Login', Component: LoginPage },
+  { path: '/sign-in', label: 'Sign In', Component: SignInPage },
+  { path: '/sign-up', label: 'Sign Up', Component: SignUpPage },
   { path: '/dashboard', label: 'Dashboard', Component: DashboardPage },
   { path: '/documents', label: 'Documents', Component: DocumentsPage },
   { path: '/editor', label: 'Editor', Component: EditorPage },
