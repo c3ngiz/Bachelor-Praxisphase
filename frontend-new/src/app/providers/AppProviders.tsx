@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { AuthProvider } from '../../features/auth';
 
 /** Props for the application provider composition component. */
 export interface AppProvidersProps {
@@ -8,5 +9,5 @@ export interface AppProvidersProps {
 
 /** Composes global providers for the application. */
 export function AppProviders({ children }: AppProvidersProps): JSX.Element {
-  return <>{children}</>;
+  return <AuthProvider>{children}</AuthProvider>;
 }
