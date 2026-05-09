@@ -2,6 +2,11 @@ import { useState, type FormEvent } from 'react';
 
 import { Button, Card, Checkbox, Divider, Input } from '../../../shared/components';
 import { SocialAuthButton } from '../components';
+import {
+  hasNoValidationErrors,
+  validateEmail,
+  validatePassword,
+} from '../utils/authValidation.utils';
 
 interface SignInFormState {
   email: string;
@@ -11,24 +16,11 @@ interface SignInFormState {
 
 type SignInErrors = Partial<Record<keyof Pick<SignInFormState, 'email' | 'password'>, string>>;
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 function validateSignInForm(values: SignInFormState): SignInErrors {
-  const errors: SignInErrors = {};
-
-  if (!values.email.trim()) {
-    errors.email = 'Email is required.';
-  } else if (!emailPattern.test(values.email)) {
-    errors.email = 'Enter a valid email address.';
-  }
-
-  if (!values.password) {
-    errors.password = 'Password is required.';
-  } else if (values.password.length < 8) {
-    errors.password = 'Password must be at least 8 characters.';
-  }
-
-  return errors;
+  return {
+    email: validateEmail(values.email),
+    password: validatePassword(values.password),
+  };
 }
 
 export function SignInPage(): JSX.Element {
@@ -44,7 +36,7 @@ export function SignInPage(): JSX.Element {
     const nextErrors = validateSignInForm(values);
     setErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length === 0) {
+    if (hasNoValidationErrors(nextErrors)) {
       window.location.assign('/dashboard');
     }
   }
@@ -52,7 +44,9 @@ export function SignInPage(): JSX.Element {
   return (
     <section className="w-full max-w-md">
       <div className="mb-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">Secure access</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
+          Secure access
+        </p>
         <h1 className="mt-3 text-3xl font-semibold text-slate-950">Welcome back</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           Sign in to continue working with your documents, profile, and dashboard.
@@ -68,7 +62,9 @@ export function SignInPage(): JSX.Element {
                 error={errors.email}
                 label="Email address"
                 name="email"
-                onChange={(event) => setValues((current) => ({ ...current, email: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, email: event.target.value }))
+                }
                 placeholder="you@example.com"
                 required
                 type="email"
@@ -80,7 +76,9 @@ export function SignInPage(): JSX.Element {
                 error={errors.password}
                 label="Password"
                 name="password"
-                onChange={(event) => setValues((current) => ({ ...current, password: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, password: event.target.value }))
+                }
                 placeholder="Enter your password"
                 required
                 type="password"
@@ -93,9 +91,14 @@ export function SignInPage(): JSX.Element {
                 checked={values.remember}
                 label="Remember me"
                 name="remember"
-                onChange={(event) => setValues((current) => ({ ...current, remember: event.target.checked }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, remember: event.target.checked }))
+                }
               />
-              <a className="font-medium text-slate-900 underline-offset-4 hover:underline" href="/forgot-password">
+              <a
+                className="font-medium text-slate-900 underline-offset-4 hover:underline"
+                href="/forgot-password"
+              >
                 Forgot password?
               </a>
             </div>
@@ -107,7 +110,9 @@ export function SignInPage(): JSX.Element {
             <div className="grid gap-4">
               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                 <Divider />
-                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">or</span>
+                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                  or
+                </span>
                 <Divider />
               </div>
 
@@ -119,7 +124,10 @@ export function SignInPage(): JSX.Element {
 
             <p className="m-0 text-center text-sm text-slate-600">
               New here?{' '}
-              <a className="font-semibold text-slate-950 underline-offset-4 hover:underline" href="/sign-up">
+              <a
+                className="font-semibold text-slate-950 underline-offset-4 hover:underline"
+                href="/sign-up"
+              >
                 Create an account
               </a>
             </p>

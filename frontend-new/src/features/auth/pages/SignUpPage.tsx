@@ -2,6 +2,11 @@ import { useState, type FormEvent } from 'react';
 
 import { Button, Card, Checkbox, Divider, Input } from '../../../shared/components';
 import { PasswordStrengthIndicator, SocialAuthButton } from '../components';
+import {
+  hasNoValidationErrors,
+  validateEmail,
+  validatePassword,
+} from '../utils/authValidation.utils';
 
 interface SignUpFormState {
   fullName: string;
@@ -14,8 +19,6 @@ interface SignUpFormState {
 type SignUpField = keyof SignUpFormState;
 type SignUpErrors = Partial<Record<SignUpField, string>>;
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 function validateSignUpForm(values: SignUpFormState): SignUpErrors {
   const errors: SignUpErrors = {};
 
@@ -23,17 +26,8 @@ function validateSignUpForm(values: SignUpFormState): SignUpErrors {
     errors.fullName = 'Full name is required.';
   }
 
-  if (!values.email.trim()) {
-    errors.email = 'Email is required.';
-  } else if (!emailPattern.test(values.email)) {
-    errors.email = 'Enter a valid email address.';
-  }
-
-  if (!values.password) {
-    errors.password = 'Password is required.';
-  } else if (values.password.length < 8) {
-    errors.password = 'Password must be at least 8 characters.';
-  }
+  errors.email = validateEmail(values.email);
+  errors.password = validatePassword(values.password);
 
   if (!values.confirmPassword) {
     errors.confirmPassword = 'Confirm your password.';
@@ -63,7 +57,7 @@ export function SignUpPage(): JSX.Element {
     const nextErrors = validateSignUpForm(values);
     setErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length === 0) {
+    if (hasNoValidationErrors(nextErrors)) {
       window.location.assign('/dashboard');
     }
   }
@@ -71,7 +65,9 @@ export function SignUpPage(): JSX.Element {
   return (
     <section className="w-full max-w-md">
       <div className="mb-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">Start fresh</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
+          Start fresh
+        </p>
         <h1 className="mt-3 text-3xl font-semibold text-slate-950">Create your account</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           Set up your workspace with the essentials, then move straight into your dashboard.
@@ -87,7 +83,9 @@ export function SignUpPage(): JSX.Element {
                 error={errors.fullName}
                 label="Full name"
                 name="fullName"
-                onChange={(event) => setValues((current) => ({ ...current, fullName: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, fullName: event.target.value }))
+                }
                 placeholder="Alex Morgan"
                 required
                 type="text"
@@ -99,7 +97,9 @@ export function SignUpPage(): JSX.Element {
                 error={errors.email}
                 label="Email address"
                 name="email"
-                onChange={(event) => setValues((current) => ({ ...current, email: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, email: event.target.value }))
+                }
                 placeholder="you@example.com"
                 required
                 type="email"
@@ -112,7 +112,9 @@ export function SignUpPage(): JSX.Element {
                   error={errors.password}
                   label="Password"
                   name="password"
-                  onChange={(event) => setValues((current) => ({ ...current, password: event.target.value }))}
+                  onChange={(event) =>
+                    setValues((current) => ({ ...current, password: event.target.value }))
+                  }
                   placeholder="Create a password"
                   required
                   type="password"
@@ -126,7 +128,9 @@ export function SignUpPage(): JSX.Element {
                 error={errors.confirmPassword}
                 label="Confirm password"
                 name="confirmPassword"
-                onChange={(event) => setValues((current) => ({ ...current, confirmPassword: event.target.value }))}
+                onChange={(event) =>
+                  setValues((current) => ({ ...current, confirmPassword: event.target.value }))
+                }
                 placeholder="Repeat your password"
                 required
                 type="password"
@@ -140,13 +144,18 @@ export function SignUpPage(): JSX.Element {
               label={
                 <span>
                   I agree to the{' '}
-                  <a className="font-semibold text-slate-950 underline-offset-4 hover:underline" href="/terms">
+                  <a
+                    className="font-semibold text-slate-950 underline-offset-4 hover:underline"
+                    href="/terms"
+                  >
                     terms and conditions
                   </a>
                 </span>
               }
               name="acceptedTerms"
-              onChange={(event) => setValues((current) => ({ ...current, acceptedTerms: event.target.checked }))}
+              onChange={(event) =>
+                setValues((current) => ({ ...current, acceptedTerms: event.target.checked }))
+              }
             />
 
             <Button className="w-full" size="lg" type="submit">
@@ -156,7 +165,9 @@ export function SignUpPage(): JSX.Element {
             <div className="grid gap-4">
               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                 <Divider />
-                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">or</span>
+                <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                  or
+                </span>
                 <Divider />
               </div>
 
@@ -168,7 +179,10 @@ export function SignUpPage(): JSX.Element {
 
             <p className="m-0 text-center text-sm text-slate-600">
               Already have an account?{' '}
-              <a className="font-semibold text-slate-950 underline-offset-4 hover:underline" href="/sign-in">
+              <a
+                className="font-semibold text-slate-950 underline-offset-4 hover:underline"
+                href="/sign-in"
+              >
                 Sign in
               </a>
             </p>

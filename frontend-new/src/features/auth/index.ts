@@ -4,4 +4,3 @@ export * from './pages/SignInPage';
 export * from './pages/SignUpPage';
 export * from './services/authService';
 export * from './types/auth.types';
-export * from './utils/auth.utils';
