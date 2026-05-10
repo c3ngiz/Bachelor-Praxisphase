@@ -44,6 +44,27 @@ select {
   padding: 1rem;
   border-bottom: 1px solid #d7dde5;
   background: #ffffff;
+  overflow-x: auto;
+}
+
+.app-nav__link {
+  border-radius: 0.5rem;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.app-nav__link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.app-nav__link--active {
+  background: #0f172a;
+  color: #ffffff;
 }
 
 .app-main {
@@ -52,9 +73,33 @@ select {
   padding: 2rem 0;
 }
 
+.app-main--workspace {
+  width: min(1440px, calc(100% - 2rem));
+}
+
 .auth-shell {
   display: grid;
   min-height: 100vh;
   place-items: center;
   padding: 1rem;
+}
+
+.workspace-page {
+  display: flex;
+  gap: 1rem;
+  min-height: calc(100vh - 8rem);
+}
+
+.workspace-page__sidebar {
+  flex: 0 0 16rem;
+}
+
+@media (max-width: 900px) {
+  .workspace-page {
+    flex-direction: column;
+  }
+
+  .workspace-page__sidebar {
+    flex: 0 0 auto;
+  }
 }

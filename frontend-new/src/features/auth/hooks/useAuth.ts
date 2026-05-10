@@ -26,6 +26,8 @@ export interface UseAuthResult {
   user: AuthUser | null;
   /** Whether any auth request is currently pending. */
   isLoading: boolean;
+  /** Whether the initial session refresh has completed. */
+  isInitialized: boolean;
   /** Last normalized auth error, when available. */
   error: ApiError | null;
   /** Whether a user is currently authenticated. */
@@ -68,6 +70,7 @@ const AuthContext = createContext<UseAuthResult | null>(null);
 export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const didInitialRefresh = useRef(false);
 
@@ -84,6 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       throw normalizedError;
     } finally {
       setIsLoading(false);
+      setIsInitialized(true);
     }
   }, []);
 
@@ -114,6 +118,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     try {
       await authService.signOut();
       setUser(null);
+      setIsInitialized(true);
     } catch (requestError) {
       const normalizedError = normalizeApiError(requestError);
       setError(normalizedError);
@@ -144,6 +149,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     () => ({
       error,
       isAuthenticated: Boolean(user),
+      isInitialized,
       isLoading,
       login: signIn,
       refreshCurrentUser,
@@ -152,7 +158,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       signUp,
       user,
     }),
-    [error, isLoading, refreshCurrentUser, signIn, signOut, signUp, user],
+    [error, isInitialized, isLoading, refreshCurrentUser, signIn, signOut, signUp, user],
   );
 
   return createElement(AuthContext.Provider, { value }, children);

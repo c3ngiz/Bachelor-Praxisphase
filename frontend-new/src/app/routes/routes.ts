@@ -5,17 +5,28 @@ import { EditorPage } from '../../features/editor';
 import { ExamplePage } from '../../features/example';
 import { ProfilePage } from '../../features/profile';
 import { SettingsPage } from '../../features/settings';
+import { WorkspacePage } from '../../features/workspace';
 
 /** Supported application route paths. */
 export type AppRoutePath =
   | '/sign-in'
   | '/sign-up'
   | '/dashboard'
+  | '/workspace'
+  | '/workspace/folder/:folderId'
   | '/documents'
   | '/editor'
   | '/example'
   | '/profile'
   | '/settings';
+
+/** Route match context passed to route components. */
+export interface AppRouteContext {
+  /** Matched browser pathname. */
+  pathname: string;
+  /** Dynamic route parameters parsed from the pathname. */
+  params: Record<string, string>;
+}
 
 /** Route configuration entry used by the application router. */
 export interface AppRoute {
@@ -24,14 +35,35 @@ export interface AppRoute {
   /** Human-readable navigation label. */
   label: string;
   /** Component rendered for the route. */
-  Component: () => JSX.Element;
+  Component: (context: AppRouteContext) => JSX.Element;
+  /** Whether unauthenticated users should be redirected to sign in. */
+  requiresAuth?: boolean;
+  /** Whether the route should be shown in primary navigation. */
+  showInNav?: boolean;
+  /** Optional redirect target for legacy routes. */
+  redirectTo?: AppRoutePath;
 }
 
 /** Centralized application route configuration. */
 export const appRoutes: AppRoute[] = [
-  { path: '/sign-in', label: 'Sign In', Component: SignInPage },
-  { path: '/sign-up', label: 'Sign Up', Component: SignUpPage },
-  { path: '/dashboard', label: 'Dashboard', Component: DashboardPage },
+  { path: '/sign-in', label: 'Sign In', Component: SignInPage, showInNav: false },
+  { path: '/sign-up', label: 'Sign Up', Component: SignUpPage, showInNav: false },
+  {
+    path: '/dashboard',
+    label: 'Dashboard',
+    Component: DashboardPage,
+    redirectTo: '/workspace',
+    requiresAuth: true,
+    showInNav: false,
+  },
+  { path: '/workspace', label: 'Workspace', Component: WorkspacePage, requiresAuth: true },
+  {
+    path: '/workspace/folder/:folderId',
+    label: 'Workspace folder',
+    Component: WorkspacePage,
+    requiresAuth: true,
+    showInNav: false,
+  },
   { path: '/documents', label: 'Documents', Component: DocumentsPage },
   { path: '/editor', label: 'Editor', Component: EditorPage },
   { path: '/example', label: 'Example', Component: ExamplePage },

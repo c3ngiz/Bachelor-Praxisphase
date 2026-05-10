@@ -11,18 +11,33 @@ export interface AppLayoutProps {
 
 /** Provides the main application shell and navigation. */
 export function AppLayout({ routes, children }: AppLayoutProps): JSX.Element {
+  const pathname = window.location.pathname;
+  const isWorkspaceRoute = pathname.startsWith('/workspace');
+
   return (
     <div className="app-shell">
       <nav className="app-nav" aria-label="Primary">
         {routes
-          .filter((route) => route.path !== '/sign-in' && route.path !== '/sign-up')
-          .map((route) => (
-            <a href={route.path} key={route.path}>
-              {route.label}
-            </a>
-          ))}
+          .filter((route) => route.showInNav !== false)
+          .map((route) => {
+            const isActive =
+              pathname === route.path || (route.path === '/workspace' && isWorkspaceRoute);
+
+            return (
+              <a
+                aria-current={isActive ? 'page' : undefined}
+                className={isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link'}
+                href={route.path}
+                key={route.path}
+              >
+                {route.label}
+              </a>
+            );
+          })}
       </nav>
-      <main className="app-main">{children}</main>
+      <main className={isWorkspaceRoute ? 'app-main app-main--workspace' : 'app-main'}>
+        {children}
+      </main>
     </div>
   );
 }

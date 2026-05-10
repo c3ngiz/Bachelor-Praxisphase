@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Building2, Globe } from 'lucide-react';
 
 import { Button, Card, Checkbox, Divider, Input } from '../../../shared/components';
+import { DEFAULT_ROUTE } from '../../../shared/constants';
 import { PasswordStrengthIndicator, SocialAuthButton } from '../components';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -70,7 +71,7 @@ export function SignUpPage(): JSX.Element {
         name: values.fullName,
         password: values.password,
       });
-      window.location.assign('/dashboard');
+      window.location.assign(DEFAULT_ROUTE);
     } catch {
       // The auth provider exposes normalized errors for this page to render.
     }
