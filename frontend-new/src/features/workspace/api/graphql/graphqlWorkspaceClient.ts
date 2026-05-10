@@ -4,7 +4,6 @@ import { env } from '../../../../config/env';
 import { NormalizedApiError, throwNormalizedApiError } from '../../../auth/api/authApiError';
 import { authTokenStorage } from '../../../auth/api/authTokenStorage';
 import {
-  toBackendPermission,
   toMoveTargets,
   toWorkspaceItem,
   toWorkspaceItemsResult,
@@ -13,8 +12,8 @@ import {
   type BackendWorkspaceItemsResponse,
 } from '../workspaceMappers';
 import {
+  createDocumentMutation,
   createFolderMutation,
-  createWorkspaceDocumentMutation,
   deleteWorkspaceItemMutation,
   moveTargetsQuery,
   moveWorkspaceItemMutation,
@@ -123,10 +122,10 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
    */
   async createDocument(input: CreateDocumentInput): Promise<DocumentItem> {
     const data = await this.request<
-      { createWorkspaceDocument: BackendWorkspaceItem },
+      { createDocument: BackendWorkspaceItem },
       { input: CreateDocumentInput }
-    >(createWorkspaceDocumentMutation, { input });
-    const item = toWorkspaceItem(data.createWorkspaceDocument);
+    >(createDocumentMutation, { input });
+    const item = toWorkspaceItem(data.createDocument);
 
     return item.kind === 'document' ? item : { ...item, kind: 'document' };
   }
@@ -140,8 +139,8 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
   async renameItem(input: RenameItemInput): Promise<WorkspaceItem> {
     const data = await this.request<
       { renameWorkspaceItem: BackendWorkspaceItem },
-      { itemId: EntityId; name: string }
-    >(renameWorkspaceItemMutation, input);
+      { input: RenameItemInput }
+    >(renameWorkspaceItemMutation, { input });
 
     return toWorkspaceItem(data.renameWorkspaceItem);
   }
@@ -152,9 +151,9 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
    * @param input - Delete input.
    */
   async deleteItem(input: DeleteItemInput): Promise<void> {
-    await this.request<{ deleteWorkspaceItem: { success: boolean } }, { itemId: EntityId }>(
+    await this.request<{ deleteWorkspaceItem: { success: boolean } }, { id: EntityId }>(
       deleteWorkspaceItemMutation,
-      input,
+      { id: input.itemId },
     );
   }
 
@@ -180,10 +179,10 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
    * @returns Updated item.
    */
   async moveItem(input: MoveItemInput): Promise<WorkspaceItem> {
-    const data = await this.request<{ moveWorkspaceItem: BackendWorkspaceItem }, MoveItemInput>(
-      moveWorkspaceItemMutation,
-      input,
-    );
+    const data = await this.request<
+      { moveWorkspaceItem: BackendWorkspaceItem },
+      { input: MoveItemInput }
+    >(moveWorkspaceItemMutation, { input });
 
     return toWorkspaceItem(data.moveWorkspaceItem);
   }
@@ -197,13 +196,13 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
   async shareItem(input: ShareInvite): Promise<WorkspaceItem> {
     const data = await this.request<
       { shareWorkspaceItem: BackendWorkspaceItem },
-      { itemId: EntityId; input: { email: string; role: 'editor' | 'viewer' } }
+      { input: { itemId: EntityId; email: string; permission: Exclude<ShareInvite['permission'], 'owner'> } }
     >(shareWorkspaceItemMutation, {
       input: {
         email: input.email,
-        role: toBackendPermission(input.permission),
+        itemId: input.itemId,
+        permission: input.permission,
       },
-      itemId: input.itemId,
     });
 
     return toWorkspaceItem(data.shareWorkspaceItem);
@@ -218,11 +217,13 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
   async updateCollaborator(input: UpdateCollaboratorInput): Promise<WorkspaceItem> {
     const data = await this.request<
       { updateWorkspaceCollaborator: BackendWorkspaceItem },
-      { itemId: EntityId; collaboratorId: EntityId; permission: 'editor' | 'viewer' }
+      { input: { itemId: EntityId; userId: EntityId; permission: UpdateCollaboratorInput['permission'] } }
     >(updateWorkspaceCollaboratorMutation, {
-      collaboratorId: input.collaboratorId,
-      itemId: input.itemId,
-      permission: toBackendPermission(input.permission),
+      input: {
+        itemId: input.itemId,
+        permission: input.permission,
+        userId: input.collaboratorId,
+      },
     });
 
     return toWorkspaceItem(data.updateWorkspaceCollaborator);
@@ -237,8 +238,13 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
   async removeCollaborator(input: RemoveCollaboratorInput): Promise<WorkspaceItem> {
     const data = await this.request<
       { removeWorkspaceCollaborator: BackendWorkspaceItem },
-      { itemId: EntityId; collaboratorId: EntityId }
-    >(removeWorkspaceCollaboratorMutation, input);
+      { input: { itemId: EntityId; userId: EntityId } }
+    >(removeWorkspaceCollaboratorMutation, {
+      input: {
+        itemId: input.itemId,
+        userId: input.collaboratorId,
+      },
+    });
 
     return toWorkspaceItem(data.removeWorkspaceCollaborator);
   }

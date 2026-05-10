@@ -6,12 +6,8 @@ import { findAuthUserById } from "../rest/auth/auth.repository.js";
 import { toRestAuthUser } from "../rest/auth/auth.mapper.js";
 import type { RestAuthUser } from "../rest/auth/auth.dto.js";
 import { HttpError } from "../rest/common/errors/httpError.js";
-import { findRestDocumentById } from "../rest/documents/document.repository.js";
-import { toRestDocument } from "../rest/documents/document.mapper.js";
-import {
-  canRestAccessDocument,
-  canRestEditDocument,
-} from "../rest/documents/document.permissions.js";
+import { getLegacyDocument } from "../../workspace/workspace.service.js";
+import { findActiveWorkspaceItemById } from "../../workspace/workspace.repository.js";
 import { collaborationEditorExtensions } from "./editorExtensions.js";
 import {
   findCollaborationState,
@@ -42,24 +38,12 @@ export async function authenticateCollaborationConnection(input: {
   }
 
   const documentId = documentNameToId(input.documentName);
-  const document = await findRestDocumentById(documentId);
-
-  if (!document) {
-    throw new HttpError(StatusCodes.NOT_FOUND, "Document not found.");
-  }
-
   const user = toRestAuthUser(authUserRecord);
-  const canAccess = await canRestAccessDocument(document, user.id);
-
-  if (!canAccess) {
-    throw new HttpError(StatusCodes.FORBIDDEN, "You do not have access to this document.");
-  }
-
-  const canEdit = await canRestEditDocument(document, user);
+  const document = await getLegacyDocument(documentId, user);
 
   return {
     user,
-    readOnly: !canEdit,
+    readOnly: !document.canEdit,
   };
 }
 
@@ -73,12 +57,12 @@ export async function loadCollaborationDocument(documentName: string): Promise<Y
     return ydoc;
   }
 
-  const document = await findRestDocumentById(documentId);
-  if (!document) {
+  const document = await findActiveWorkspaceItemById(documentId);
+  if (!document || document.type !== "document" || !document.document) {
     throw new HttpError(StatusCodes.NOT_FOUND, "Document not found.");
   }
 
-  const initialContent = toRestDocument(document).content ?? emptyDocumentContent;
+  const initialContent = document.document.content ?? emptyDocumentContent;
 
   return TiptapTransformer.toYdoc(
     initialContent,

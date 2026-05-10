@@ -5,12 +5,12 @@ import { HttpError } from "../common/errors/httpError.js";
 import type { RestAuthResponse, RestAuthUser, RestLoginInput, RestRegisterInput } from "./auth.dto.js";
 import { buildRestInitials, toRestAuthUser } from "./auth.mapper.js";
 import {
-  createUserWithDefaultWorkspace,
+  createUser,
   findAuthUserById,
   findUserByEmail,
 } from "./auth.repository.js";
 
-/** Registers a REST user and creates their default workspace. */
+/** Registers a REST user. */
 export async function registerRestUser(input: RestRegisterInput): Promise<RestAuthResponse> {
   const email = input.email.toLowerCase();
   const existingUser = await findUserByEmail(email);
@@ -19,7 +19,7 @@ export async function registerRestUser(input: RestRegisterInput): Promise<RestAu
     throw new HttpError(StatusCodes.CONFLICT, "A user with this email already exists.");
   }
 
-  const user = await createUserWithDefaultWorkspace({
+  const user = await createUser({
     email,
     passwordHash: await hashPassword(input.password),
     name: input.name.trim(),

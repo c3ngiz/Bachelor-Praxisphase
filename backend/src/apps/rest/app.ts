@@ -7,7 +7,7 @@ import { env } from "../../shared/config/env.js";
 import { createRestAuthRouter } from "./auth/auth.routes.js";
 import { restErrorHandler } from "./common/middleware/errorHandler.js";
 import { createRestDocumentRouter } from "./documents/document.routes.js";
-import { createRestWorkspaceRouter } from "./workspaces/workspace.routes.js";
+import { createRestWorkspaceItemRouter } from "./workspace/workspace.routes.js";
 
 /** Creates the standalone REST backend application. */
 export function createRestApp() {
@@ -33,7 +33,7 @@ export function createRestApp() {
 
   app.use("/api/auth", createRestAuthRouter());
   app.use("/api/documents", createRestDocumentRouter());
-  app.use("/api/workspaces", createRestWorkspaceRouter());
+  app.use("/api/workspace", createRestWorkspaceItemRouter());
 
   app.use((_request, response) => {
     return response.status(StatusCodes.NOT_FOUND).json({

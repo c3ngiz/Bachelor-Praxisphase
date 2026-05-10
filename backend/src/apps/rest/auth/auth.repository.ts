@@ -23,34 +23,15 @@ export function findAuthUserById(userId: string) {
   });
 }
 
-/** Creates a user and private default workspace in a single REST auth transaction. */
-export function createUserWithDefaultWorkspace(input: {
+/** Creates a user for REST auth without provisioning workspace rows. */
+export function createUser(input: {
   email: string;
   passwordHash: string;
   name: string;
   initials: string;
   avatarColor: string;
 }) {
-  return prisma.$transaction(async (tx) => {
-    const createdUser = await tx.user.create({
-      data: input,
-    });
-
-    await tx.workspace.create({
-      data: {
-        name: `${createdUser.name}'s Workspace`,
-        description: "Your private default workspace",
-        isDefault: true,
-        ownerId: createdUser.id,
-        members: {
-          create: {
-            userId: createdUser.id,
-            role: "owner",
-          },
-        },
-      },
-    });
-
-    return createdUser;
+  return prisma.user.create({
+    data: input,
   });
 }

@@ -23,34 +23,15 @@ export function findGraphqlAuthUserById(userId: string) {
   });
 }
 
-/** Creates a GraphQL user and default workspace in one transaction. */
-export function createGraphqlUserWithDefaultWorkspace(input: {
+/** Creates a GraphQL user without provisioning workspace rows. */
+export function createGraphqlUser(input: {
   email: string;
   passwordHash: string;
   name: string;
   initials: string;
   avatarColor: string;
 }) {
-  return prisma.$transaction(async (tx) => {
-    const createdUser = await tx.user.create({
-      data: input,
-    });
-
-    await tx.workspace.create({
-      data: {
-        name: `${createdUser.name}'s Workspace`,
-        description: "Your private default workspace",
-        isDefault: true,
-        ownerId: createdUser.id,
-        members: {
-          create: {
-            userId: createdUser.id,
-            role: "owner",
-          },
-        },
-      },
-    });
-
-    return createdUser;
+  return prisma.user.create({
+    data: input,
   });
 }

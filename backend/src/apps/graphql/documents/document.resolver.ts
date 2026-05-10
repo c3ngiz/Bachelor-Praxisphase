@@ -1,12 +1,10 @@
 import type { GraphqlBackendContext } from "../common/context.js";
 import { requireGraphqlAuth } from "../auth/auth.resolver.js";
 import {
-  graphqlCreateDocumentDto,
   graphqlInviteDocumentCollaboratorDto,
   graphqlUpdateDocumentDto,
 } from "./document.dto.js";
 import {
-  createGraphqlDocument,
   deleteGraphqlDocument,
   getGraphqlDocumentById,
   inviteGraphqlDocumentCollaborator,
@@ -33,15 +31,6 @@ export const graphqlDocumentQueries = {
 
 /** GraphQL document mutation resolvers. */
 export const graphqlDocumentMutations = {
-  createDocument(
-    _parent: unknown,
-    args: { input: unknown },
-    context: GraphqlBackendContext,
-  ) {
-    const authUser = requireGraphqlAuth(context);
-    return createGraphqlDocument(graphqlCreateDocumentDto.parse(args.input), authUser);
-  },
-
   updateDocument(
     _parent: unknown,
     args: { documentId: string; input: unknown },

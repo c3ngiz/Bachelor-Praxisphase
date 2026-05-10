@@ -5,9 +5,9 @@ import {
   graphqlDocumentQueries,
 } from "../documents/document.resolver.js";
 import {
-  graphqlWorkspaceMutations,
-  graphqlWorkspaceQueries,
-} from "../workspaces/workspace.resolver.js";
+  graphqlWorkspaceItemMutations,
+  graphqlWorkspaceItemQueries,
+} from "../workspace/workspace.resolver.js";
 
 /** Root resolver map for the standalone GraphQL backend. */
 export const resolvers = {
@@ -15,11 +15,11 @@ export const resolvers = {
   Query: {
     ...graphqlAuthQueries,
     ...graphqlDocumentQueries,
-    ...graphqlWorkspaceQueries,
+    ...graphqlWorkspaceItemQueries,
   },
   Mutation: {
     ...graphqlAuthMutations,
     ...graphqlDocumentMutations,
-    ...graphqlWorkspaceMutations,
+    ...graphqlWorkspaceItemMutations,
   },
 };

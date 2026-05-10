@@ -1,6 +1,7 @@
 import { GraphQLError, type GraphQLFormattedError } from "graphql";
 import { ZodError } from "zod";
 import { StatusCodes } from "http-status-codes";
+import { DomainError } from "../../../shared/errors/domainError.js";
 
 /** Domain error used only by the GraphQL backend. */
 export class GraphqlBackendError extends Error {
@@ -61,6 +62,17 @@ export function formatGraphqlBackendError(
   }
 
   if (originalError instanceof GraphqlBackendError) {
+    return {
+      message: originalError.message,
+      extensions: {
+        code: codeForStatus(originalError.statusCode),
+        statusCode: originalError.statusCode,
+        ...(originalError.data && typeof originalError.data === "object" ? originalError.data : {}),
+      },
+    };
+  }
+
+  if (originalError instanceof DomainError) {
     return {
       message: originalError.message,
       extensions: {

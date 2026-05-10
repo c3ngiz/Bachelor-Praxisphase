@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { WorkspaceLegacyDocumentResponse } from "../../../workspace/workspace.types.js";
 
 const restCollaboratorDto = z.object({
   id: z.string().min(1),
@@ -12,13 +13,20 @@ const restCollaboratorDto = z.object({
 export const restDocumentVisibilityDto = z.enum(["private", "shared", "workspace"]);
 
 /** REST create document request body. */
-export const restCreateDocumentDto = z.object({
-  title: z.string().trim().min(1).max(200),
-  content: z.unknown().default({ type: "doc", content: [] }),
-  visibility: restDocumentVisibilityDto.default("private"),
-  workspaceId: z.string().min(1).optional(),
-  collaborators: z.array(restCollaboratorDto).default([]),
-});
+export const restCreateDocumentDto = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    title: z.string().trim().min(1).max(200).optional(),
+    content: z.unknown().default({ type: "doc", content: [] }),
+    parentId: z.string().min(1).nullable().optional(),
+    visibility: restDocumentVisibilityDto.default("private"),
+    workspaceId: z.string().min(1).optional(),
+    collaborators: z.array(restCollaboratorDto).default([]),
+  })
+  .refine((input) => input.name || input.title, {
+    message: "Document title is required.",
+    path: ["title"],
+  });
 
 /** REST update document request body. */
 export const restUpdateDocumentDto = z.object({
@@ -42,33 +50,5 @@ export type RestCreateDocumentInput = z.infer<typeof restCreateDocumentDto>;
 export type RestUpdateDocumentInput = z.infer<typeof restUpdateDocumentDto>;
 export type RestInviteDocumentCollaboratorInput = z.infer<typeof restInviteDocumentCollaboratorDto>;
 
-export type RestDocumentCollaborator = {
-  id: string;
-  name: string;
-  initials: string;
-  color: string;
-  role: RestDocumentRole;
-};
-
-export type RestDocument = {
-  id: string;
-  title: string;
-  content: unknown;
-  revision: number;
-  author: string;
-  createdAt: string;
-  updatedAt: string;
-  lastOpenedAt?: string;
-  visibility: RestDocumentVisibility;
-  workspaceId: string;
-  ownerId: string;
-  ownerName: string;
-  collaborators: RestDocumentCollaborator[];
-  currentUserRole: RestDocumentRole | null;
-  canEdit: boolean;
-  canShare: boolean;
-  canDelete: boolean;
-  lastEditedById: string;
-  lastEditedByName: string;
-  lastEditedAt: string;
-};
+export type RestDocumentCollaborator = WorkspaceLegacyDocumentResponse["collaborators"][number];
+export type RestDocument = WorkspaceLegacyDocumentResponse;

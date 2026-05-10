@@ -159,15 +159,15 @@ export function toPermissionLevel(role: BackendWorkspaceRole | null | undefined)
 }
 
 /**
- * Converts a normalized permission into the role string expected by assumed APIs.
+ * Converts a normalized permission into the canonical backend permission value.
  *
  * @param permission - Frontend permission selected by the user.
  * @returns Backend role value.
  */
 export function toBackendPermission(
   permission: Exclude<PermissionLevel, 'owner'>,
-): 'editor' | 'viewer' {
-  return permission === 'write' ? 'editor' : 'viewer';
+): 'write' | 'read' {
+  return permission === 'write' ? 'write' : 'read';
 }
 
 /**

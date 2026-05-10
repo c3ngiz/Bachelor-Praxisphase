@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { ZodError } from "zod";
+import { DomainError } from "../../../../shared/errors/domainError.js";
 import { HttpError } from "../errors/httpError.js";
 
 /** Converts REST backend exceptions into JSON HTTP responses. */
@@ -19,6 +20,14 @@ export function restErrorHandler(
 
   if (error instanceof HttpError) {
     return response.status(error.statusCode).json({
+      message: error.message,
+      ...(error.data && typeof error.data === "object" ? error.data : {}),
+    });
+  }
+
+  if (error instanceof DomainError) {
+    return response.status(error.statusCode).json({
+      code: error.code,
       message: error.message,
       ...(error.data && typeof error.data === "object" ? error.data : {}),
     });

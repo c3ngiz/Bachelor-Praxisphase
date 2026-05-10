@@ -4,7 +4,6 @@ import { env } from '../../../../config/env';
 import { throwNormalizedApiError } from '../../../auth/api/authApiError';
 import { authTokenStorage } from '../../../auth/api/authTokenStorage';
 import {
-  toBackendPermission,
   toMoveTargets,
   toWorkspaceItem,
   toWorkspaceItemsResult,
@@ -137,7 +136,7 @@ export class RestWorkspaceClient implements WorkspaceClient {
   async renameItem(input: RenameItemInput): Promise<WorkspaceItem> {
     try {
       const response = await this.http.patch<RestWorkspaceItemResponse>(
-        `/api/workspace/items/${encodeURIComponent(input.itemId)}`,
+        `/api/workspace/items/${encodeURIComponent(input.itemId)}/rename`,
         { name: input.name },
       );
       return toWorkspaceItem(response.data.item);
@@ -203,10 +202,10 @@ export class RestWorkspaceClient implements WorkspaceClient {
   async shareItem(input: ShareInvite): Promise<WorkspaceItem> {
     try {
       const response = await this.http.post<RestWorkspaceItemResponse>(
-        `/api/workspace/items/${encodeURIComponent(input.itemId)}/shares`,
+        `/api/workspace/items/${encodeURIComponent(input.itemId)}/share`,
         {
           email: input.email,
-          role: toBackendPermission(input.permission),
+          permission: input.permission,
         },
       );
       return toWorkspaceItem(response.data.item);
@@ -227,7 +226,7 @@ export class RestWorkspaceClient implements WorkspaceClient {
         `/api/workspace/items/${encodeURIComponent(input.itemId)}/collaborators/${encodeURIComponent(
           input.collaboratorId,
         )}`,
-        { role: toBackendPermission(input.permission) },
+        { permission: input.permission },
       );
       return toWorkspaceItem(response.data.item);
     } catch (error) {

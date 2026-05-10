@@ -7,100 +7,91 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum DocumentVisibility {
-  private
-  shared
-  workspace
+enum WorkspaceItemType {
+  folder
+  document
 }
 
-enum WorkspaceRole {
-  owner
-  editor
-  viewer
+enum PermissionLevel {
+  read
+  write
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   passwordHash String
   name         String
   initials     String
   avatarColor  String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  ownedDocuments Document[] @relation("DocumentOwner")
-  editedDocuments Document[] @relation("DocumentLastEditor")
-  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
-  workspaceMemberships WorkspaceMember[]
+  ownedWorkspaceItems    WorkspaceItem[]             @relation("WorkspaceItemOwner")
+  workspaceCollaborators WorkspaceItemCollaborator[]
+  editedDocuments        Document[]                  @relation("DocumentLastEditor")
 }
 
-model Workspace {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model WorkspaceItem {
+  id        String            @id @default(cuid())
+  name      String
+  type      WorkspaceItemType
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime?
 
   ownerId String
-  owner   User @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner   User   @relation("WorkspaceItemOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
-  documents Document[]
-  members   WorkspaceMember[]
+  parentId String?
+  parent   WorkspaceItem?  @relation("WorkspaceItemHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children WorkspaceItem[] @relation("WorkspaceItemHierarchy")
+
+  document      Document?
+  collaborators WorkspaceItemCollaborator[]
 
   @@index([ownerId])
-  @@index([isDefault])
+  @@index([parentId])
+  @@index([type])
+  @@index([deletedAt])
+  @@index([parentId, name])
 }
 
-model WorkspaceMember {
-  id          String        @id @default(cuid())
-  role        WorkspaceRole
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+model Document {
+  id               String   @id
+  content          Json
+  revision         Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  lastOpenedAt     DateTime?
+  lastEditedById   String
+  lastEditedByName String
+  lastEditedAt     DateTime @default(now())
 
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  item               WorkspaceItem               @relation(fields: [id], references: [id], onDelete: Cascade)
+  lastEditedBy       User                        @relation("DocumentLastEditor", fields: [lastEditedById], references: [id], onDelete: Cascade)
+  collaborationState DocumentCollaborationState?
+
+  @@index([revision])
+  @@index([updatedAt])
+  @@index([lastEditedById])
+}
+
+model WorkspaceItemCollaborator {
+  id         String          @id @default(cuid())
+  permission PermissionLevel
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  itemId String
+  item   WorkspaceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([workspaceId, userId])
+  @@unique([itemId, userId])
+  @@index([itemId])
   @@index([userId])
-  @@index([workspaceId])
-}
-
-model Document {
-  id             String             @id @default(cuid())
-  title          String
-  content        Json
-  revision       Int                @default(1)
-  author         String
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  lastOpenedAt   DateTime?
-  visibility     DocumentVisibility @default(private)
-
-  workspaceId    String
-  workspace      Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  ownerId        String
-  ownerName      String
-  owner          User               @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-
-  collaborators  Json
-
-  lastEditedById   String
-  lastEditedByName String
-  lastEditedAt     DateTime         @default(now())
-  lastEditedBy     User             @relation("DocumentLastEditor", fields: [lastEditedById], references: [id], onDelete: Cascade)
-  collaborationState DocumentCollaborationState?
-
-  @@index([ownerId])
-  @@index([workspaceId])
-  @@index([lastEditedById])
-  @@index([revision])
-  @@index([updatedAt])
 }
 
 model DocumentCollaborationState {

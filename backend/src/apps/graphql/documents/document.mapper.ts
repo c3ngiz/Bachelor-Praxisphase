@@ -1,31 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { GraphqlBackendError } from "../common/errors.js";
-import type { GraphqlAuthUser } from "../auth/auth.dto.js";
-import type {
-  GraphqlDocument,
-  GraphqlDocumentCollaborator,
-  GraphqlDocumentRole,
-} from "./document.dto.js";
-
-export type GraphqlDocumentRecord = {
-  id: string;
-  title: string;
-  content: unknown;
-  revision: number;
-  author: string;
-  createdAt: Date;
-  updatedAt: Date;
-  lastOpenedAt: Date | null;
-  visibility: "private" | "shared" | "workspace";
-  workspaceId: string;
-  ownerId: string;
-  ownerName: string;
-  collaborators: unknown;
-  lastEditedById: string;
-  lastEditedByName: string;
-  lastEditedAt: Date;
-};
 
 /** Checks whether an unknown value is a JSON object. */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -74,74 +49,4 @@ export function toGraphqlPrismaNonNullJsonValue(value: unknown): Prisma.InputJso
   }
 
   return parsedValue;
-}
-
-/** Reads collaborators from a document JSON field. */
-export function getGraphqlDocumentCollaborators(value: unknown): GraphqlDocumentCollaborator[] {
-  return Array.isArray(value) ? (value as GraphqlDocumentCollaborator[]) : [];
-}
-
-/** Ensures the owner appears once in the GraphQL collaborator list. */
-export function normalizeGraphqlCollaborators(
-  collaborators: GraphqlDocumentCollaborator[],
-  authUser: Pick<GraphqlAuthUser, "id" | "name" | "initials" | "avatarColor">,
-): GraphqlDocumentCollaborator[] {
-  const ownerEntry: GraphqlDocumentCollaborator = {
-    id: authUser.id,
-    name: authUser.name,
-    initials: authUser.initials,
-    color: authUser.avatarColor,
-    role: "owner",
-  };
-  const deduped = new Map<string, GraphqlDocumentCollaborator>();
-  deduped.set(ownerEntry.id, ownerEntry);
-
-  for (const collaborator of collaborators) {
-    deduped.set(collaborator.id, collaborator.id === authUser.id ? ownerEntry : collaborator);
-  }
-
-  return Array.from(deduped.values());
-}
-
-export type GraphqlDocumentCapabilities = {
-  currentUserRole: GraphqlDocumentRole | null;
-  canEdit: boolean;
-  canShare: boolean;
-  canDelete: boolean;
-};
-
-const defaultGraphqlDocumentCapabilities: GraphqlDocumentCapabilities = {
-  currentUserRole: null,
-  canEdit: false,
-  canShare: false,
-  canDelete: false,
-};
-
-/** Maps a document database record into the GraphQL document shape. */
-export function toGraphqlDocument(
-  document: GraphqlDocumentRecord,
-  capabilities: GraphqlDocumentCapabilities = defaultGraphqlDocumentCapabilities,
-): GraphqlDocument {
-  return {
-    id: document.id,
-    title: document.title,
-    content: document.content,
-    revision: document.revision,
-    author: document.author,
-    createdAt: document.createdAt.toISOString(),
-    updatedAt: document.updatedAt.toISOString(),
-    lastOpenedAt: document.lastOpenedAt?.toISOString(),
-    visibility: document.visibility,
-    workspaceId: document.workspaceId,
-    ownerId: document.ownerId,
-    ownerName: document.ownerName,
-    collaborators: getGraphqlDocumentCollaborators(document.collaborators),
-    currentUserRole: capabilities.currentUserRole,
-    canEdit: capabilities.canEdit,
-    canShare: capabilities.canShare,
-    canDelete: capabilities.canDelete,
-    lastEditedById: document.lastEditedById,
-    lastEditedByName: document.lastEditedByName,
-    lastEditedAt: document.lastEditedAt.toISOString(),
-  };
 }

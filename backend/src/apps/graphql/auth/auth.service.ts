@@ -10,7 +10,7 @@ import type {
 } from "./auth.dto.js";
 import { buildGraphqlInitials, toGraphqlAuthUser } from "./auth.mapper.js";
 import {
-  createGraphqlUserWithDefaultWorkspace,
+  createGraphqlUser,
   findGraphqlAuthUserById,
   findGraphqlUserByEmail,
 } from "./auth.repository.js";
@@ -26,7 +26,7 @@ export async function registerGraphqlUser(
     throw new GraphqlBackendError(StatusCodes.CONFLICT, "A user with this email already exists.");
   }
 
-  const user = await createGraphqlUserWithDefaultWorkspace({
+  const user = await createGraphqlUser({
     email,
     passwordHash: await hashPassword(input.password),
     name: input.name.trim(),

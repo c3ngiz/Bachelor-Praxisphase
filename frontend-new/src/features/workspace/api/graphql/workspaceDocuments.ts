@@ -102,9 +102,9 @@ export const createFolderMutation = `
 `;
 
 /** GraphQL mutation for creating a workspace document shell. */
-export const createWorkspaceDocumentMutation = `
-  mutation CreateWorkspaceDocument($input: CreateWorkspaceDocumentInput!) {
-    createWorkspaceDocument(input: $input) {
+export const createDocumentMutation = `
+  mutation CreateDocument($input: CreateDocumentInput!) {
+    createDocument(input: $input) {
       ${workspaceItemFields}
     }
   }
@@ -112,8 +112,8 @@ export const createWorkspaceDocumentMutation = `
 
 /** GraphQL mutation for renaming a workspace item. */
 export const renameWorkspaceItemMutation = `
-  mutation RenameWorkspaceItem($itemId: ID!, $name: String!) {
-    renameWorkspaceItem(itemId: $itemId, name: $name) {
+  mutation RenameWorkspaceItem($input: RenameWorkspaceItemInput!) {
+    renameWorkspaceItem(input: $input) {
       ${workspaceItemFields}
     }
   }
@@ -121,8 +121,8 @@ export const renameWorkspaceItemMutation = `
 
 /** GraphQL mutation for deleting a workspace item. */
 export const deleteWorkspaceItemMutation = `
-  mutation DeleteWorkspaceItem($itemId: ID!) {
-    deleteWorkspaceItem(itemId: $itemId) {
+  mutation DeleteWorkspaceItem($id: ID!) {
+    deleteWorkspaceItem(id: $id) {
       success
     }
   }
@@ -130,8 +130,8 @@ export const deleteWorkspaceItemMutation = `
 
 /** GraphQL mutation for moving a workspace item. */
 export const moveWorkspaceItemMutation = `
-  mutation MoveWorkspaceItem($itemId: ID!, $targetFolderId: ID) {
-    moveWorkspaceItem(itemId: $itemId, targetFolderId: $targetFolderId) {
+  mutation MoveWorkspaceItem($input: MoveWorkspaceItemInput!) {
+    moveWorkspaceItem(input: $input) {
       ${workspaceItemFields}
     }
   }
@@ -139,8 +139,8 @@ export const moveWorkspaceItemMutation = `
 
 /** GraphQL mutation for sharing a workspace item. */
 export const shareWorkspaceItemMutation = `
-  mutation ShareWorkspaceItem($itemId: ID!, $input: ShareWorkspaceItemInput!) {
-    shareWorkspaceItem(itemId: $itemId, input: $input) {
+  mutation ShareWorkspaceItem($input: ShareWorkspaceItemInput!) {
+    shareWorkspaceItem(input: $input) {
       ${workspaceItemFields}
     }
   }
@@ -148,16 +148,8 @@ export const shareWorkspaceItemMutation = `
 
 /** GraphQL mutation for changing collaborator access. */
 export const updateWorkspaceCollaboratorMutation = `
-  mutation UpdateWorkspaceCollaborator(
-    $itemId: ID!
-    $collaboratorId: ID!
-    $permission: String!
-  ) {
-    updateWorkspaceCollaborator(
-      itemId: $itemId
-      collaboratorId: $collaboratorId
-      permission: $permission
-    ) {
+  mutation UpdateWorkspaceCollaborator($input: UpdateWorkspaceCollaboratorInput!) {
+    updateWorkspaceCollaborator(input: $input) {
       ${workspaceItemFields}
     }
   }
@@ -165,8 +157,8 @@ export const updateWorkspaceCollaboratorMutation = `
 
 /** GraphQL mutation for removing collaborator access. */
 export const removeWorkspaceCollaboratorMutation = `
-  mutation RemoveWorkspaceCollaborator($itemId: ID!, $collaboratorId: ID!) {
-    removeWorkspaceCollaborator(itemId: $itemId, collaboratorId: $collaboratorId) {
+  mutation RemoveWorkspaceCollaborator($input: RemoveWorkspaceCollaboratorInput!) {
+    removeWorkspaceCollaborator(input: $input) {
       ${workspaceItemFields}
     }
   }
