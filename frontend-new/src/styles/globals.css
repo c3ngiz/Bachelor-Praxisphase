@@ -38,35 +38,6 @@ select {
   min-height: 100vh;
 }
 
-.app-nav {
-  display: flex;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-bottom: 1px solid #d7dde5;
-  background: #ffffff;
-  overflow-x: auto;
-}
-
-.app-nav__link {
-  border-radius: 0.5rem;
-  color: #475569;
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.5rem 0.75rem;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.app-nav__link:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.app-nav__link--active {
-  background: #0f172a;
-  color: #ffffff;
-}
-
 .app-main {
   width: min(1120px, calc(100% - 2rem));
   margin: 0 auto;

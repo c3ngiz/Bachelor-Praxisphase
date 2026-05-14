@@ -1,16 +1,18 @@
-const authTokenStorageKey = 'frontend-new.auth.token';
+/** Browser storage key used for the persisted bearer token. */
+export const AUTH_TOKEN_STORAGE_KEY = 'frontend-new.auth.token';
 
 /**
- * Safely reads browser local storage when it is available.
+ * Safely reads a browser storage area when it is available.
  *
- * @returns The current local storage object, or null outside the browser.
+ * @param storageName - Browser storage area to read.
+ * @returns The requested storage object, or null outside the browser.
  */
-function getLocalStorage(): Storage | null {
+function getBrowserStorage(storageName: 'localStorage' | 'sessionStorage'): Storage | null {
   if (typeof window === 'undefined') {
     return null;
   }
 
-  return window.localStorage;
+  return window[storageName];
 }
 
 /** Centralized bearer token storage for authentication API clients. */
@@ -21,7 +23,7 @@ export const authTokenStorage = {
    * @returns Stored bearer token, or null when none exists.
    */
   getToken(): string | null {
-    return getLocalStorage()?.getItem(authTokenStorageKey) ?? null;
+    return getBrowserStorage('localStorage')?.getItem(AUTH_TOKEN_STORAGE_KEY) ?? null;
   },
 
   /**
@@ -30,11 +32,12 @@ export const authTokenStorage = {
    * @param token - Bearer access token returned by the backend.
    */
   setToken(token: string): void {
-    getLocalStorage()?.setItem(authTokenStorageKey, token);
+    getBrowserStorage('localStorage')?.setItem(AUTH_TOKEN_STORAGE_KEY, token);
   },
 
   /** Clears the persisted bearer token. */
   clearToken(): void {
-    getLocalStorage()?.removeItem(authTokenStorageKey);
+    getBrowserStorage('localStorage')?.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    getBrowserStorage('sessionStorage')?.removeItem(AUTH_TOKEN_STORAGE_KEY);
   },
 };

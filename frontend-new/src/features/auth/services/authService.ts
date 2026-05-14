@@ -9,6 +9,7 @@ import type {
   SignInInput,
   SignUpInput,
 } from '../types/auth.types';
+import { resetApplicationState } from '../utils/sessionCleanup';
 
 /**
  * Creates the auth client implementation selected by environment config.
@@ -68,8 +69,11 @@ export const authService = {
    * Current backends use bearer tokens and expose no sign-out endpoint.
    */
   async signOut(): Promise<void> {
-    await authClient.signOut();
-    authTokenStorage.clearToken();
+    try {
+      await authClient.signOut();
+    } finally {
+      resetApplicationState();
+    }
   },
 
   /**

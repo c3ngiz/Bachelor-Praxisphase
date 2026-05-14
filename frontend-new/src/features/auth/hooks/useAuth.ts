@@ -114,15 +114,14 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const signOut = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setUser(null);
+    setIsInitialized(true);
 
     try {
       await authService.signOut();
-      setUser(null);
-      setIsInitialized(true);
     } catch (requestError) {
       const normalizedError = normalizeApiError(requestError);
       setError(normalizedError);
-      throw normalizedError;
     } finally {
       setIsLoading(false);
     }
@@ -140,8 +139,9 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     didInitialRefresh.current = true;
 
     void refreshCurrentUser().catch(() => {
-      void authService.signOut();
+      void authService.signOut().catch(() => undefined);
       setUser(null);
+      setIsInitialized(true);
     });
   }, [refreshCurrentUser]);
 

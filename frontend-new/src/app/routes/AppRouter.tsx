@@ -14,7 +14,7 @@ interface MatchedRoute {
 
 /** Maps the current browser path to the configured application route. */
 export function AppRouter(): JSX.Element {
-  const { isAuthenticated, isInitialized } = useAuth();
+  const { isAuthenticated, isInitialized, signOut, user } = useAuth();
   const pathname = window.location.pathname;
   const fallbackRoute = appRoutes.find((item) => item.path === DEFAULT_ROUTE) ?? appRoutes[0];
   const matchedRoute = findMatchedRoute(pathname) ?? {
@@ -50,7 +50,7 @@ export function AppRouter(): JSX.Element {
   }
 
   return (
-    <AppLayout routes={appRoutes}>
+    <AppLayout currentUser={user} onSignOut={signOut}>
       <Page {...context} />
     </AppLayout>
   );
