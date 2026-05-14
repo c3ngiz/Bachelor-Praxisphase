@@ -5,6 +5,7 @@ import {
   formatWorkspaceDate,
   getPermissionLabel,
   getSharingStatusLabel,
+  getWorkspaceDocumentPath,
   getWorkspaceFolderPath,
   getWorkspaceItemTypeLabel,
 } from '../utils/workspaceFormatting';
@@ -91,9 +92,12 @@ export function WorkspaceItemTable({
                           {item.name}
                         </a>
                       ) : (
-                        <span className="block truncate font-medium text-slate-950">
+                        <a
+                          className="block truncate font-medium text-slate-950 underline-offset-4 hover:underline"
+                          href={getWorkspaceDocumentPath(item.id)}
+                        >
                           {item.name}
-                        </span>
+                        </a>
                       )}
                       {item.kind === 'folder' && typeof item.childCount === 'number' ? (
                         <span className="text-xs text-slate-500">

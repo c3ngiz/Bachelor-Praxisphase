@@ -14,6 +14,8 @@ export interface EnvConfig {
   restApiUrl: string;
   /** Endpoint URL for GraphQL API requests. */
   graphqlApiUrl: string;
+  /** WebSocket URL for the Hocuspocus collaboration server. */
+  collaborationUrl: string;
   /** Display name for the application. */
   appName: string;
 }
@@ -51,6 +53,7 @@ function readEnvValue(key: string, fallback: string): string {
 export const env: EnvConfig = {
   apiMode: parseApiMode(import.meta.env.VITE_API_MODE),
   appName: readEnvValue('VITE_APP_NAME', 'Frontend New'),
+  collaborationUrl: readEnvValue('VITE_COLLABORATION_URL', 'ws://localhost:4100'),
   graphqlApiUrl: readEnvValue('VITE_GRAPHQL_API_URL', 'http://localhost:4000/graphql'),
   restApiUrl: readEnvValue('VITE_REST_API_URL', 'http://localhost:4000/api'),
 };

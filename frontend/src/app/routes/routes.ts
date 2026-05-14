@@ -16,6 +16,7 @@ export type AppRoutePath =
   | '/workspace/folder/:folderId'
   | '/documents'
   | '/editor'
+  | '/workspace/document/:documentId'
   | '/example'
   | '/profile'
   | '/settings';
@@ -74,6 +75,13 @@ export const appRoutes: AppRoute[] = [
   {
     path: '/editor',
     label: 'Editor',
+    Component: EditorPage,
+    requiresAuth: true,
+    showInNav: false,
+  },
+  {
+    path: '/workspace/document/:documentId',
+    label: 'Document editor',
     Component: EditorPage,
     requiresAuth: true,
     showInNav: false,

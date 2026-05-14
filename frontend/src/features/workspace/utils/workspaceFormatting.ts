@@ -17,6 +17,16 @@ export function getWorkspaceFolderPath(folderId: string | null): string {
 }
 
 /**
+ * Builds the URL for a workspace document editor.
+ *
+ * @param documentId - Document identifier.
+ * @returns Browser path for the document editor.
+ */
+export function getWorkspaceDocumentPath(documentId: string): string {
+  return `/workspace/document/${encodeURIComponent(documentId)}`;
+}
+
+/**
  * Formats a workspace item kind for display.
  *
  * @param item - Workspace item.
