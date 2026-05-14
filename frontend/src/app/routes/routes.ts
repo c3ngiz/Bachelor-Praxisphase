@@ -1,8 +1,4 @@
 import { SignInPage, SignUpPage } from '../../features/auth';
-import { DashboardPage } from '../../features/dashboard';
-import { DocumentsPage } from '../../features/documents';
-import { EditorPage } from '../../features/editor';
-import { ExamplePage } from '../../features/example';
 import { ProfilePage } from '../../features/profile';
 import { SettingsPage } from '../../features/settings';
 import { WorkspacePage } from '../../features/workspace';
@@ -11,13 +7,9 @@ import { WorkspacePage } from '../../features/workspace';
 export type AppRoutePath =
   | '/sign-in'
   | '/sign-up'
-  | '/dashboard'
   | '/workspace'
   | '/workspace/folder/:folderId'
-  | '/documents'
-  | '/editor'
   | '/workspace/document/:documentId'
-  | '/example'
   | '/profile'
   | '/settings';
 
@@ -49,47 +41,11 @@ export interface AppRoute {
 export const appRoutes: AppRoute[] = [
   { path: '/sign-in', label: 'Sign In', Component: SignInPage, showInNav: false },
   { path: '/sign-up', label: 'Sign Up', Component: SignUpPage, showInNav: false },
-  {
-    path: '/dashboard',
-    label: 'Dashboard',
-    Component: DashboardPage,
-    redirectTo: '/workspace',
-    requiresAuth: true,
-    showInNav: false,
-  },
   { path: '/workspace', label: 'Workspace', Component: WorkspacePage, requiresAuth: true },
   {
     path: '/workspace/folder/:folderId',
     label: 'Workspace folder',
     Component: WorkspacePage,
-    requiresAuth: true,
-    showInNav: false,
-  },
-  {
-    path: '/documents',
-    label: 'Documents',
-    Component: DocumentsPage,
-    requiresAuth: true,
-    showInNav: false,
-  },
-  {
-    path: '/editor',
-    label: 'Editor',
-    Component: EditorPage,
-    requiresAuth: true,
-    showInNav: false,
-  },
-  {
-    path: '/workspace/document/:documentId',
-    label: 'Document editor',
-    Component: EditorPage,
-    requiresAuth: true,
-    showInNav: false,
-  },
-  {
-    path: '/example',
-    label: 'Example',
-    Component: ExamplePage,
     requiresAuth: true,
     showInNav: false,
   },
