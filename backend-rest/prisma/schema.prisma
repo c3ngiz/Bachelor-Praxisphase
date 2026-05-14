@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WorkspaceItemType {
+  FOLDER
+  DOCUMENT
+}
+
+enum WorkspacePermission {
+  READ
+  WRITE
+}
+
+model User {
+  id           String           @id @default(uuid()) @db.Uuid
+  email        String           @unique
+  name         String
+  passwordHash String
+  avatarColor  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  ownedItems   WorkspaceItem[]
+  shares       WorkspaceShare[]
+
+  @@map("users")
+}
+
+model WorkspaceItem {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String
+  type            WorkspaceItemType
+  ownerId         String           @db.Uuid
+  parentId        String?          @db.Uuid
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  parent          WorkspaceItem?   @relation("WorkspaceItemHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children        WorkspaceItem[]  @relation("WorkspaceItemHierarchy")
+  shares          WorkspaceShare[]
+  documentContent DocumentContent?
+
+  @@index([deletedAt])
+  @@index([ownerId])
+  @@index([parentId])
+  @@index([type])
+  @@map("workspace_items")
+}
+
+model WorkspaceShare {
+  id         String              @id @default(uuid()) @db.Uuid
+  itemId     String              @db.Uuid
+  userId     String              @db.Uuid
+  permission WorkspacePermission
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  item       WorkspaceItem       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, userId])
+  @@index([itemId])
+  @@index([userId])
+  @@map("workspace_shares")
+}
+
+model DocumentContent {
+  id           String        @id @default(uuid()) @db.Uuid
+  itemId       String        @unique @db.Uuid
+  content      Json
+  revision     Int           @default(1)
+  lastOpenedAt DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  item         WorkspaceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@map("document_contents")
+}
