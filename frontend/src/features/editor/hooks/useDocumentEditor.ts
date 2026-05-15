@@ -7,18 +7,14 @@ import { normalizeApiError } from '../../auth/api/authApiError';
 import { useAuth } from '../../auth/hooks/useAuth';
 import type { EntityId } from '../../workspace/types/workspace.types';
 import { editorService } from '../services/editorService';
-import { createEditorExtensions, emptyEditorContent } from '../utils/editorFormatting';
-import {
-  calculateA4PageCount,
-  measureEditorContentHeight,
-} from '../utils/pagination';
+import { createEditorExtensions, emptyEditorContent } from '../utils/editorContent';
 import type {
   DocumentEditorLoadResult,
-  DocumentSaveState,
   UseDocumentEditorResult,
 } from '../types/editor.types';
 import { useCollaboration } from './useCollaboration';
-import { useDocumentAutosave } from './useDocumentAutosave';
+import { useEditorPagination } from './useEditorPagination';
+import { useEditorSave, type EditorSavedMeta } from './useEditorSave';
 
 /** Options accepted by the document editor hook. */
 export interface UseDocumentEditorOptions {
@@ -27,11 +23,12 @@ export interface UseDocumentEditorOptions {
 }
 
 /**
- * Orchestrates TipTap editor state, persistence, permissions, and pagination.
+ * Orchestrates document loading, TipTap setup, permissions, save state, and pagination.
  *
- * REST persistence remains the source of truth in polling mode. Real-time
- * collaboration can be enabled later through the isolated Yjs adapter without
- * changing route or toolbar components.
+ * Command execution, autosave, and visual page measurement live in focused
+ * hooks. REST persistence remains the source of truth in polling mode, while
+ * the collaboration adapter can switch to Yjs transport without changing route
+ * or presentational components.
  *
  * @param options - Document editor setup options.
  * @returns Editor state and commands consumed by the page shell.
@@ -45,16 +42,10 @@ export function useDocumentEditor({
   const [title, setTitleState] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<DocumentSaveState>('saved');
-  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
-  const [pageCount, setPageCount] = useState(1);
-  const revisionRef = useRef(1);
-  const changeVersionRef = useRef(0);
-  const savedVersionRef = useRef(0);
   const applyingContentRef = useRef(false);
   const appliedEditorRef = useRef<Editor | null>(null);
+  const editorRef = useRef<Editor | null>(null);
   const canWrite = loadedContent?.canWrite ?? false;
-  const hasUnsavedChanges = changeVersionRef.current !== savedVersionRef.current;
   const enableCollaboration =
     collaboration.isRealtimeEnabled && Boolean(collaboration.provider);
 
@@ -69,14 +60,28 @@ export function useDocumentEditor({
     [collaboration.localUser, collaboration.provider, collaboration.ydoc, enableCollaboration],
   );
 
-  const markUnsaved = useCallback(() => {
-    if (!canWrite || applyingContentRef.current) {
-      return;
-    }
+  const getEditor = useCallback(() => editorRef.current, []);
+  const shouldIgnoreChange = useCallback(() => applyingContentRef.current, []);
+  const handleSaved = useCallback(
+    (result: DocumentEditorLoadResult, meta: EditorSavedMeta) => {
+      setLoadedContent(result);
 
-    changeVersionRef.current += 1;
-    setSaveState('unsaved');
-  }, [canWrite]);
+      if (!meta.hasConcurrentChanges) {
+        setTitleState(result.document.name);
+      }
+    },
+    [],
+  );
+  const save = useEditorSave({
+    canWrite,
+    documentId,
+    getEditor,
+    isLoading,
+    onError: setError,
+    onSaved: handleSaved,
+    shouldIgnoreChange,
+    title,
+  });
 
   const editor = useEditor(
     {
@@ -89,21 +94,17 @@ export function useDocumentEditor({
         },
       },
       extensions,
-      onUpdate: () => markUnsaved(),
+      onUpdate: save.markUnsaved,
     },
-    [extensions],
+    [extensions, save.markUnsaved],
   );
+  const pagination = useEditorPagination({
+    editor,
+    enabled: Boolean(editor && loadedContent && !isLoading),
+  });
 
-  const measurePages = useCallback(() => {
-    const root = getMountedEditorDom(editor);
-
-    if (!root) {
-      setPageCount(1);
-      return;
-    }
-
-    const measuredHeight = measureEditorContentHeight(root);
-    setPageCount(calculateA4PageCount(measuredHeight));
+  useEffect(() => {
+    editorRef.current = editor;
   }, [editor]);
 
   useEffect(() => {
@@ -113,12 +114,7 @@ export function useDocumentEditor({
     setError(null);
     setLoadedContent(null);
     setTitleState('');
-    setSaveState('saved');
-    setLastSavedAt(null);
-    setPageCount(1);
-    revisionRef.current = 1;
-    changeVersionRef.current = 0;
-    savedVersionRef.current = 0;
+    save.resetSaveTracking();
     appliedEditorRef.current = null;
 
     editorService
@@ -128,10 +124,12 @@ export function useDocumentEditor({
           return;
         }
 
-        revisionRef.current = result.revision;
         setLoadedContent(result);
         setTitleState(result.document.name);
-        setLastSavedAt(result.updatedAt);
+        save.resetSaveTracking({
+          revision: result.revision,
+          updatedAt: result.updatedAt,
+        });
       })
       .catch((requestError) => {
         if (!isActive) {
@@ -149,7 +147,7 @@ export function useDocumentEditor({
     return () => {
       isActive = false;
     };
-  }, [documentId]);
+  }, [documentId, save.resetSaveTracking]);
 
   useEffect(() => {
     if (!editor || !loadedContent || appliedEditorRef.current === editor) {
@@ -162,91 +160,21 @@ export function useDocumentEditor({
     appliedEditorRef.current = editor;
     window.requestAnimationFrame(() => {
       applyingContentRef.current = false;
-      measurePages();
+      pagination.measureNow();
     });
-  }, [editor, loadedContent, measurePages]);
+  }, [editor, loadedContent, pagination]);
 
   useEffect(() => {
     editor?.setEditable(canWrite);
   }, [canWrite, editor]);
 
-  useEffect(() => {
-    const root = getMountedEditorDom(editor);
-
-    if (!root) {
-      return undefined;
-    }
-
-    const resizeObserver =
-      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measurePages);
-    const mutationObserver =
-      typeof MutationObserver === 'undefined' ? null : new MutationObserver(measurePages);
-
-    resizeObserver?.observe(root);
-    mutationObserver?.observe(root, {
-      attributes: true,
-      characterData: true,
-      childList: true,
-      subtree: true,
-    });
-    editor.on('update', measurePages);
-    window.requestAnimationFrame(measurePages);
-
-    return () => {
-      resizeObserver?.disconnect();
-      mutationObserver?.disconnect();
-      editor.off('update', measurePages);
-    };
-  }, [editor, measurePages]);
-
-  const saveNow = useCallback(async () => {
-    if (!editor || !loadedContent || !canWrite) {
-      return;
-    }
-
-    const versionAtSaveStart = changeVersionRef.current;
-
-    setSaveState('saving');
-    setError(null);
-
-    try {
-      const result = await editorService.saveDocumentContent(documentId, {
-        content: editor.getJSON(),
-        revision: revisionRef.current,
-        title,
-      });
-
-      revisionRef.current = result.revision;
-      setLoadedContent(result);
-      setTitleState(result.document.name);
-      setLastSavedAt(result.updatedAt);
-
-      if (changeVersionRef.current === versionAtSaveStart) {
-        savedVersionRef.current = versionAtSaveStart;
-        setSaveState('saved');
-      } else {
-        setSaveState('unsaved');
-      }
-    } catch (requestError) {
-      setSaveState('failed');
-      setError(normalizeApiError(requestError).message);
-      throw requestError;
-    }
-  }, [canWrite, documentId, editor, loadedContent, title]);
-
   const setTitle = useCallback(
     (nextTitle: string) => {
       setTitleState(nextTitle);
-      markUnsaved();
+      save.markUnsaved();
     },
-    [markUnsaved],
+    [save.markUnsaved],
   );
-
-  useDocumentAutosave({
-    enabled: canWrite && !isLoading,
-    hasUnsavedChanges,
-    onSave: saveNow,
-  });
 
   return {
     canWrite,
@@ -254,35 +182,14 @@ export function useDocumentEditor({
     document: loadedContent?.document ?? null,
     editor,
     error,
-    hasUnsavedChanges,
+    hasUnsavedChanges: save.hasUnsavedChanges,
     isLoading,
-    lastSavedAt,
-    pageCount,
-    saveNow,
-    saveState,
+    lastSavedAt: save.lastSavedAt,
+    pageCount: pagination.pageCount,
+    pagination,
+    saveNow: save.saveNow,
+    saveState: save.saveState,
     setTitle,
     title,
   };
-}
-
-/**
- * Safely returns the mounted ProseMirror DOM root.
- *
- * TipTap exposes a proxy before `EditorContent` creates the real view. Reading
- * `editor.view.dom` during that short window throws, so all pagination logic
- * must go through this guard.
- *
- * @param editor - TipTap editor instance.
- * @returns Mounted editor DOM root, or null while the view is not ready.
- */
-function getMountedEditorDom(editor: Editor | null): HTMLElement | null {
-  if (!editor || !editor.isInitialized || editor.isDestroyed) {
-    return null;
-  }
-
-  try {
-    return editor.view.dom as HTMLElement;
-  } catch {
-    return null;
-  }
 }

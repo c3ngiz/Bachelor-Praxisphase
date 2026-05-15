@@ -1,4 +1,5 @@
 import type { Editor, JSONContent } from '@tiptap/core';
+import type { CSSProperties } from 'react';
 
 import type { AuthUser } from '../../auth/types/auth.types';
 import type { DocumentItem, EntityId } from '../../workspace/types/workspace.types';
@@ -8,6 +9,12 @@ export type EditorDocumentContent = JSONContent;
 
 /** Save state shown by the document editor. */
 export type DocumentSaveState = 'saved' | 'saving' | 'unsaved' | 'failed';
+
+/** Text alignment values supported by the document editor toolbar. */
+export type EditorTextAlignment = 'left' | 'center' | 'right' | 'justify';
+
+/** Block style values exposed by the editor sidebar. */
+export type EditorBlockStyle = 'paragraph' | 'heading1' | 'heading2';
 
 /** Real-time collaboration connection state exposed to editor UI. */
 export type CollaborationConnectionState =
@@ -94,6 +101,78 @@ export interface UseCollaborationResult {
   status: CollaborationConnectionState;
 }
 
+/** Reactive toolbar state derived from the current TipTap selection. */
+export interface EditorToolbarState {
+  /** Active text alignment. */
+  alignment: EditorTextAlignment;
+  /** Active block style for the current selection. */
+  blockStyle: EditorBlockStyle;
+  /** Whether bold is active. */
+  bold: boolean;
+  /** Whether bullet list is active. */
+  bulletList: boolean;
+  /** Active font family value. */
+  fontFamily: string;
+  /** Active font size value. */
+  fontSize: string;
+  /** Active highlight color value. */
+  highlight: string;
+  /** Whether italic is active. */
+  italic: boolean;
+  /** Whether ordered list is active. */
+  orderedList: boolean;
+  /** Active text color value. */
+  textColor: string;
+  /** Whether underline is active. */
+  underline: boolean;
+}
+
+/** Typed command facade used by presentational toolbar controls. */
+export interface EditorCommandApi {
+  /** Whether command controls should be disabled. */
+  disabled: boolean;
+  /** Selection-derived toolbar state. */
+  state: EditorToolbarState;
+  /** Sets the active block style. */
+  setBlockStyle: (style: EditorBlockStyle) => void;
+  /** Toggles bold text. */
+  toggleBold: () => void;
+  /** Toggles italic text. */
+  toggleItalic: () => void;
+  /** Toggles underlined text. */
+  toggleUnderline: () => void;
+  /** Toggles the default highlight color. */
+  toggleHighlight: () => void;
+  /** Sets paragraph or heading alignment. */
+  setAlignment: (alignment: EditorTextAlignment) => void;
+  /** Toggles a bullet list. */
+  toggleBulletList: () => void;
+  /** Toggles an ordered list. */
+  toggleOrderedList: () => void;
+  /** Sets or clears font family. */
+  setFontFamily: (fontFamily: string) => void;
+  /** Sets or clears font size. */
+  setFontSize: (fontSize: string) => void;
+  /** Sets or clears text color. */
+  setTextColor: (color: string) => void;
+  /** Sets or clears text highlight. */
+  setHighlight: (color: string) => void;
+  /** Runs undo when available. */
+  undo: () => void;
+  /** Runs redo when available. */
+  redo: () => void;
+}
+
+/** Visual pagination state for the single TipTap editor surface. */
+export interface EditorPaginationState {
+  /** Number of visual A4 sheets needed for the measured content. */
+  pageCount: number;
+  /** Zero-based indexes used for rendering page backgrounds. */
+  pageIndexes: number[];
+  /** Inline stack height required for positioned page backgrounds. */
+  pageStackStyle: CSSProperties;
+}
+
 /** State returned by the document editor orchestration hook. */
 export interface UseDocumentEditorResult {
   /** TipTap editor instance. */
@@ -116,6 +195,8 @@ export interface UseDocumentEditorResult {
   lastSavedAt: string | null;
   /** Visual A4 page count calculated from editor content height. */
   pageCount: number;
+  /** Visual pagination details used by the canvas. */
+  pagination: EditorPaginationState;
   /** Collaboration state for the current document. */
   collaboration: UseCollaborationResult;
   /** Updates the editable document title. */

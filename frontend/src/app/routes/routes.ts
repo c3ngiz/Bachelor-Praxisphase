@@ -1,5 +1,5 @@
 import { SignInPage, SignUpPage } from '../../features/auth';
-import { EditorPage } from '../../features/editor';
+import { DocumentEditorPage } from '../../features/editor';
 import { ProfilePage } from '../../features/profile';
 import { SettingsPage } from '../../features/settings';
 import { WorkspacePage } from '../../features/workspace';
@@ -53,7 +53,7 @@ export const appRoutes: AppRoute[] = [
   {
     path: '/workspace/document/:documentId',
     label: 'Document editor',
-    Component: EditorPage,
+    Component: DocumentEditorPage,
     requiresAuth: true,
     showInNav: false,
   },

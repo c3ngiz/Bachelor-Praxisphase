@@ -1,8 +1,8 @@
-import { EditorShell } from '../components/EditorShell';
+import { EditorLayout } from '../components/EditorLayout';
 import { useDocumentEditor } from '../hooks/useDocumentEditor';
 
 /** Props accepted by the document editor route. */
-export interface EditorPageProps {
+export interface DocumentEditorPageProps {
   /** Dynamic route parameters supplied by the app router. */
   params?: Record<string, string>;
 }
@@ -13,7 +13,7 @@ export interface EditorPageProps {
  * @param props - Route props.
  * @returns Document editor page.
  */
-export function EditorPage({ params }: EditorPageProps): JSX.Element {
+export function DocumentEditorPage({ params }: DocumentEditorPageProps): JSX.Element {
   const documentId = params?.documentId;
 
   if (!documentId) {
@@ -36,10 +36,10 @@ interface EditorRouteContentProps {
  * Owns the editor hook for a known document route.
  *
  * @param props - Route content props.
- * @returns Hydrated editor shell.
+ * @returns Hydrated editor layout.
  */
 function EditorRouteContent({ documentId }: EditorRouteContentProps): JSX.Element {
   const state = useDocumentEditor({ documentId });
 
-  return <EditorShell state={state} />;
+  return <EditorLayout state={state} />;
 }

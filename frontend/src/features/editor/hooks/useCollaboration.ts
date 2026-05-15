@@ -8,7 +8,7 @@ import {
   getCollaborationRoomName,
   shouldUseRealtimeCollaboration,
 } from '../services/collaborationClient';
-import { getEditorUserColor } from '../utils/editorFormatting';
+import { getEditorUserColor } from '../utils/editorContent';
 import type {
   CollaborationConnectionState,
   CollaborationUser,

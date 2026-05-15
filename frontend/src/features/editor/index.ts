@@ -1,4 +1,4 @@
-export { EditorPage } from './pages/EditorPage';
+export { DocumentEditorPage } from './pages/DocumentEditorPage';
 export type {
   CollaborationConnectionState,
   CollaborationUser,

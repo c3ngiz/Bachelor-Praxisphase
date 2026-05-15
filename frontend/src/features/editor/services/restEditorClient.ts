@@ -5,7 +5,7 @@ import { NormalizedApiError, throwNormalizedApiError } from '../../auth/api/auth
 import { authTokenStorage } from '../../auth/api/authTokenStorage';
 import { toWorkspaceItem, type BackendWorkspaceItem } from '../../workspace/api/workspaceMappers';
 import type { EntityId } from '../../workspace/types/workspace.types';
-import { normalizeEditorContent } from '../utils/editorFormatting';
+import { normalizeEditorContent } from '../utils/editorContent';
 import type {
   DocumentEditorLoadResult,
   EditorClient,

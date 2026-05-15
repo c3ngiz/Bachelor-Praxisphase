@@ -18,7 +18,7 @@ export const emptyEditorContent: EditorDocumentContent = {
   type: 'doc',
 };
 
-/** Font families exposed by the editor toolbar. */
+/** Font families exposed by the editor sidebar. */
 export const editorFontFamilyOptions = [
   { label: 'Default', value: '' },
   { label: 'Arial', value: 'Arial, sans-serif' },
@@ -28,7 +28,7 @@ export const editorFontFamilyOptions = [
   { label: 'Courier New', value: '"Courier New", monospace' },
 ] as const;
 
-/** Font sizes exposed by the editor toolbar. */
+/** Font sizes exposed by the editor sidebar. */
 export const editorFontSizeOptions = [
   '10px',
   '11px',
@@ -40,7 +40,7 @@ export const editorFontSizeOptions = [
   '32px',
 ] as const;
 
-/** Highlight swatches exposed by the editor toolbar. */
+/** Highlight swatches exposed by the editor sidebar. */
 export const editorHighlightOptions = [
   { label: 'Yellow highlight', value: '#fef08a' },
   { label: 'Green highlight', value: '#bbf7d0' },
@@ -49,7 +49,7 @@ export const editorHighlightOptions = [
   { label: 'Clear highlight', value: '' },
 ] as const;
 
-/** Text color swatches exposed by the editor toolbar. */
+/** Text color swatches exposed by the editor sidebar. */
 export const editorTextColorOptions = [
   { label: 'Slate text', value: '#17202a' },
   { label: 'Gray text', value: '#475569' },
@@ -74,8 +74,11 @@ export interface CreateEditorExtensionsOptions {
 /**
  * Creates the editor extension list for polling and real-time modes.
  *
- * TipTap's collaboration extension owns undo/redo through Yjs, so StarterKit's
- * undoRedo extension is disabled only when the collaboration stack is active.
+ * The list extensions stay inside StarterKit to avoid duplicate ProseMirror
+ * node names. They are configured explicitly so bullet lists render `ul > li`
+ * nodes and ordered lists render `ol > li` nodes with TipTap's default
+ * `start: 1` attribute. This keeps list output semantic and compatible with
+ * future Yjs collaboration because the document remains one editor instance.
  *
  * @param options - Collaboration-aware extension options.
  * @returns TipTap extensions used by the document editor.
@@ -83,9 +86,29 @@ export interface CreateEditorExtensionsOptions {
 export function createEditorExtensions(options: CreateEditorExtensionsOptions): Extensions {
   const extensions: Extensions = [
     StarterKit.configure({
+      bulletList: {
+        HTMLAttributes: {
+          class: 'document-list document-list--bullet',
+        },
+        keepAttributes: false,
+        keepMarks: true,
+      },
       heading: {
         levels: [1, 2, 3],
       },
+      listItem: {
+        HTMLAttributes: {
+          class: 'document-list-item',
+        },
+      },
+      orderedList: {
+        HTMLAttributes: {
+          class: 'document-list document-list--ordered',
+        },
+        keepAttributes: false,
+        keepMarks: true,
+      },
+      underline: {},
       undoRedo: options.enableCollaboration ? false : undefined,
     }),
     TextStyle,
