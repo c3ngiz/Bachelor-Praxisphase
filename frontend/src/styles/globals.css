@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './tiptap.css';
 
 :root {
   color: #17202a;
