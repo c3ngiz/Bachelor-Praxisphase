@@ -5,39 +5,25 @@ import {
   AlignRight,
   ArrowLeft,
   Bold,
-  Heading1,
-  Heading2,
   Highlighter,
   Italic,
   List,
   ListOrdered,
   Palette,
-  Pilcrow,
   Redo2,
   Save,
-  Type,
   Underline,
   Undo2,
 } from 'lucide-react';
 
-import { Button, Divider } from '../../../shared/components';
-import { cn } from '../../../shared/utils';
+import { Button } from '../../../shared/components';
 import { useEditorCommands } from '../hooks/useEditorCommands';
-import type {
-  EditorBlockStyle,
-  EditorTextAlignment,
-  UseDocumentEditorResult,
-} from '../types/editor.types';
+import type { EditorTextAlignment, UseDocumentEditorResult } from '../types/editor.types';
 import {
   editorFontFamilyOptions,
   editorFontSizeOptions,
-  editorHighlightOptions,
-  editorTextColorOptions,
 } from '../utils/editorContent';
-import { CollaborationStatusBadge } from './CollaborationStatusBadge';
-import { DocumentHeader } from './DocumentHeader';
 import { EditorSidebarSection } from './EditorSidebarSection';
-import { SaveStatusBadge } from './SaveStatusBadge';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSelect, type ToolbarSelectOption } from './ToolbarSelect';
 
@@ -46,12 +32,6 @@ export interface EditorSidebarProps {
   /** Editor state returned by `useDocumentEditor`. */
   state: UseDocumentEditorResult;
 }
-
-const blockStyleOptions: readonly ToolbarSelectOption[] = [
-  { label: 'Paragraph', value: 'paragraph' },
-  { label: 'Heading 1', value: 'heading1' },
-  { label: 'Heading 2', value: 'heading2' },
-];
 
 const fontFamilyOptions: readonly ToolbarSelectOption[] = editorFontFamilyOptions;
 const fontSizeOptions: readonly ToolbarSelectOption[] = [
@@ -63,10 +43,14 @@ const fontSizeOptions: readonly ToolbarSelectOption[] = [
 ];
 
 /**
- * Renders document metadata and grouped formatting controls in the left rail.
+ * Renders grouped formatting controls in the right editor rail.
+ *
+ * Document identity and collaboration state are intentionally kept out of this
+ * rail so editing tools stay scannable and the document canvas remains the
+ * primary focus.
  *
  * @param props - Editor sidebar props.
- * @returns Workspace-style editor sidebar.
+ * @returns Workspace-style formatting sidebar.
  */
 export function EditorSidebar({ state }: EditorSidebarProps): JSX.Element {
   const commands = useEditorCommands({
@@ -77,106 +61,53 @@ export function EditorSidebar({ state }: EditorSidebarProps): JSX.Element {
 
   return (
     <aside
-      className="editor-sidebar rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-      aria-label="Document editor controls"
+      className="editor-sidebar editor-sidebar--toolbar rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+      aria-label="Document formatting controls"
     >
-      <div className="grid gap-3">
-        <Button
-          className="w-full justify-start gap-2"
-          onClick={() => window.location.assign('/workspace')}
-          size="sm"
-          variant="secondary"
-        >
-          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          Workspace
-        </Button>
-
-        <DocumentHeader
-          canWrite={state.canWrite}
-          document={state.document}
-          isLoading={state.isLoading}
-          onTitleChange={state.setTitle}
-          title={state.title}
-        />
-
-        <div className="flex flex-wrap gap-1.5">
-          <SaveStatusBadge lastSavedAt={state.lastSavedAt} state={state.saveState} />
-          <CollaborationStatusBadge collaboration={state.collaboration} />
-        </div>
-      </div>
-
-      <Divider className="my-4" />
-
       <div className="grid gap-4">
-        <EditorSidebarSection title="Text style">
-          <ToolbarSelect
-            disabled={controlsDisabled}
-            id="editor-block-style"
-            label="Style"
-            onChange={(value) => commands.setBlockStyle(value as EditorBlockStyle)}
-            options={blockStyleOptions}
-            value={commands.state.blockStyle}
-          />
-          <div className="mt-2 grid grid-cols-3 gap-1.5">
-            <ToolbarButton
-              active={commands.state.blockStyle === 'paragraph'}
-              disabled={controlsDisabled}
-              icon={Pilcrow}
-              label="Paragraph"
-              onClick={() => commands.setBlockStyle('paragraph')}
-            />
-            <ToolbarButton
-              active={commands.state.blockStyle === 'heading1'}
-              disabled={controlsDisabled}
-              icon={Heading1}
-              label="Heading 1"
-              onClick={() => commands.setBlockStyle('heading1')}
-            />
-            <ToolbarButton
-              active={commands.state.blockStyle === 'heading2'}
-              disabled={controlsDisabled}
-              icon={Heading2}
-              label="Heading 2"
-              onClick={() => commands.setBlockStyle('heading2')}
-            />
-          </div>
-        </EditorSidebarSection>
-
         <EditorSidebarSection title="Formatting">
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid gap-1.5">
             <ToolbarButton
               active={commands.state.bold}
               disabled={controlsDisabled}
               icon={Bold}
               label="Bold"
               onClick={commands.toggleBold}
-            />
+            >
+              Bold
+            </ToolbarButton>
             <ToolbarButton
               active={commands.state.italic}
               disabled={controlsDisabled}
               icon={Italic}
               label="Italic"
               onClick={commands.toggleItalic}
-            />
+            >
+              Italic
+            </ToolbarButton>
             <ToolbarButton
               active={commands.state.underline}
               disabled={controlsDisabled}
               icon={Underline}
               label="Underline"
               onClick={commands.toggleUnderline}
-            />
+            >
+              Underline
+            </ToolbarButton>
             <ToolbarButton
               active={Boolean(commands.state.highlight)}
               disabled={controlsDisabled}
               icon={Highlighter}
               label="Highlight"
               onClick={commands.toggleHighlight}
-            />
+            >
+              Highlight
+            </ToolbarButton>
           </div>
         </EditorSidebarSection>
 
         <EditorSidebarSection title="Alignment">
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid gap-1.5">
             {(['left', 'center', 'right', 'justify'] as const).map((alignment) => (
               <ToolbarButton
                 active={commands.state.alignment === alignment}
@@ -185,13 +116,15 @@ export function EditorSidebar({ state }: EditorSidebarProps): JSX.Element {
                 key={alignment}
                 label={`Align ${alignment}`}
                 onClick={() => commands.setAlignment(alignment)}
-              />
+              >
+                {getAlignmentLabel(alignment)}
+              </ToolbarButton>
             ))}
           </div>
         </EditorSidebarSection>
 
         <EditorSidebarSection title="Lists">
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid gap-1.5">
             <ToolbarButton
               active={commands.state.bulletList}
               disabled={controlsDisabled}
@@ -231,29 +164,27 @@ export function EditorSidebar({ state }: EditorSidebarProps): JSX.Element {
               options={fontSizeOptions}
               value={commands.state.fontSize}
             />
-            <SwatchGroup
-              activeValue={commands.state.textColor}
+            <ColorPickerField
               disabled={controlsDisabled}
-              icon={<Type aria-hidden="true" className="h-3.5 w-3.5" />}
+              fallbackValue="#17202a"
+              id="editor-text-color"
               label="Text color"
               onSelect={commands.setTextColor}
-              swatches={editorTextColorOptions}
-              variant="text"
+              value={commands.state.textColor}
             />
-            <SwatchGroup
-              activeValue={commands.state.highlight}
+            <ColorPickerField
               disabled={controlsDisabled}
-              icon={<Palette aria-hidden="true" className="h-3.5 w-3.5" />}
+              fallbackValue="#fef08a"
+              id="editor-highlight-color"
               label="Highlight color"
               onSelect={commands.setHighlight}
-              swatches={editorHighlightOptions}
-              variant="highlight"
+              value={commands.state.highlight}
             />
           </div>
         </EditorSidebarSection>
 
         <EditorSidebarSection title="Actions">
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid gap-1.5">
             <ToolbarButton
               disabled={controlsDisabled}
               icon={Undo2}
@@ -288,70 +219,88 @@ export function EditorSidebar({ state }: EditorSidebarProps): JSX.Element {
             <Save aria-hidden="true" className="h-4 w-4" />
             Save
           </Button>
+          <Button
+            className="mt-2 w-full justify-center gap-2"
+            onClick={() => window.location.assign('/workspace')}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            Back to workspace
+          </Button>
         </EditorSidebarSection>
       </div>
     </aside>
   );
 }
 
-interface SwatchGroupProps {
-  /** Currently active color value. */
-  activeValue: string;
+interface ColorPickerFieldProps {
   /** Whether swatches are disabled. */
   disabled: boolean;
-  /** Small icon shown before the swatches. */
-  icon: JSX.Element;
+  /** Color used by the picker when the editor mark is currently cleared. */
+  fallbackValue: string;
+  /** Native color input identifier. */
+  id: string;
   /** Accessible group label. */
   label: string;
-  /** Handles swatch selection. */
+  /** Handles color selection or clearing. */
   onSelect: (value: string) => void;
-  /** Available swatch values. */
-  swatches: readonly { label: string; value: string }[];
-  /** Visual swatch mode. */
-  variant: 'highlight' | 'text';
+  /** Currently active color value. */
+  value: string;
 }
 
-function SwatchGroup({
-  activeValue,
+/**
+ * Renders a native color picker for text or highlight color.
+ *
+ * @param props - Color picker props.
+ * @returns Color picker command row.
+ */
+function ColorPickerField({
   disabled,
-  icon,
+  fallbackValue,
+  id,
   label,
   onSelect,
-  swatches,
-  variant,
-}: SwatchGroupProps): JSX.Element {
-  return (
-    <div aria-label={label} className="editor-swatch-group" role="group">
-      <span className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500">
-        {icon}
-      </span>
-      {swatches.map((swatch) => {
-        const isActive = activeValue === swatch.value && Boolean(swatch.value);
+  value,
+}: ColorPickerFieldProps): JSX.Element {
+  const selectedValue = value || fallbackValue;
 
-        return (
-          <button
-            aria-label={swatch.label}
-            aria-pressed={isActive}
-            className={cn('editor-swatch', isActive && 'editor-swatch--active')}
-            disabled={disabled}
-            key={`${label}-${swatch.label}`}
-            onClick={() => onSelect(swatch.value)}
-            style={
-              variant === 'highlight'
-                ? { backgroundColor: swatch.value || '#ffffff' }
-                : { color: swatch.value || '#475569' }
-            }
-            type="button"
-          >
-            {swatch.value ? variant === 'text' ? 'A' : null : <span aria-hidden="true">x</span>}
-          </button>
-        );
-      })}
+  return (
+    <div className="editor-color-picker">
+      <label className="editor-color-picker__label" htmlFor={id}>
+        <Palette aria-hidden="true" className="h-4 w-4 text-slate-500" />
+        <span>{label}</span>
+      </label>
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <input
+          aria-label={label}
+          className="editor-color-picker__input"
+          disabled={disabled}
+          id={id}
+          onChange={(event) => onSelect(event.target.value)}
+          type="color"
+          value={selectedValue}
+        />
+        <Button
+          disabled={disabled || !value}
+          onClick={() => onSelect('')}
+          size="sm"
+          variant="secondary"
+        >
+          Clear
+        </Button>
+      </div>
     </div>
   );
 }
 
-function getAlignmentIcon(alignment: EditorTextAlignment) {
+/**
+ * Maps an alignment value to its toolbar icon.
+ *
+ * @param alignment - Current alignment command value.
+ * @returns Icon used by the alignment button.
+ */
+function getAlignmentIcon(alignment: EditorTextAlignment): typeof AlignLeft {
   if (alignment === 'center') {
     return AlignCenter;
   }
@@ -365,4 +314,26 @@ function getAlignmentIcon(alignment: EditorTextAlignment) {
   }
 
   return AlignLeft;
+}
+
+/**
+ * Maps an alignment value to concise visible button text.
+ *
+ * @param alignment - Alignment command value.
+ * @returns Button label.
+ */
+function getAlignmentLabel(alignment: EditorTextAlignment): string {
+  if (alignment === 'center') {
+    return 'Center';
+  }
+
+  if (alignment === 'right') {
+    return 'Right';
+  }
+
+  if (alignment === 'justify') {
+    return 'Justify';
+  }
+
+  return 'Left';
 }

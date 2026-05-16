@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Clock3, FileText, RadioTower, UsersRound } from 'lucide-react';
+import { FileText, type LucideIcon, UsersRound } from 'lucide-react';
 
 import { Avatar, Divider } from '../../../shared/components';
 import { getPermissionLabel } from '../../workspace/utils/workspaceFormatting';
@@ -15,34 +15,60 @@ export interface CollaborationPanelProps {
 }
 
 /**
- * Renders document collaboration, permission, and polling metadata.
+ * Renders compact document context and polling collaboration state.
  *
- * The panel does not invent realtime presence in polling mode. It shows real
- * awareness users only when the realtime provider is enabled; otherwise it
- * explains that presence is unavailable for polling synchronization.
+ * The panel keeps always-needed context visible on the left rail: document
+ * title, owner, permission, save/sync state, people, and a small details set.
+ * Realtime presence is shown only when the provider supplies it; polling mode
+ * gets a short unavailable note rather than fabricated active users.
  *
  * @param props - Collaboration panel props.
  * @returns Collaboration and document information panel.
  */
 export function CollaborationPanel({ state }: CollaborationPanelProps): JSX.Element {
   const document = state.document;
-  const localUser = state.collaboration.localUser;
   const owner = document?.owner;
+  const localUser = state.collaboration.localUser;
   const lastSyncedAt = state.sync.lastSyncedAt ?? state.sync.lastCheckedAt;
 
   return (
     <div className="grid gap-4">
-      <section aria-label="Sync status" className="grid gap-3">
-        <div>
-          <p className="m-0 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Collaboration
-          </p>
-          <h2 className="m-0 mt-1 text-lg font-semibold text-slate-950">Document sync</h2>
+      <section aria-label="Document summary" className="grid gap-3">
+        <div className="grid gap-1.5">
+          <label
+            className="m-0 text-xs font-semibold uppercase tracking-wide text-slate-500"
+            htmlFor="document-title"
+          >
+            Filename
+          </label>
+          <input
+            aria-label="Filename"
+            className="editor-title-input editor-title-input--filename"
+            disabled={!state.canWrite || state.isLoading}
+            id="document-title"
+            onChange={(event) => state.setTitle(event.target.value)}
+            placeholder={state.isLoading ? 'Loading document...' : 'Untitled document'}
+            value={state.title}
+          />
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          <SaveStatusBadge lastSavedAt={state.lastSavedAt} state={state.saveState} />
-          <SyncStatusBadge status={state.sync.status} />
+
+        <div className="grid gap-1.5">
+          <SummaryRow label="Owner" value={owner?.name ?? 'Unavailable'} />
+          <SummaryRow
+            label="Access"
+            value={document ? getPermissionLabel(document.permission) : 'Loading'}
+          />
         </div>
+
+        <div aria-label="Document state" className="editor-context-status grid gap-2">
+          <StatusRow label="Save">
+            <SaveStatusBadge lastSavedAt={state.lastSavedAt} state={state.saveState} />
+          </StatusRow>
+          <StatusRow label="Sync">
+            <SyncStatusBadge status={state.sync.status} />
+          </StatusRow>
+        </div>
+
         {state.sync.conflict ? (
           <ConflictNotice
             conflict={state.sync.conflict}
@@ -61,20 +87,7 @@ export function CollaborationPanel({ state }: CollaborationPanelProps): JSX.Elem
 
       <section aria-label="People" className="grid gap-3">
         <PanelHeading icon={UsersRound} title="People" />
-        <PersonRow
-          color={localUser.color}
-          detail="Current user"
-          name={localUser.name}
-        />
-        {owner ? (
-          <PersonRow
-            color={owner.avatarColor}
-            detail="Document owner"
-            name={owner.name}
-          />
-        ) : (
-          <PlaceholderText>Owner metadata is loading.</PlaceholderText>
-        )}
+        <PersonRow color={localUser.color} detail="Current user" name={localUser.name} />
         <PresenceList
           isRealtimeEnabled={state.collaboration.isRealtimeEnabled}
           users={state.collaboration.users}
@@ -83,39 +96,16 @@ export function CollaborationPanel({ state }: CollaborationPanelProps): JSX.Elem
 
       <Divider />
 
-      <section aria-label="Access" className="grid gap-3">
-        <PanelHeading icon={RadioTower} title="Access and polling" />
-        <MetadataRow
-          label="Permission"
-          value={document ? getPermissionLabel(document.permission) : 'Loading'}
-        />
-        <MetadataRow
-          label="Polling"
-          value={state.sync.isPolling ? `${state.sync.intervalMs / 1000}s interval` : 'Inactive'}
-        />
+      <section aria-label="Document details" className="grid gap-3">
+        <PanelHeading icon={FileText} title="Details" />
+        <MetadataRow label="Revision" value={document?.revision ? `r${document.revision}` : 'r1'} />
         <MetadataRow
           label="Last synced"
           value={lastSyncedAt ? formatDateTime(lastSyncedAt) : 'Not yet synced'}
         />
         <MetadataRow
-          label="Remote revision"
-          value={state.sync.remoteVersion ? `r${state.sync.remoteVersion.revision}` : 'Unknown'}
-        />
-      </section>
-
-      <Divider />
-
-      <section aria-label="Document metadata" className="grid gap-3">
-        <PanelHeading icon={FileText} title="Document" />
-        <MetadataRow label="Name" value={document?.name ?? 'Loading'} />
-        <MetadataRow label="Revision" value={document?.revision ? `r${document.revision}` : 'r1'} />
-        <MetadataRow
           label="Modified"
           value={document?.updatedAt ? formatDateTime(document.updatedAt) : 'Unknown'}
-        />
-        <MetadataRow
-          label="Opened"
-          value={document?.lastOpenedAt ? formatDateTime(document.lastOpenedAt) : 'Not available'}
         />
       </section>
     </div>
@@ -124,13 +114,13 @@ export function CollaborationPanel({ state }: CollaborationPanelProps): JSX.Elem
 
 interface PanelHeadingProps {
   /** Icon rendered next to the section title. */
-  icon: typeof Clock3;
+  icon: LucideIcon;
   /** Section title. */
   title: string;
 }
 
 /**
- * Renders a small icon heading for right-sidebar sections.
+ * Renders a small icon heading for context-sidebar sections.
  *
  * @param props - Heading props.
  * @returns Section heading.
@@ -140,6 +130,50 @@ function PanelHeading({ icon: Icon, title }: PanelHeadingProps): JSX.Element {
     <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
       <Icon aria-hidden="true" className="h-4 w-4 text-slate-500" />
       {title}
+    </div>
+  );
+}
+
+interface SummaryRowProps {
+  /** Compact metadata label. */
+  label: string;
+  /** Compact metadata value. */
+  value: string;
+}
+
+interface StatusRowProps {
+  /** Badge-like status content. */
+  children: JSX.Element;
+  /** Status row label. */
+  label: string;
+}
+
+/**
+ * Gives status badges a stable label and panel background.
+ *
+ * @param props - Status row props.
+ * @returns Labeled status row.
+ */
+function StatusRow({ children, label }: StatusRowProps): JSX.Element {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+      <span className="text-xs font-medium text-slate-500">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Renders high-priority document metadata near the title.
+ *
+ * @param props - Summary row props.
+ * @returns Compact summary row.
+ */
+function SummaryRow({ label, value }: SummaryRowProps): JSX.Element {
+  return (
+    <div className="flex items-center justify-between gap-3 text-xs">
+      <span className="text-slate-500">{label}</span>
+      <span className="min-w-0 truncate text-right font-medium text-slate-800">{value}</span>
     </div>
   );
 }
@@ -192,7 +226,7 @@ interface PresenceListProps {
  */
 function PresenceList({ isRealtimeEnabled, users }: PresenceListProps): JSX.Element {
   if (!isRealtimeEnabled) {
-    return <PlaceholderText>Presence unavailable in polling mode.</PlaceholderText>;
+    return <PlaceholderText>Live presence unavailable in polling mode.</PlaceholderText>;
   }
 
   if (users.length === 0) {
@@ -243,7 +277,7 @@ interface PlaceholderTextProps {
  */
 function PlaceholderText({ children }: PlaceholderTextProps): JSX.Element {
   return (
-    <p className="m-0 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+    <p className="m-0 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-500">
       {children}
     </p>
   );

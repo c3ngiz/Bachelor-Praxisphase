@@ -1,25 +1,21 @@
-import { CollaborationPanel } from './CollaborationPanel';
+import { EditorContextSidebar } from './EditorContextSidebar';
 import type { UseDocumentEditorResult } from '../types/editor.types';
 
-/** Props for the editor collaboration sidebar. */
+/** Props for the legacy editor context-sidebar wrapper. */
 export interface EditorRightSidebarProps {
   /** Editor state returned by `useDocumentEditor`. */
   state: UseDocumentEditorResult;
 }
 
 /**
- * Renders the right rail for collaboration and document sync details.
+ * Backward-compatible wrapper for the document context sidebar.
  *
- * @param props - Right sidebar props.
- * @returns Workspace-style right editor sidebar.
+ * The context rail now belongs on the left side of the editor, but this export
+ * remains available for older imports while rendering the same compact panel.
+ *
+ * @param props - Legacy wrapper props.
+ * @returns Workspace-style editor context sidebar.
  */
 export function EditorRightSidebar({ state }: EditorRightSidebarProps): JSX.Element {
-  return (
-    <aside
-      aria-label="Document collaboration information"
-      className="editor-sidebar editor-sidebar--right rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-    >
-      <CollaborationPanel state={state} />
-    </aside>
-  );
+  return <EditorContextSidebar state={state} />;
 }
