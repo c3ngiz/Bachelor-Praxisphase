@@ -3,6 +3,7 @@ import type { EntityId } from '../../workspace/types/workspace.types';
 import type {
   DocumentEditorLoadResult,
   EditorClient,
+  GetDocumentContentOptions,
   SaveDocumentContentInput,
 } from '../types/editor.types';
 
@@ -18,10 +19,15 @@ export class GraphqlEditorClient implements EditorClient {
    * Throws a clear unsupported-transport error.
    *
    * @param documentId - Workspace document identifier.
+   * @param options - Ignored until a GraphQL editor schema exists.
    * @returns Never resolves until a GraphQL editor schema is implemented.
    */
-  getDocumentContent(documentId: EntityId): Promise<DocumentEditorLoadResult> {
+  getDocumentContent(
+    documentId: EntityId,
+    options?: GetDocumentContentOptions,
+  ): Promise<DocumentEditorLoadResult> {
     void documentId;
+    void options;
     return Promise.reject(createUnsupportedGraphqlError());
   }
 

@@ -1,4 +1,4 @@
-import type { Extensions, JSONContent } from '@tiptap/core';
+import type { Editor, Extensions, JSONContent } from '@tiptap/core';
 import { Collaboration } from '@tiptap/extension-collaboration';
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret';
 import { Color } from '@tiptap/extension-color';
@@ -151,6 +151,39 @@ export function normalizeEditorContent(value: unknown): EditorDocumentContent {
 }
 
 /**
+ * Replaces the mounted editor document with a backend snapshot.
+ *
+ * Polling uses this helper with TipTap's `emitUpdate: false` option so remote
+ * content application does not mark the document dirty or immediately trigger
+ * autosave. Selection is restored to the closest valid position when possible.
+ *
+ * @param editor - Mounted TipTap editor instance.
+ * @param content - Normalized remote document content.
+ */
+export function applyEditorContentSnapshot(editor: Editor, content: EditorDocumentContent): void {
+  const wasFocused = editor.isFocused;
+  const previousSelection = editor.state.selection;
+
+  editor.commands.setContent(content, { emitUpdate: false });
+
+  const documentSize = editor.state.doc.content.size;
+
+  if (documentSize > 0) {
+    const from = clampEditorSelectionPosition(previousSelection.from, documentSize);
+    const to = clampEditorSelectionPosition(previousSelection.to, documentSize);
+
+    editor.commands.setTextSelection({
+      from: Math.min(from, to),
+      to: Math.max(from, to),
+    });
+  }
+
+  if (wasFocused) {
+    editor.commands.focus();
+  }
+}
+
+/**
  * Derives a stable collaboration color from a user or document identifier.
  *
  * @param value - Stable input string.
@@ -171,4 +204,15 @@ export function getEditorUserColor(value: string): string {
  */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Keeps a ProseMirror selection position inside the current document.
+ *
+ * @param position - Previous selection position.
+ * @param documentSize - Size of the current ProseMirror document.
+ * @returns Safe selection position.
+ */
+function clampEditorSelectionPosition(position: number, documentSize: number): number {
+  return Math.max(1, Math.min(position, documentSize));
 }

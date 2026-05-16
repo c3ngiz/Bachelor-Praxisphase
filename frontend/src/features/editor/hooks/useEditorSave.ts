@@ -5,6 +5,7 @@ import { normalizeApiError } from '../../auth/api/authApiError';
 import type { EntityId } from '../../workspace/types/workspace.types';
 import { editorService } from '../services/editorService';
 import type {
+  DocumentContentVersion,
   DocumentEditorLoadResult,
   DocumentSaveState,
   SaveDocumentContentInput,
@@ -36,6 +37,8 @@ export interface UseEditorSaveOptions {
   getEditor: () => Editor | null;
   /** Whether the initial document load is still pending. */
   isLoading: boolean;
+  /** Whether save/autosave should wait for the user to resolve a sync conflict. */
+  saveBlocked?: boolean;
   /** Receives the normalized backend response after a successful save. */
   onSaved: (result: DocumentEditorLoadResult, meta: EditorSavedMeta) => void;
   /** Receives load/save errors for the route-level alert. */
@@ -48,6 +51,8 @@ export interface UseEditorSaveOptions {
 
 /** State and commands returned by the editor save hook. */
 export interface UseEditorSaveResult {
+  /** Adopts a newer backend revision while preserving local dirty edits. */
+  adoptRemoteVersion: (input: DocumentContentVersion) => void;
   /** Whether local content differs from the last acknowledged save. */
   hasUnsavedChanges: boolean;
   /** ISO timestamp of the last successful save. */
@@ -68,7 +73,9 @@ export interface UseEditorSaveResult {
  * The hook keeps mutable editor/version values in refs so TipTap update
  * handlers do not capture stale permission or title state. Concurrent edits
  * during an in-flight save keep the editor marked as unsaved after the backend
- * acknowledges the older version.
+ * acknowledges the older version. When polling reports a conflict, autosave is
+ * blocked until the user either reloads the remote revision or explicitly keeps
+ * the local version.
  *
  * @param options - Save setup options.
  * @returns Save state and persistence commands.
@@ -81,6 +88,7 @@ export function useEditorSave({
   isLoading,
   onError,
   onSaved,
+  saveBlocked = false,
   shouldIgnoreChange,
   title,
 }: UseEditorSaveOptions): UseEditorSaveResult {
@@ -91,6 +99,7 @@ export function useEditorSave({
   const changeVersionRef = useRef(0);
   const isLoadingRef = useRef(isLoading);
   const revisionRef = useRef(1);
+  const saveBlockedRef = useRef(saveBlocked);
   const savedVersionRef = useRef(0);
   const titleRef = useRef(title);
 
@@ -101,6 +110,10 @@ export function useEditorSave({
   useEffect(() => {
     isLoadingRef.current = isLoading;
   }, [isLoading]);
+
+  useEffect(() => {
+    saveBlockedRef.current = saveBlocked;
+  }, [saveBlocked]);
 
   useEffect(() => {
     titleRef.current = title;
@@ -135,10 +148,24 @@ export function useEditorSave({
     publishVersionSnapshot();
   }, [publishVersionSnapshot, shouldIgnoreChange]);
 
+  const adoptRemoteVersion = useCallback(
+    (input: DocumentContentVersion) => {
+      revisionRef.current = input.revision;
+      setLastSavedAt(input.updatedAt);
+
+      if (changeVersionRef.current !== savedVersionRef.current) {
+        setSaveState('unsaved');
+      }
+
+      publishVersionSnapshot();
+    },
+    [publishVersionSnapshot],
+  );
+
   const saveNow = useCallback(async () => {
     const editor = getEditor();
 
-    if (!editor || !canWriteRef.current || isLoadingRef.current) {
+    if (!editor || !canWriteRef.current || isLoadingRef.current || saveBlockedRef.current) {
       return;
     }
 
@@ -173,7 +200,7 @@ export function useEditorSave({
   const hasUnsavedChanges = versionSnapshot.change !== versionSnapshot.saved;
 
   useEffect(() => {
-    if (!canWrite || isLoading || !hasUnsavedChanges || saveState === 'saving') {
+    if (!canWrite || isLoading || saveBlocked || !hasUnsavedChanges || saveState === 'saving') {
       return undefined;
     }
 
@@ -182,7 +209,7 @@ export function useEditorSave({
     }, debounceMs);
 
     return () => window.clearTimeout(timeoutId);
-  }, [canWrite, debounceMs, hasUnsavedChanges, isLoading, saveNow, saveState]);
+  }, [canWrite, debounceMs, hasUnsavedChanges, isLoading, saveBlocked, saveNow, saveState]);
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent): void {
@@ -199,6 +226,7 @@ export function useEditorSave({
   }, [hasUnsavedChanges]);
 
   return {
+    adoptRemoteVersion,
     hasUnsavedChanges,
     lastSavedAt,
     markUnsaved,

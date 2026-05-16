@@ -9,6 +9,7 @@ import { normalizeEditorContent } from '../utils/editorContent';
 import type {
   DocumentEditorLoadResult,
   EditorClient,
+  GetDocumentContentOptions,
   SaveDocumentContentInput,
 } from '../types/editor.types';
 
@@ -56,12 +57,19 @@ export class RestEditorClient implements EditorClient {
    * Loads persisted document content.
    *
    * @param documentId - Workspace document identifier.
+   * @param options - Optional load behavior for metadata touching.
    * @returns Normalized editor content response.
    */
-  async getDocumentContent(documentId: EntityId): Promise<DocumentEditorLoadResult> {
+  async getDocumentContent(
+    documentId: EntityId,
+    options?: GetDocumentContentOptions,
+  ): Promise<DocumentEditorLoadResult> {
     try {
       const response = await this.http.get<RestDocumentContentResponse>(
         `/api/workspace/documents/${encodeURIComponent(documentId)}/content`,
+        {
+          params: options?.touch === false ? { touch: 'false' } : undefined,
+        },
       );
 
       return toDocumentEditorLoadResult(response.data);

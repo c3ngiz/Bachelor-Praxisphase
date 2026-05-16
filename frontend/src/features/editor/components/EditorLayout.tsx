@@ -1,4 +1,5 @@
 import { EditorCanvas } from './EditorCanvas';
+import { EditorRightSidebar } from './EditorRightSidebar';
 import { EditorSidebar } from './EditorSidebar';
 import type { UseDocumentEditorResult } from '../types/editor.types';
 
@@ -12,7 +13,7 @@ export interface EditorLayoutProps {
  * Provides the responsive workspace-style layout for the document editor.
  *
  * @param props - Editor layout props.
- * @returns Editor sidebar and document canvas layout.
+ * @returns Left tools, central document canvas, and right collaboration sidebar.
  */
 export function EditorLayout({ state }: EditorLayoutProps): JSX.Element {
   return (
@@ -30,6 +31,9 @@ export function EditorLayout({ state }: EditorLayoutProps): JSX.Element {
           </div>
         ) : null}
         <EditorCanvas state={state} />
+      </div>
+      <div className="document-editor-page__right-sidebar">
+        <EditorRightSidebar state={state} />
       </div>
     </section>
   );

@@ -7,13 +7,16 @@ import { normalizeApiError } from '../../auth/api/authApiError';
 import { useAuth } from '../../auth/hooks/useAuth';
 import type { EntityId } from '../../workspace/types/workspace.types';
 import { editorService } from '../services/editorService';
-import { createEditorExtensions, emptyEditorContent } from '../utils/editorContent';
-import type {
-  DocumentEditorLoadResult,
-  UseDocumentEditorResult,
-} from '../types/editor.types';
+import { getDocumentContentVersion } from '../utils/contentVersion';
+import {
+  applyEditorContentSnapshot,
+  createEditorExtensions,
+  emptyEditorContent,
+} from '../utils/editorContent';
+import type { DocumentEditorLoadResult, UseDocumentEditorResult } from '../types/editor.types';
 import { useCollaboration } from './useCollaboration';
 import { useEditorPagination } from './useEditorPagination';
+import { useEditorPollingSync } from './useEditorPollingSync';
 import { useEditorSave, type EditorSavedMeta } from './useEditorSave';
 
 /** Options accepted by the document editor hook. */
@@ -26,9 +29,11 @@ export interface UseDocumentEditorOptions {
  * Orchestrates document loading, TipTap setup, permissions, save state, and pagination.
  *
  * Command execution, autosave, and visual page measurement live in focused
- * hooks. REST persistence remains the source of truth in polling mode, while
- * the collaboration adapter can switch to Yjs transport without changing route
- * or presentational components.
+ * hooks. REST persistence remains the source of truth in polling mode: the
+ * polling hook compares backend revisions, applies remote snapshots only when
+ * the editor is clean, and exposes a conflict state instead of overwriting
+ * unsaved local edits. The collaboration adapter can switch to Yjs transport
+ * without changing route or presentational components.
  *
  * @param options - Document editor setup options.
  * @returns Editor state and commands consumed by the page shell.
@@ -42,12 +47,13 @@ export function useDocumentEditor({
   const [title, setTitleState] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSyncConflictActive, setIsSyncConflictActive] = useState(false);
   const applyingContentRef = useRef(false);
   const appliedEditorRef = useRef<Editor | null>(null);
   const editorRef = useRef<Editor | null>(null);
   const canWrite = loadedContent?.canWrite ?? false;
-  const enableCollaboration =
-    collaboration.isRealtimeEnabled && Boolean(collaboration.provider);
+  const currentVersion = loadedContent ? getDocumentContentVersion(loadedContent) : null;
+  const enableCollaboration = collaboration.isRealtimeEnabled && Boolean(collaboration.provider);
 
   const extensions = useMemo(
     () =>
@@ -62,16 +68,13 @@ export function useDocumentEditor({
 
   const getEditor = useCallback(() => editorRef.current, []);
   const shouldIgnoreChange = useCallback(() => applyingContentRef.current, []);
-  const handleSaved = useCallback(
-    (result: DocumentEditorLoadResult, meta: EditorSavedMeta) => {
-      setLoadedContent(result);
+  const handleSaved = useCallback((result: DocumentEditorLoadResult, meta: EditorSavedMeta) => {
+    setLoadedContent(result);
 
-      if (!meta.hasConcurrentChanges) {
-        setTitleState(result.document.name);
-      }
-    },
-    [],
-  );
+    if (!meta.hasConcurrentChanges) {
+      setTitleState(result.document.name);
+    }
+  }, []);
   const save = useEditorSave({
     canWrite,
     documentId,
@@ -79,6 +82,7 @@ export function useDocumentEditor({
     isLoading,
     onError: setError,
     onSaved: handleSaved,
+    saveBlocked: isSyncConflictActive,
     shouldIgnoreChange,
     title,
   });
@@ -103,9 +107,73 @@ export function useDocumentEditor({
     enabled: Boolean(editor && loadedContent && !isLoading),
   });
 
+  const applyRemoteContent = useCallback(
+    (result: DocumentEditorLoadResult) => {
+      const currentEditor = editorRef.current;
+
+      setLoadedContent(result);
+      setTitleState(result.document.name);
+      save.resetSaveTracking({
+        revision: result.revision,
+        updatedAt: result.updatedAt,
+      });
+
+      if (!currentEditor) {
+        appliedEditorRef.current = null;
+        return;
+      }
+
+      applyingContentRef.current = true;
+      applyEditorContentSnapshot(currentEditor, result.content);
+      currentEditor.setEditable(result.canWrite);
+      appliedEditorRef.current = currentEditor;
+      window.requestAnimationFrame(() => {
+        applyingContentRef.current = false;
+        pagination.measureNow();
+      });
+    },
+    [pagination, save.resetSaveTracking],
+  );
+
+  const keepLocalContent = useCallback(
+    (result: DocumentEditorLoadResult) => {
+      const currentEditor = editorRef.current;
+
+      setLoadedContent({
+        ...result,
+        content: currentEditor?.getJSON() ?? result.content,
+      });
+      save.adoptRemoteVersion({
+        revision: result.revision,
+        updatedAt: result.updatedAt,
+      });
+      currentEditor?.setEditable(result.canWrite);
+    },
+    [save.adoptRemoteVersion],
+  );
+
+  const sync = useEditorPollingSync({
+    currentVersion,
+    documentId,
+    enabled: Boolean(
+      editor &&
+      loadedContent &&
+      !isLoading &&
+      !collaboration.isRealtimeEnabled &&
+      save.saveState !== 'saving',
+    ),
+    hasUnsavedChanges: save.hasUnsavedChanges,
+    onApplyRemoteContent: applyRemoteContent,
+    onKeepLocalVersion: keepLocalContent,
+  });
+
   useEffect(() => {
     editorRef.current = editor;
   }, [editor]);
+
+  useEffect(() => {
+    setIsSyncConflictActive(Boolean(sync.conflict));
+  }, [sync.conflict]);
 
   useEffect(() => {
     let isActive = true;
@@ -155,7 +223,7 @@ export function useDocumentEditor({
     }
 
     applyingContentRef.current = true;
-    editor.commands.setContent(loadedContent.content, { emitUpdate: false });
+    applyEditorContentSnapshot(editor, loadedContent.content);
     editor.setEditable(loadedContent.canWrite);
     appliedEditorRef.current = editor;
     window.requestAnimationFrame(() => {
@@ -190,6 +258,7 @@ export function useDocumentEditor({
     saveNow: save.saveNow,
     saveState: save.saveState,
     setTitle,
+    sync,
     title,
   };
 }

@@ -11,6 +11,12 @@ const defaultDocumentContent = {
   type: 'doc',
 };
 
+/** Options for loading document content. */
+interface GetDocumentContentOptions {
+  /** Whether this read should update last-opened metadata. */
+  touchLastOpenedAt: boolean;
+}
+
 /**
  * Handles document content loading and save/autosave persistence.
  */
@@ -34,26 +40,19 @@ export class DocumentsService {
    *
    * @param userId - Current user identifier.
    * @param documentId - Workspace document identifier.
+   * @param options - Metadata side effects allowed for this read.
    * @returns Document content response.
    */
-  async getContent(userId: string, documentId: string): Promise<DocumentContentResponse> {
+  async getContent(
+    userId: string,
+    documentId: string,
+    options: GetDocumentContentOptions = { touchLastOpenedAt: true },
+  ): Promise<DocumentContentResponse> {
     const item = await this.workspaceService.getAccessibleRecord(userId, documentId);
     this.workspaceService.assertDocument(item);
 
     const access = await this.workspaceService.resolveAccess(userId, item);
-    const content = await this.prisma.documentContent.upsert({
-      create: {
-        content: defaultDocumentContent,
-        itemId: item.id,
-        lastOpenedAt: new Date(),
-      },
-      update: {
-        lastOpenedAt: new Date(),
-      },
-      where: {
-        itemId: item.id,
-      },
-    });
+    const content = await this.getOrCreateContent(item.id, options);
     const document = await this.workspaceService.getItem(userId, item.id);
 
     return {
@@ -125,5 +124,46 @@ export class DocumentsService {
       revision: content.revision,
       updatedAt: content.updatedAt.toISOString(),
     };
+  }
+
+  /**
+   * Loads a content row and optionally updates last-opened metadata.
+   *
+   * Polling passes `touchLastOpenedAt: false` so each sync check is read-only
+   * unless the document content row must be created for the first time.
+   *
+   * @param itemId - Workspace document item identifier.
+   * @param options - Read side-effect options.
+   * @returns Existing or newly created content row.
+   */
+  private async getOrCreateContent(itemId: string, options: GetDocumentContentOptions) {
+    const existing = await this.prisma.documentContent.findUnique({
+      where: {
+        itemId,
+      },
+    });
+
+    if (existing && !options.touchLastOpenedAt) {
+      return existing;
+    }
+
+    if (existing) {
+      return this.prisma.documentContent.update({
+        data: {
+          lastOpenedAt: new Date(),
+        },
+        where: {
+          itemId,
+        },
+      });
+    }
+
+    return this.prisma.documentContent.create({
+      data: {
+        content: defaultDocumentContent,
+        itemId,
+        ...(options.touchLastOpenedAt ? { lastOpenedAt: new Date() } : {}),
+      },
+    });
   }
 }

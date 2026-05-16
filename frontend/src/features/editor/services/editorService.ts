@@ -4,6 +4,7 @@ import { RestEditorClient } from './restEditorClient';
 import type {
   DocumentEditorLoadResult,
   EditorClient,
+  GetDocumentContentOptions,
   SaveDocumentContentInput,
 } from '../types/editor.types';
 import type { EntityId } from '../../workspace/types/workspace.types';
@@ -29,10 +30,14 @@ export const editorService = {
    * Loads document content for the editor route.
    *
    * @param documentId - Workspace document identifier.
+   * @param options - Optional load behavior for initial loads versus polling.
    * @returns Normalized document content and permissions.
    */
-  getDocumentContent(documentId: EntityId): Promise<DocumentEditorLoadResult> {
-    return editorClient.getDocumentContent(documentId);
+  getDocumentContent(
+    documentId: EntityId,
+    options?: GetDocumentContentOptions,
+  ): Promise<DocumentEditorLoadResult> {
+    return editorClient.getDocumentContent(documentId, options);
   },
 
   /**

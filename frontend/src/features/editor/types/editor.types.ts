@@ -10,6 +10,16 @@ export type EditorDocumentContent = JSONContent;
 /** Save state shown by the document editor. */
 export type DocumentSaveState = 'saved' | 'saving' | 'unsaved' | 'failed';
 
+/** Polling synchronization state shown by the document editor. */
+export type DocumentSyncStatus =
+  | 'idle'
+  | 'paused'
+  | 'checking'
+  | 'synced'
+  | 'remote-applied'
+  | 'conflict'
+  | 'error';
+
 /** Text alignment values supported by the document editor toolbar. */
 export type EditorTextAlignment = 'left' | 'center' | 'right' | 'justify';
 
@@ -37,6 +47,24 @@ export interface CollaborationUser {
   color: string;
 }
 
+/** Stable backend marker used to compare persisted document content revisions. */
+export interface DocumentContentVersion {
+  /** Monotonic backend revision incremented on every content save. */
+  revision: number;
+  /** Backend timestamp attached to the content row for display only. */
+  updatedAt: string | null;
+}
+
+/** Conflict detected when polling sees newer remote content during local edits. */
+export interface EditorSyncConflict {
+  /** Local version the editor was based on when the conflict was detected. */
+  localVersion: DocumentContentVersion;
+  /** Newer remote version available from the backend. */
+  remoteVersion: DocumentContentVersion;
+  /** ISO timestamp for when the polling hook detected the conflict. */
+  detectedAt: string;
+}
+
 /** Document content payload normalized for editor hooks and services. */
 export interface DocumentEditorLoadResult {
   /** Workspace document metadata. */
@@ -49,6 +77,17 @@ export interface DocumentEditorLoadResult {
   revision: number;
   /** ISO timestamp of the last persisted content update. */
   updatedAt: string;
+}
+
+/** Options accepted when loading editor content from a backend transport. */
+export interface GetDocumentContentOptions {
+  /**
+   * Whether the backend should update the document's last-opened metadata.
+   *
+   * Polling requests set this to false so sync checks stay read-only and do
+   * not move timestamps that are unrelated to content changes.
+   */
+  touch?: boolean;
 }
 
 /** Payload sent when saving document content. */
@@ -69,7 +108,10 @@ export interface EditorClient {
    * @param documentId - Workspace document identifier.
    * @returns Normalized document content and permission state.
    */
-  getDocumentContent(documentId: EntityId): Promise<DocumentEditorLoadResult>;
+  getDocumentContent(
+    documentId: EntityId,
+    options?: GetDocumentContentOptions,
+  ): Promise<DocumentEditorLoadResult>;
   /**
    * Persists document content and title changes.
    *
@@ -99,6 +141,32 @@ export interface UseCollaborationResult {
   users: CollaborationUser[];
   /** Current connection state. */
   status: CollaborationConnectionState;
+}
+
+/** State and commands returned by the polling synchronization hook. */
+export interface UseEditorPollingSyncResult {
+  /** Current polling and remote synchronization status. */
+  status: DocumentSyncStatus;
+  /** Whether a polling timer is active for the visible document tab. */
+  isPolling: boolean;
+  /** Polling interval in milliseconds. */
+  intervalMs: number;
+  /** Last time a poll request completed successfully or failed. */
+  lastCheckedAt: string | null;
+  /** Last time the local editor applied or acknowledged the remote revision. */
+  lastSyncedAt: string | null;
+  /** Latest remote version observed by the polling loop. */
+  remoteVersion: DocumentContentVersion | null;
+  /** Current unsaved-local-vs-remote conflict, if any. */
+  conflict: EditorSyncConflict | null;
+  /** Last polling error message, if a sync request failed. */
+  error: string | null;
+  /** Runs an immediate sync check using the same conflict-safe rules. */
+  pollNow: () => Promise<void>;
+  /** Applies the conflicted remote content and clears local unsaved edits. */
+  reloadLatest: () => void;
+  /** Keeps local edits and adopts the latest remote revision before saving. */
+  keepLocalVersion: () => void;
 }
 
 /** Reactive toolbar state derived from the current TipTap selection. */
@@ -199,6 +267,8 @@ export interface UseDocumentEditorResult {
   pagination: EditorPaginationState;
   /** Collaboration state for the current document. */
   collaboration: UseCollaborationResult;
+  /** Polling synchronization state for REST collaboration mode. */
+  sync: UseEditorPollingSyncResult;
   /** Updates the editable document title. */
   setTitle: (title: string) => void;
   /** Saves current content immediately. */

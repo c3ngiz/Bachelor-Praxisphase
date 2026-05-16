@@ -23,7 +23,11 @@ import {
 import { Button, Divider } from '../../../shared/components';
 import { cn } from '../../../shared/utils';
 import { useEditorCommands } from '../hooks/useEditorCommands';
-import type { EditorBlockStyle, EditorTextAlignment, UseDocumentEditorResult } from '../types/editor.types';
+import type {
+  EditorBlockStyle,
+  EditorTextAlignment,
+  UseDocumentEditorResult,
+} from '../types/editor.types';
 import {
   editorFontFamilyOptions,
   editorFontSizeOptions,
@@ -269,10 +273,16 @@ export function EditorSidebar({ state }: EditorSidebarProps): JSX.Element {
           </div>
           <Button
             className="mt-2 w-full justify-center gap-2"
-            disabled={!state.canWrite || !state.editor || state.saveState === 'saving'}
+            disabled={
+              !state.canWrite ||
+              !state.editor ||
+              state.saveState === 'saving' ||
+              Boolean(state.sync.conflict)
+            }
             loading={state.saveState === 'saving'}
             onClick={() => void state.saveNow().catch(() => undefined)}
             size="sm"
+            title={state.sync.conflict ? 'Resolve the sync conflict before saving.' : undefined}
             variant="primary"
           >
             <Save aria-hidden="true" className="h-4 w-4" />
@@ -333,7 +343,7 @@ function SwatchGroup({
             }
             type="button"
           >
-            {swatch.value ? (variant === 'text' ? 'A' : null) : <span aria-hidden="true">x</span>}
+            {swatch.value ? variant === 'text' ? 'A' : null : <span aria-hidden="true">x</span>}
           </button>
         );
       })}
