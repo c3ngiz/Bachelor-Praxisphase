@@ -17,7 +17,6 @@ coverage/
 
 # Python artifacts
 .venv/
-.collabdocs_ot_service.egg-info/
 dist/
 build/
 *.egg-info/
@@ -26,6 +25,8 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.ruff_cache/
+*.pytest_cache/
 
 # Logs
 logs/

@@ -1,3 +1,10 @@
+"""Operational-transform primitives for the plain-text collaboration protocol.
+
+The editor sends single insert/delete operations against a base version. These
+helpers transform an incoming operation over already accepted operations so the
+server can serialize concurrent edits into one deterministic document history.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,22 +16,32 @@ TextOperation = dict[str, Any]
 
 @dataclass(frozen=True)
 class OperationIdentity:
+    """Stable identity used to deterministically order concurrent inserts."""
+
     client_id: str
     op_id: str
 
     def tie_key(self) -> tuple[str, str]:
+        """Return the deterministic ordering key for equal-position inserts."""
+
         return (self.client_id, self.op_id)
 
 
 def clone_op(op: TextOperation) -> TextOperation:
+    """Return a shallow copy of an operation before mutating transform fields."""
+
     return dict(op)
 
 
 def op_text_len(op: TextOperation) -> int:
+    """Return the insertion text length for an operation."""
+
     return len(str(op.get("text", "")))
 
 
 def clamp_position(content: str, pos: int) -> int:
+    """Clamp a code-point position into the current document bounds."""
+
     return max(0, min(pos, len(content)))
 
 
@@ -74,6 +91,8 @@ def transform_insert_insert(
     accepted: TextOperation,
     accepted_identity: OperationIdentity,
 ) -> TextOperation:
+    """Transform an insert over a previously accepted insert."""
+
     a_pos = int(incoming["pos"])
     b_pos = int(accepted["pos"])
 
@@ -86,6 +105,8 @@ def transform_insert_insert(
 
 
 def transform_insert_delete(incoming: TextOperation, accepted: TextOperation) -> TextOperation:
+    """Transform an insert over a previously accepted delete."""
+
     a_pos = int(incoming["pos"])
     b_pos = int(accepted["pos"])
     b_len = int(accepted["len"])
@@ -97,6 +118,8 @@ def transform_insert_delete(incoming: TextOperation, accepted: TextOperation) ->
 
 
 def transform_delete_insert(incoming: TextOperation, accepted: TextOperation) -> TextOperation:
+    """Transform a delete over a previously accepted insert."""
+
     a_pos = int(incoming["pos"])
     a_len = int(incoming["len"])
     b_pos = int(accepted["pos"])
@@ -111,6 +134,8 @@ def transform_delete_insert(incoming: TextOperation, accepted: TextOperation) ->
 
 
 def transform_delete_delete(incoming: TextOperation, accepted: TextOperation) -> TextOperation | None:
+    """Transform a delete over a previously accepted delete."""
+
     a_pos = int(incoming["pos"])
     a_len = int(incoming["len"])
     b_pos = int(accepted["pos"])
@@ -145,6 +170,8 @@ def transform_over_history(
     incoming_identity: OperationIdentity,
     history: list[tuple[TextOperation, OperationIdentity]],
 ) -> TextOperation | None:
+    """Transform one incoming operation over accepted operations in version order."""
+
     transformed: TextOperation | None = clone_op(incoming)
 
     for accepted, accepted_identity in history:

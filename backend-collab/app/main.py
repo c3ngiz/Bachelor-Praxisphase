@@ -1,3 +1,10 @@
+"""FastAPI application exposing REST, GraphQL, and collaboration WebSockets.
+
+REST and GraphQL remain separate route trees while sharing the same domain
+services and SQLAlchemy database layer. The WebSocket editor endpoint also uses
+the shared JWT and workspace permission rules before accepting a room join.
+"""
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -5,18 +12,30 @@ from uuid import UUID
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from .auth import AuthService, AuthenticationError
-from .config import get_settings
-from .models import JoinMessage
-from .repository import CollaborationRepository
-from .rooms import ClientConnection, RoomManager, client_message_adapter
+from app.api.graphql.schema import graphql_router
+from app.api.rest.router import api_router
+from app.core.config import get_settings
+from app.core.errors import UnauthorizedError, install_exception_handlers
+from app.core.logging import configure_logging
+from app.core.security import SecurityService
+from app.db.session import async_session_factory
+from app.domain.collaboration.schemas import JoinMessage
+from app.domain.collaboration.service import (
+    ClientConnection,
+    CollaborationAuthService,
+    CollaborationRepository,
+    RoomManager,
+    client_message_adapter,
+)
 
 settings = get_settings()
-repository = CollaborationRepository(settings.database_url)
-auth_service = AuthService(settings.jwt_secret, repository)
-room_manager = RoomManager(repository, settings)
+configure_logging()
 
-app = FastAPI(title="CollabDocs OT Sidecar", version="0.1.0")
+collaboration_repository = CollaborationRepository(async_session_factory)
+collaboration_auth = CollaborationAuthService(SecurityService(settings), collaboration_repository)
+room_manager = RoomManager(collaboration_repository, settings)
+
+app = FastAPI(title="CollabDocs Python Backend", version="0.2.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list or ["http://localhost:5173"],
@@ -24,36 +43,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def startup() -> None:
-    await repository.connect()
-
-
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    await repository.close()
+install_exception_handlers(app)
+app.include_router(api_router, prefix="/api")
+app.include_router(graphql_router, prefix="/graphql")
 
 
 @app.get("/health")
 async def health() -> dict[str, str]:
+    """Return a lightweight health response for local and container checks."""
+
     return {"status": "ok"}
 
 
 @app.get("/metrics")
 async def metrics() -> dict[str, object]:
-    return {"rooms": await repository.metrics_summary()}
+    """Return collaboration diagnostics grouped by document."""
+
+    return {"rooms": await collaboration_repository.metrics_summary()}
 
 
 @app.websocket("/ws/docs/{doc_id}")
 async def document_socket(websocket: WebSocket, doc_id: UUID) -> None:
+    """Accept a document collaboration WebSocket after JWT and permission checks."""
+
     connection: ClientConnection | None = None
     await websocket.accept()
 
     try:
-        user = await auth_service.authenticate_websocket(websocket)
-        access = await repository.resolve_workspace_access(user.user_id, str(doc_id))
+        user = await collaboration_auth.authenticate_websocket(websocket)
+        access = await collaboration_repository.resolve_workspace_access(user.user_id, str(doc_id))
 
         if not access:
             await websocket.send_json(
@@ -95,12 +113,12 @@ async def document_socket(websocket: WebSocket, doc_id: UUID) -> None:
             payload = await websocket.receive_json()
             await room.handle_message(connection, payload)
 
-    except AuthenticationError as error:
+    except UnauthorizedError as error:
         await websocket.send_json(
             {
                 "type": "error",
                 "code": "UNAUTHENTICATED",
-                "message": str(error),
+                "message": error.message,
                 "recoverable": False,
             }
         )
