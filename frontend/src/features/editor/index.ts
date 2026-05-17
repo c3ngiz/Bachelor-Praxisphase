@@ -1,7 +1,8 @@
 export { DocumentEditorPage } from './pages/DocumentEditorPage';
 export type {
-  CollaborationConnectionState,
-  CollaborationUser,
-  DocumentSaveState,
-  EditorDocumentContent,
+  CursorState,
+  PlainTextConnectionStatus,
+  PlainTextEditorState,
+  PlainTextMetrics,
+  TextOp,
 } from './types/editor.types';

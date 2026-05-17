@@ -4,8 +4,7 @@ import { RestEditorClient } from './restEditorClient';
 import type {
   DocumentEditorLoadResult,
   EditorClient,
-  GetDocumentContentOptions,
-  SaveDocumentContentInput,
+  GetDocumentMetadataOptions,
 } from '../types/editor.types';
 import type { EntityId } from '../../workspace/types/workspace.types';
 
@@ -27,30 +26,16 @@ const editorClient = createEditorClient();
 /** Frontend-facing document editor facade used by hooks. */
 export const editorService = {
   /**
-   * Loads document content for the editor route.
+   * Loads workspace document metadata for the editor route.
    *
    * @param documentId - Workspace document identifier.
    * @param options - Optional load behavior for initial loads versus polling.
    * @returns Normalized document content and permissions.
    */
-  getDocumentContent(
+  getDocumentMetadata(
     documentId: EntityId,
-    options?: GetDocumentContentOptions,
+    options?: GetDocumentMetadataOptions,
   ): Promise<DocumentEditorLoadResult> {
-    return editorClient.getDocumentContent(documentId, options);
-  },
-
-  /**
-   * Saves document content and title changes.
-   *
-   * @param documentId - Workspace document identifier.
-   * @param input - Save payload.
-   * @returns Updated document content metadata.
-   */
-  saveDocumentContent(
-    documentId: EntityId,
-    input: SaveDocumentContentInput,
-  ): Promise<DocumentEditorLoadResult> {
-    return editorClient.saveDocumentContent(documentId, input);
+    return editorClient.getDocumentMetadata(documentId, options);
   },
 };

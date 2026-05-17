@@ -5,20 +5,16 @@ import { NormalizedApiError, throwNormalizedApiError } from '../../auth/api/auth
 import { authTokenStorage } from '../../auth/api/authTokenStorage';
 import { toWorkspaceItem, type BackendWorkspaceItem } from '../../workspace/api/workspaceMappers';
 import type { EntityId } from '../../workspace/types/workspace.types';
-import { normalizeEditorContent } from '../utils/editorContent';
 import type {
   DocumentEditorLoadResult,
   EditorClient,
-  GetDocumentContentOptions,
-  SaveDocumentContentInput,
+  GetDocumentMetadataOptions,
 } from '../types/editor.types';
 
 /** REST document content response returned by the editor backend. */
 interface RestDocumentContentResponse {
   /** Workspace document metadata. */
   document: BackendWorkspaceItem;
-  /** Persisted TipTap/ProseMirror JSON content. */
-  content: unknown;
   /** Whether the current user may save changes. */
   canWrite: boolean;
   /** Optimistic content revision. */
@@ -54,48 +50,21 @@ export class RestEditorClient implements EditorClient {
   }
 
   /**
-   * Loads persisted document content.
+   * Loads document metadata and permission state.
    *
    * @param documentId - Workspace document identifier.
    * @param options - Optional load behavior for metadata touching.
    * @returns Normalized editor content response.
    */
-  async getDocumentContent(
+  async getDocumentMetadata(
     documentId: EntityId,
-    options?: GetDocumentContentOptions,
+    options?: GetDocumentMetadataOptions,
   ): Promise<DocumentEditorLoadResult> {
     try {
       const response = await this.http.get<RestDocumentContentResponse>(
         `/api/workspace/documents/${encodeURIComponent(documentId)}/content`,
         {
           params: options?.touch === false ? { touch: 'false' } : undefined,
-        },
-      );
-
-      return toDocumentEditorLoadResult(response.data);
-    } catch (error) {
-      throwNormalizedApiError(error);
-    }
-  }
-
-  /**
-   * Saves document content through the REST autosave endpoint.
-   *
-   * @param documentId - Workspace document identifier.
-   * @param input - Save payload.
-   * @returns Updated editor content response.
-   */
-  async saveDocumentContent(
-    documentId: EntityId,
-    input: SaveDocumentContentInput,
-  ): Promise<DocumentEditorLoadResult> {
-    try {
-      const response = await this.http.patch<RestDocumentContentResponse>(
-        `/api/workspace/documents/${encodeURIComponent(documentId)}/content`,
-        {
-          content: input.content,
-          revision: input.revision,
-          title: input.title,
         },
       );
 
@@ -125,7 +94,6 @@ function toDocumentEditorLoadResult(
 
   return {
     canWrite: response.canWrite,
-    content: normalizeEditorContent(response.content),
     document: item,
     revision: response.revision,
     updatedAt: response.updatedAt,

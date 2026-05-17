@@ -1,5 +1,5 @@
-import { EditorLayout } from '../components/EditorLayout';
-import { useDocumentEditor } from '../hooks/useDocumentEditor';
+import { PlainTextEditorLayout } from '../components/PlainTextEditorLayout';
+import { usePlainTextCollaboration } from '../hooks/usePlainTextCollaboration';
 
 /** Props accepted by the document editor route. */
 export interface DocumentEditorPageProps {
@@ -39,7 +39,7 @@ interface EditorRouteContentProps {
  * @returns Hydrated editor layout.
  */
 function EditorRouteContent({ documentId }: EditorRouteContentProps): JSX.Element {
-  const state = useDocumentEditor({ documentId });
+  const state = usePlainTextCollaboration(documentId);
 
-  return <EditorLayout state={state} />;
+  return <PlainTextEditorLayout state={state} />;
 }
