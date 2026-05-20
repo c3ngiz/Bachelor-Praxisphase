@@ -1,6 +1,15 @@
-import { Activity, FileText, RadioTower, UsersRound, type LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import {
+  Activity,
+  ChevronRight,
+  FileText,
+  RadioTower,
+  Save,
+  UsersRound,
+  type LucideIcon,
+} from 'lucide-react';
 
-import { Badge, Divider } from '../../../shared/components';
+import { Badge, Card, Divider } from '../../../shared/components';
 import { getPermissionLabel } from '../../workspace/utils/workspaceFormatting';
 import type {
   CursorState,
@@ -15,60 +24,87 @@ export interface PlainTextContextSidebarProps {
 }
 
 export function PlainTextContextSidebar({ state }: PlainTextContextSidebarProps): JSX.Element {
+  const accessLabel = state.document ? getPermissionLabel(state.document.permission) : 'Loading';
+  const activePeopleCount = 1 + state.remoteCursors.length;
+
   return (
-    <aside className="plaintext-context-panel">
-      <section aria-label="Document summary" className="grid gap-3">
-        <div className="grid gap-1">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Filename
-          </span>
-          <h1 className="m-0 truncate text-base font-semibold text-slate-950">
-            {state.title || 'Untitled document'}
-          </h1>
-        </div>
-        <SummaryRow
-          label="Access"
-          value={state.document ? getPermissionLabel(state.document.permission) : 'Loading'}
-        />
-        <SummaryRow label="Version" value={`v${state.version}`} />
-        <StatusBadge status={state.status} />
-      </section>
+    <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
+      <Card className="overflow-hidden">
+        <Card.Content className="grid gap-4 p-4">
+          <section aria-label="Document summary" className="grid gap-3">
+            <div className="min-w-0">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Document
+              </span>
+              <h1 className="m-0 mt-1 truncate text-lg font-semibold text-slate-950">
+                {state.title || 'Untitled document'}
+              </h1>
+              <p className="m-0 mt-1 truncate text-xs text-slate-500">
+                {state.document?.owner.name ?? 'Workspace document'}
+              </p>
+            </div>
 
-      <Divider />
+            <div className="flex flex-wrap gap-2">
+              <MetadataChip label="Access" value={accessLabel} />
+              <MetadataChip label="Version" value={`v${state.version}`} />
+            </div>
 
-      <section aria-label="People" className="grid gap-3">
-        <PanelHeading icon={UsersRound} title="People" />
-        <PersonRow cursor={state.localUser} detail="Current user" />
-        {state.remoteCursors.length > 0 ? (
-          <div className="grid gap-2">
-            {state.remoteCursors.map((cursor) => (
-              <PersonRow
-                cursor={cursor}
-                detail="Active collaborator"
-                key={`${cursor.user_id}:${cursor.client_id}`}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="m-0 text-xs text-slate-500">No active collaborators detected.</p>
-        )}
-      </section>
+            <div className="grid gap-2 rounded-md bg-slate-50 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                  <RadioTower aria-hidden="true" className="h-3.5 w-3.5" />
+                  Connection
+                </span>
+                <StatusBadge status={state.status} />
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                  <Save aria-hidden="true" className="h-3.5 w-3.5" />
+                  Save state
+                </span>
+                <Badge variant={getSaveStatusVariant(state.saveStatus)}>
+                  {formatSaveStatus(state.saveStatus)}
+                </Badge>
+              </div>
+            </div>
+          </section>
 
-      <Divider />
+          <Divider />
 
-      <section aria-label="Metrics" className="grid gap-3">
-        <PanelHeading icon={Activity} title="Metrics" />
-        <MetricsRows metrics={state.metrics} />
-      </section>
+          <section aria-label="People" className="grid gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <PanelHeading icon={UsersRound} title="People" />
+              <Badge variant="default">{activePeopleCount} active</Badge>
+            </div>
+            <div className="grid gap-2">
+              <PersonRow cursor={state.localUser} detail="Current user" isCurrentUser />
+              {state.remoteCursors.map((cursor) => (
+                <PersonRow
+                  cursor={cursor}
+                  detail="Active collaborator"
+                  key={`${cursor.user_id}:${cursor.client_id}`}
+                />
+              ))}
+            </div>
+            {state.remoteCursors.length === 0 ? (
+              <p className="m-0 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                Only you are active in this document.
+              </p>
+            ) : null}
+          </section>
 
-      <Divider />
+          <CollapsibleSection icon={Activity} title="Metrics">
+            <MetricsRows metrics={state.metrics} />
+          </CollapsibleSection>
 
-      <section aria-label="Document details" className="grid gap-3">
-        <PanelHeading icon={FileText} title="Details" />
-        <SummaryRow label="Mode" value={formatSyncMode(state.syncMode)} />
-        <SummaryRow label="Save" value={formatSaveStatus(state.saveStatus)} />
-        <SummaryRow label="Client" value={state.clientId.slice(0, 8)} />
-      </section>
+          <CollapsibleSection icon={FileText} title="Details">
+            <SummaryRow label="Mode" value={formatSyncMode(state.syncMode)} />
+            <SummaryRow label="Save" value={formatSaveStatus(state.saveStatus)} />
+            <SummaryRow label="Client" value={state.clientId.slice(0, 8)} />
+            <SummaryRow label="Permission" value={accessLabel} />
+          </CollapsibleSection>
+        </Card.Content>
+      </Card>
     </aside>
   );
 }
@@ -84,6 +120,20 @@ function PanelHeading({ icon: Icon, title }: PanelHeadingProps): JSX.Element {
       <Icon aria-hidden="true" className="h-4 w-4 text-slate-500" />
       {title}
     </div>
+  );
+}
+
+interface MetadataChipProps {
+  label: string;
+  value: string;
+}
+
+function MetadataChip({ label, value }: MetadataChipProps): JSX.Element {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs">
+      <span className="text-slate-500">{label}</span>
+      <span className="max-w-[8rem] truncate font-medium text-slate-900">{value}</span>
+    </span>
   );
 }
 
@@ -104,20 +154,29 @@ function SummaryRow({ label, value }: SummaryRowProps): JSX.Element {
 interface PersonRowProps {
   cursor: CursorState;
   detail: string;
+  isCurrentUser?: boolean;
 }
 
-function PersonRow({ cursor, detail }: PersonRowProps): JSX.Element {
+function PersonRow({ cursor, detail, isCurrentUser = false }: PersonRowProps): JSX.Element {
   return (
-    <div className="flex min-w-0 items-center gap-3">
+    <div className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1">
       <span
-        aria-hidden="true"
-        className="h-8 w-8 shrink-0 rounded-full text-center text-xs font-semibold leading-8 text-white"
+        aria-label={`${cursor.display_name} avatar`}
+        className="relative h-8 w-8 shrink-0 rounded-full text-center text-xs font-semibold leading-8 text-white"
+        role="img"
         style={{ backgroundColor: cursor.color }}
       >
         {getInitials(cursor.display_name)}
+        <span
+          aria-hidden="true"
+          className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500"
+        />
       </span>
-      <div className="min-w-0">
-        <p className="m-0 truncate text-sm font-medium text-slate-950">{cursor.display_name}</p>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="m-0 truncate text-sm font-medium text-slate-950">{cursor.display_name}</p>
+          {isCurrentUser ? <Badge variant="default">You</Badge> : null}
+        </div>
         <p className="m-0 text-xs text-slate-500">{detail}</p>
       </div>
     </div>
@@ -143,13 +202,37 @@ function MetricsRows({ metrics }: { metrics: PlainTextMetrics }): JSX.Element {
   );
 }
 
+interface CollapsibleSectionProps {
+  children: ReactNode;
+  icon: LucideIcon;
+  title: string;
+}
+
+function CollapsibleSection({ children, icon: Icon, title }: CollapsibleSectionProps): JSX.Element {
+  return (
+    <details className="group border-t border-slate-200 pt-3">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md py-1 text-sm font-semibold text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
+        <span className="flex items-center gap-2">
+          <Icon aria-hidden="true" className="h-4 w-4 text-slate-500" />
+          {title}
+        </span>
+        <ChevronRight
+          aria-hidden="true"
+          className="h-4 w-4 text-slate-400 transition-transform group-open:rotate-90"
+        />
+      </summary>
+      <div className="mt-3 grid gap-2">{children}</div>
+    </details>
+  );
+}
+
 function StatusBadge({ status }: { status: PlainTextConnectionStatus }): JSX.Element {
   const variant =
     status === 'connected' ? 'success' : status === 'error' ? 'destructive' : 'default';
 
   return (
-    <Badge className="w-fit" variant={variant}>
-      <RadioTower aria-hidden="true" className="mr-1.5 h-3.5 w-3.5" />
+    <Badge className="w-fit gap-1.5" variant={variant}>
+      <RadioTower aria-hidden="true" className="h-3.5 w-3.5" />
       {formatStatus(status)}
     </Badge>
   );
@@ -209,5 +292,23 @@ function formatSaveStatus(status: PlainTextEditorState['saveStatus']): string {
       return 'Saving';
     case 'unsaved':
       return 'Unsaved';
+  }
+}
+
+function getSaveStatusVariant(
+  status: PlainTextEditorState['saveStatus'],
+): 'default' | 'success' | 'warning' | 'destructive' {
+  switch (status) {
+    case 'conflict':
+    case 'error':
+      return 'destructive';
+    case 'saving':
+    case 'unsaved':
+      return 'warning';
+    case 'live':
+    case 'saved':
+      return 'success';
+    case 'idle':
+      return 'default';
   }
 }

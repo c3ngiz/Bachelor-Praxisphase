@@ -42,7 +42,7 @@ select {
 .app-main {
   width: min(1120px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 2rem 0;
+  padding: 1.5rem 0;
 }
 
 .app-main--workspace {
@@ -73,5 +73,26 @@ select {
 
   .workspace-page__sidebar {
     flex: 0 0 auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    width: min(1120px, calc(100% - 3rem));
+    padding: 2rem 0;
+  }
+
+  .app-main--workspace {
+    width: min(1440px, calc(100% - 3rem));
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-main {
+    width: min(1120px, calc(100% - 4rem));
+  }
+
+  .app-main--workspace {
+    width: min(1440px, calc(100% - 4rem));
   }
 }

@@ -316,84 +316,140 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     }
 
     let shouldReconnect = true;
-    const websocket = new WebSocket(buildDocumentSocketUrl(documentId, token));
-    wsRef.current = websocket;
+    let reconnectAttempt = 0;
+    let reconnectTimeoutId: number | null = null;
+
+    const scheduleReconnect = (): void => {
+      if (!shouldReconnect || reconnectTimeoutId !== null) {
+        return;
+      }
+
+      const delayMs = Math.min(1000 * 2 ** reconnectAttempt, 5000);
+      reconnectAttempt += 1;
+      setStatus('disconnected');
+
+      reconnectTimeoutId = window.setTimeout(() => {
+        reconnectTimeoutId = null;
+        connect();
+      }, delayMs);
+    };
+
+    const connect = (): void => {
+      if (!shouldReconnect) {
+        return;
+      }
+
+      const websocket = new WebSocket(buildDocumentSocketUrl(documentId, token));
+      wsRef.current = websocket;
+      setStatus('connecting');
+
+      websocket.addEventListener('open', () => {
+        if (wsRef.current !== websocket || !shouldReconnect) {
+          return;
+        }
+
+        reconnectAttempt = 0;
+        setError(null);
+        const message: ClientMessage = { client_id: clientId, type: 'join' };
+        websocket.send(JSON.stringify(message));
+      });
+
+      websocket.addEventListener('message', (event) => {
+        if (wsRef.current !== websocket || !shouldReconnect) {
+          return;
+        }
+
+        const message = JSON.parse(event.data as string) as ServerMessage;
+
+        if (message.type === 'snapshot') {
+          versionRef.current = message.version;
+          queueRef.current = [];
+          inFlightRef.current = null;
+          setCanWrite(message.can_write);
+          setContent(message.content);
+          setContentSerial((current) => current + 1);
+          setRemoteCursors(
+            message.presence
+              .filter((cursor) => cursor.client_id !== clientId)
+              .map(normalizeCursorColor),
+          );
+          setVersion(message.version);
+          setStatus('connected');
+          setError(null);
+          return;
+        }
+
+        if (message.type === 'ack') {
+          handleAck(message);
+          return;
+        }
+
+        if (message.type === 'broadcast_op') {
+          handleRemoteOperation(message);
+          return;
+        }
+
+        if (message.type === 'cursor') {
+          if (message.cursor.client_id !== clientId) {
+            setRemoteCursors((current) => upsertCursor(current, normalizeCursorColor(message.cursor)));
+          }
+          return;
+        }
+
+        if (message.type === 'presence') {
+          setRemoteCursors(
+            message.users
+              .filter((cursor) => cursor.client_id !== clientId)
+              .map(normalizeCursorColor),
+          );
+          return;
+        }
+
+        if (message.type === 'error') {
+          setError(message.message);
+          setStatus(message.recoverable ? 'connected' : 'error');
+        }
+      });
+
+      websocket.addEventListener('close', () => {
+        if (wsRef.current === websocket) {
+          wsRef.current = null;
+        }
+
+        if (shouldReconnect && wsRef.current === null) {
+          scheduleReconnect();
+        }
+      });
+
+      websocket.addEventListener('error', () => {
+        if (wsRef.current !== websocket || !shouldReconnect) {
+          return;
+        }
+
+        setStatus('disconnected');
+      });
+    };
+
     setStatus('connecting');
     setError(null);
-
-    websocket.addEventListener('open', () => {
-      const message: ClientMessage = { client_id: clientId, type: 'join' };
-      websocket.send(JSON.stringify(message));
-    });
-
-    websocket.addEventListener('message', (event) => {
-      const message = JSON.parse(event.data as string) as ServerMessage;
-
-      if (message.type === 'snapshot') {
-        versionRef.current = message.version;
-        queueRef.current = [];
-        inFlightRef.current = null;
-        setCanWrite(message.can_write);
-        setContent(message.content);
-        setContentSerial((current) => current + 1);
-        setRemoteCursors(
-          message.presence
-            .filter((cursor) => cursor.client_id !== clientId)
-            .map(normalizeCursorColor),
-        );
-        setVersion(message.version);
-        setStatus('connected');
-        return;
-      }
-
-      if (message.type === 'ack') {
-        handleAck(message);
-        return;
-      }
-
-      if (message.type === 'broadcast_op') {
-        handleRemoteOperation(message);
-        return;
-      }
-
-      if (message.type === 'cursor') {
-        if (message.cursor.client_id !== clientId) {
-          setRemoteCursors((current) => upsertCursor(current, normalizeCursorColor(message.cursor)));
-        }
-        return;
-      }
-
-      if (message.type === 'presence') {
-        setRemoteCursors(
-          message.users
-            .filter((cursor) => cursor.client_id !== clientId)
-            .map(normalizeCursorColor),
-        );
-        return;
-      }
-
-      if (message.type === 'error') {
-        setError(message.message);
-        setStatus(message.recoverable ? 'connected' : 'error');
-      }
-    });
-
-    websocket.addEventListener('close', () => {
-      wsRef.current = null;
-      if (shouldReconnect) {
-        setStatus('disconnected');
-      }
-    });
-
-    websocket.addEventListener('error', () => {
-      setError('The collaboration socket encountered an error.');
-      setStatus('error');
-    });
+    reconnectTimeoutId = window.setTimeout(() => {
+      reconnectTimeoutId = null;
+      connect();
+    }, 0);
 
     return () => {
       shouldReconnect = false;
-      websocket.close();
-      wsRef.current = null;
+
+      if (reconnectTimeoutId !== null) {
+        window.clearTimeout(reconnectTimeoutId);
+      }
+
+      const websocket = wsRef.current;
+
+      if (websocket) {
+        websocket.close();
+        wsRef.current = null;
+      }
     };
   }, [clientId, documentId, handleAck, handleRemoteOperation]);
 
