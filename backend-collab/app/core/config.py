@@ -23,7 +23,10 @@ class Settings(BaseSettings):
     jwt_secret: str = Field("development-secret", alias="JWT_SECRET")
     jwt_expires_minutes: int = Field(1440, alias="JWT_EXPIRES_MINUTES")
     jwt_expires_in: str | None = Field(None, alias="JWT_EXPIRES_IN")
-    cors_origins: str = Field("http://localhost:5173,http://localhost:5174", alias="CORS_ORIGINS")
+    cors_origins: str = Field(
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174",
+        alias="CORS_ORIGINS",
+    )
     cors_origin: str | None = Field(None, alias="CORS_ORIGIN")
     snapshot_every_ops: int = Field(50, alias="SNAPSHOT_EVERY_OPS")
 

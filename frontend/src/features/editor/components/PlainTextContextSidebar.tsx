@@ -65,7 +65,8 @@ export function PlainTextContextSidebar({ state }: PlainTextContextSidebarProps)
 
       <section aria-label="Document details" className="grid gap-3">
         <PanelHeading icon={FileText} title="Details" />
-        <SummaryRow label="Mode" value="Plain-text OT" />
+        <SummaryRow label="Mode" value={formatSyncMode(state.syncMode)} />
+        <SummaryRow label="Save" value={formatSaveStatus(state.saveStatus)} />
         <SummaryRow label="Client" value={state.clientId.slice(0, 8)} />
       </section>
     </aside>
@@ -166,5 +167,47 @@ function formatStatus(status: PlainTextConnectionStatus): string {
       return 'Disconnected';
     case 'error':
       return 'Error';
+  }
+}
+
+/**
+ * Formats the active synchronization mode for the details panel.
+ *
+ * @param syncMode - Active editor synchronization mode.
+ * @returns Human-readable mode label.
+ */
+function formatSyncMode(syncMode: PlainTextEditorState['syncMode']): string {
+  switch (syncMode) {
+    case 'polling':
+      return 'Polling';
+    case 'subscription':
+      return 'GraphQL subscription';
+    case 'websocket':
+      return 'WebSocket OT';
+  }
+}
+
+/**
+ * Formats the save state for the details panel.
+ *
+ * @param status - Current save status.
+ * @returns Human-readable save status label.
+ */
+function formatSaveStatus(status: PlainTextEditorState['saveStatus']): string {
+  switch (status) {
+    case 'conflict':
+      return 'Conflict';
+    case 'error':
+      return 'Error';
+    case 'idle':
+      return 'Idle';
+    case 'live':
+      return 'Live';
+    case 'saved':
+      return 'Saved';
+    case 'saving':
+      return 'Saving';
+    case 'unsaved':
+      return 'Unsaved';
   }
 }

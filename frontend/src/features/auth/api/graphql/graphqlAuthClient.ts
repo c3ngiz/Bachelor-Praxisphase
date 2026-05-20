@@ -16,14 +16,32 @@ import {
   type BackendAuthUser,
 } from '../authMappers';
 import { authTokenStorage } from '../authTokenStorage';
-import { meQuery, signInMutation, signUpMutation } from './authDocuments';
+import { meQuery, signInMutation, signOutMutation, signUpMutation } from './authDocuments';
 
 /** GraphQL response envelope returned by the backend. */
 interface GraphqlResponse<TData> {
   /** Operation data when the request succeeds. */
   data?: TData;
   /** Operation errors when GraphQL execution fails. */
-  errors?: Array<{ message: string }>;
+  errors?: GraphqlResponseError[];
+}
+
+/** GraphQL error returned by the backend. */
+interface GraphqlResponseError {
+  /** Human-readable error message. */
+  message?: string;
+  /** Backend extensions used for normalized frontend errors. */
+  extensions?: {
+    /** Stable backend error code. */
+    code?: string;
+    /** HTTP-like status code. */
+    statusCode?: number;
+    /** Optional field validation details. */
+    issues?: {
+      /** Field validation errors keyed by field name. */
+      fieldErrors?: Record<string, string[]>;
+    };
+  };
 }
 
 /** GraphQL request body sent through axios. */
@@ -100,12 +118,14 @@ export class GraphqlAuthClient implements AuthClient {
   }
 
   /**
-   * Completes local sign-out for bearer-token GraphQL auth.
-   *
-   * The current GraphQL backend does not expose a logout mutation.
+   * Completes backend sign-out for bearer-token GraphQL auth.
    */
   async signOut(): Promise<void> {
-    return Promise.resolve();
+    if (!authTokenStorage.getToken()) {
+      return;
+    }
+
+    await this.request<{ signOut: { success: boolean } }, undefined>(signOutMutation);
   }
 
   /**
@@ -138,9 +158,7 @@ export class GraphqlAuthClient implements AuthClient {
       >('', { query, variables });
 
       if (response.data.errors?.length) {
-        throw new NormalizedApiError({
-          message: response.data.errors[0]?.message ?? 'GraphQL request failed. Please try again.',
-        });
+        throw toNormalizedGraphqlError(response.data.errors[0]);
       }
 
       if (!response.data.data) {
@@ -152,4 +170,19 @@ export class GraphqlAuthClient implements AuthClient {
       throwNormalizedApiError(error);
     }
   }
+}
+
+/**
+ * Converts one GraphQL execution error into the frontend API error class.
+ *
+ * @param error - GraphQL response error returned by the backend.
+ * @returns Normalized API error.
+ */
+function toNormalizedGraphqlError(error: GraphqlResponseError | undefined): NormalizedApiError {
+  return new NormalizedApiError({
+    code: error?.extensions?.code,
+    fieldErrors: error?.extensions?.issues?.fieldErrors,
+    message: error?.message ?? 'GraphQL request failed. Please try again.',
+    statusCode: error?.extensions?.statusCode,
+  });
 }

@@ -4,9 +4,11 @@ import { env } from '../../../../config/env';
 import { NormalizedApiError, throwNormalizedApiError } from '../../../auth/api/authApiError';
 import { authTokenStorage } from '../../../auth/api/authTokenStorage';
 import {
+  toCollaborators,
   toMoveTargets,
   toWorkspaceItem,
   toWorkspaceItemsResult,
+  type BackendCollaborator,
   type BackendMoveTarget,
   type BackendWorkspaceItem,
   type BackendWorkspaceItemsResponse,
@@ -15,6 +17,7 @@ import {
   createDocumentMutation,
   createFolderMutation,
   deleteWorkspaceItemMutation,
+  itemCollaboratorsQuery,
   moveTargetsQuery,
   moveWorkspaceItemMutation,
   removeWorkspaceCollaboratorMutation,
@@ -24,6 +27,7 @@ import {
   workspaceItemsQuery,
 } from './workspaceDocuments';
 import type {
+  Collaborator,
   CreateDocumentInput,
   CreateFolderInput,
   DeleteItemInput,
@@ -46,7 +50,25 @@ interface GraphqlResponse<TData> {
   /** Operation data when present. */
   data?: TData;
   /** GraphQL errors returned by execution. */
-  errors?: Array<{ message?: string }>;
+  errors?: GraphqlResponseError[];
+}
+
+/** GraphQL error returned by the backend. */
+interface GraphqlResponseError {
+  /** Human-readable error message. */
+  message?: string;
+  /** Backend extensions used for normalized frontend errors. */
+  extensions?: {
+    /** Stable backend error code. */
+    code?: string;
+    /** HTTP-like status code. */
+    statusCode?: number;
+    /** Optional field validation details. */
+    issues?: {
+      /** Field validation errors keyed by field name. */
+      fieldErrors?: Record<string, string[]>;
+    };
+  };
 }
 
 /** GraphQL request body sent through axios. */
@@ -96,6 +118,21 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
     >(workspaceItemsQuery, { parentId });
 
     return toWorkspaceItemsResult(data.workspaceItems);
+  }
+
+  /**
+   * Lists direct collaborators for an accessible item.
+   *
+   * @param itemId - Item whose collaborators should load.
+   * @returns Normalized collaborator entries.
+   */
+  async listCollaborators(itemId: EntityId): Promise<Collaborator[]> {
+    const data = await this.request<
+      { itemCollaborators: BackendCollaborator[] },
+      { itemId: EntityId }
+    >(itemCollaboratorsQuery, { itemId });
+
+    return toCollaborators(data.itemCollaborators);
   }
 
   /**
@@ -265,9 +302,7 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
       >('', { query, variables });
 
       if (response.data.errors?.length) {
-        throw new NormalizedApiError({
-          message: response.data.errors[0]?.message ?? 'GraphQL request failed. Please try again.',
-        });
+        throw toNormalizedGraphqlError(response.data.errors[0]);
       }
 
       if (!response.data.data) {
@@ -279,4 +314,19 @@ export class GraphqlWorkspaceClient implements WorkspaceClient {
       throwNormalizedApiError(error);
     }
   }
+}
+
+/**
+ * Converts one GraphQL execution error into the frontend API error class.
+ *
+ * @param error - GraphQL response error returned by the backend.
+ * @returns Normalized API error.
+ */
+function toNormalizedGraphqlError(error: GraphqlResponseError | undefined): NormalizedApiError {
+  return new NormalizedApiError({
+    code: error?.extensions?.code,
+    fieldErrors: error?.extensions?.issues?.fieldErrors,
+    message: error?.message ?? 'GraphQL request failed. Please try again.',
+    statusCode: error?.extensions?.statusCode,
+  });
 }

@@ -12,6 +12,7 @@ from app.core.errors import ConflictAppError
 from app.db.models.collaboration import CollabDocument
 from app.db.models.document import DocumentContent
 from app.db.models.workspace import WorkspaceItem
+from app.domain.documents.events import document_content_events
 from app.domain.documents.schemas import DocumentContentResponse, UpdateDocumentContentRequest
 from app.domain.workspace.service import DEFAULT_DOCUMENT_CONTENT, WorkspaceService
 
@@ -81,7 +82,9 @@ class DocumentsService:
         item.updated_at = now
         await self.sync_collaboration_document(str(item.id), extract_tiptap_text(input.content))
         await self.db.commit()
-        return await self.get_content(user_id, str(item.id), touch_last_opened_at=False)
+        response = await self.get_content(user_id, str(item.id), touch_last_opened_at=False)
+        await document_content_events.publish(str(item.id), response)
+        return response
 
     async def get_or_create_content(
         self,

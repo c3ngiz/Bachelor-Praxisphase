@@ -25,6 +25,7 @@ from app.db.models.collaboration import (
 )
 from app.db.models.document import DocumentContent
 from app.db.models.workspace import WorkspaceItem
+from app.domain.documents.events import document_content_events
 from app.domain.collaboration.schemas import (
     AcceptedOperation,
     ClientMessage,
@@ -34,7 +35,7 @@ from app.domain.collaboration.schemas import (
     UserSession,
     WorkspaceAccess,
 )
-from app.domain.documents.service import extract_tiptap_text, plain_text_to_tiptap
+from app.domain.documents.service import DocumentsService, extract_tiptap_text, plain_text_to_tiptap
 from app.domain.users.service import UsersService
 from app.domain.workspace.service import WorkspaceService
 from app.ot import OperationIdentity, apply_operation, transform_over_history
@@ -192,6 +193,12 @@ class CollaborationRepository:
                 item = await db.get(WorkspaceItem, doc_uuid)
                 if item:
                     item.updated_at = now
+
+        async with self.session_factory() as db:
+            response = await DocumentsService(db).get_content(
+                user_id, doc_id, touch_last_opened_at=False
+            )
+            await document_content_events.publish(doc_id, response)
 
     async def persist_snapshot(self, doc_id: str, version: int, content: str) -> None:
         """Persist a periodic collaboration snapshot."""

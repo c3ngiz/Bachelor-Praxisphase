@@ -10,6 +10,7 @@ import {
   useShareItem,
 } from './useWorkspaceActions';
 import { useWorkspaceItems } from './useWorkspaceItems';
+import { workspaceService } from '../services/workspaceService';
 import type { EntityId, WorkspaceFilter, WorkspaceItem } from '../types/workspace.types';
 
 /** Return value for the composed workspace dashboard hook. */
@@ -38,6 +39,8 @@ export interface UseWorkspaceResult {
   setActiveFilter: (filter: WorkspaceFilter) => void;
   /** Reloads the current folder. */
   refresh: () => Promise<void>;
+  /** Lists direct collaborators for an item. */
+  listCollaborators: typeof workspaceService.listCollaborators;
   /** Creates a folder. */
   createFolder: ReturnType<typeof useCreateFolder>['createFolder'];
   /** Creates a document shell. */
@@ -117,6 +120,7 @@ export function useWorkspace(folderId: EntityId | null): UseWorkspaceResult {
     isSharing: shareItem.isSharing,
     itemCounts,
     items: itemsState.items,
+    listCollaborators: workspaceService.listCollaborators,
     loadMoveTargets: moveItem.loadMoveTargets,
     moveItem: moveItem.moveItem,
     moveTargets: moveItem.moveTargets,

@@ -83,6 +83,15 @@ export const workspaceItemsQuery = `
   }
 `;
 
+/** GraphQL query for listing direct collaborators on an item. */
+export const itemCollaboratorsQuery = `
+  query ItemCollaborators($itemId: ID!) {
+    itemCollaborators(itemId: $itemId) {
+      ${workspaceCollaboratorFields}
+    }
+  }
+`;
+
 /** GraphQL query for listing valid move destinations. */
 export const moveTargetsQuery = `
   query MoveTargets($excludeItemId: ID!) {

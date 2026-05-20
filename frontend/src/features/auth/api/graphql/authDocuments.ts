@@ -41,3 +41,12 @@ export const meQuery = `
     }
   }
 `;
+
+/** GraphQL mutation used to validate and complete backend sign-out. */
+export const signOutMutation = `
+  mutation SignOut {
+    signOut {
+      success
+    }
+  }
+`;

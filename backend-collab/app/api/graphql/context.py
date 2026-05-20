@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import Depends, Request
+from fastapi import Depends, Request, WebSocket
 from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.fastapi import BaseContext
 
@@ -19,16 +19,27 @@ from app.domain.users.service import UsersService
 class GraphQLContext(BaseContext):
     """Per-request GraphQL context exposing the DB session and current user."""
 
-    request: Request
+    request: Request | WebSocket
     db: AsyncSession
 
     async def current_user(self) -> User:
         """Resolve the authenticated user from the GraphQL Authorization header."""
 
-        authorization = self.request.headers.get("authorization")
+        authorization = self.request.headers.get("authorization") or self.connection_authorization()
         token = extract_bearer_token(authorization)
         payload = SecurityService(get_settings()).decode_access_token(token)
         return await UsersService(self.db).get_by_id_or_throw(payload["sub"])
+
+    def connection_authorization(self) -> str | None:
+        """Return authorization supplied through GraphQL WebSocket connection params."""
+
+        params = self.connection_params
+
+        if not isinstance(params, dict):
+            return None
+
+        authorization = params.get("authorization") or params.get("Authorization")
+        return authorization if isinstance(authorization, str) else None
 
 
 async def get_graphql_context(

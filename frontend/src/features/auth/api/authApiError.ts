@@ -3,6 +3,7 @@ import { AxiosError, isAxiosError } from 'axios';
 import type { ApiError, AuthFieldErrors } from '../types/auth.types';
 
 type RestErrorResponse = {
+  code?: string;
   message?: string;
   issues?: {
     fieldErrors?: Record<string, string[]>;
@@ -102,6 +103,7 @@ function normalizeAxiosError(error: AxiosError): ApiError {
   const restError = error.response.data as RestErrorResponse;
 
   return {
+    code: restError.code,
     fieldErrors: restError.issues?.fieldErrors,
     message: restError.message ?? 'Request failed. Please try again.',
     statusCode: error.response.status,

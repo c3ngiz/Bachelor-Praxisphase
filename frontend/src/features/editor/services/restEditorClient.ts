@@ -1,27 +1,20 @@
 import axios, { type AxiosInstance } from 'axios';
 
 import { env } from '../../../config/env';
-import { NormalizedApiError, throwNormalizedApiError } from '../../auth/api/authApiError';
+import { throwNormalizedApiError } from '../../auth/api/authApiError';
 import { authTokenStorage } from '../../auth/api/authTokenStorage';
-import { toWorkspaceItem, type BackendWorkspaceItem } from '../../workspace/api/workspaceMappers';
 import type { EntityId } from '../../workspace/types/workspace.types';
+import {
+  toDocumentContentResult,
+  type BackendDocumentContent,
+} from './editorContentMappers';
 import type {
+  DocumentContentResult,
   DocumentEditorLoadResult,
   EditorClient,
   GetDocumentMetadataOptions,
+  UpdateDocumentContentInput,
 } from '../types/editor.types';
-
-/** REST document content response returned by the editor backend. */
-interface RestDocumentContentResponse {
-  /** Workspace document metadata. */
-  document: BackendWorkspaceItem;
-  /** Whether the current user may save changes. */
-  canWrite: boolean;
-  /** Optimistic content revision. */
-  revision: number;
-  /** ISO update timestamp. */
-  updatedAt: string;
-}
 
 /** REST client for document editor content endpoints. */
 export class RestEditorClient implements EditorClient {
@@ -60,42 +53,61 @@ export class RestEditorClient implements EditorClient {
     documentId: EntityId,
     options?: GetDocumentMetadataOptions,
   ): Promise<DocumentEditorLoadResult> {
+    const result = await this.getDocumentContent(documentId, options);
+
+    return {
+      canWrite: result.canWrite,
+      document: result.document,
+      revision: result.revision,
+      updatedAt: result.updatedAt,
+    };
+  }
+
+  /**
+   * Loads document content and permission state.
+   *
+   * @param documentId - Workspace document identifier.
+   * @param options - Optional load behavior for metadata touching.
+   * @returns Normalized editor content response.
+   */
+  async getDocumentContent(
+    documentId: EntityId,
+    options?: GetDocumentMetadataOptions,
+  ): Promise<DocumentContentResult> {
     try {
-      const response = await this.http.get<RestDocumentContentResponse>(
+      const response = await this.http.get<BackendDocumentContent>(
         `/api/workspace/documents/${encodeURIComponent(documentId)}/content`,
         {
           params: options?.touch === false ? { touch: 'false' } : undefined,
         },
       );
 
-      return toDocumentEditorLoadResult(response.data);
+      return toDocumentContentResult(response.data);
     } catch (error) {
       throwNormalizedApiError(error);
     }
   }
-}
 
-/**
- * Maps REST document content into frontend editor state.
- *
- * @param response - Raw REST response.
- * @returns Normalized load result.
- */
-function toDocumentEditorLoadResult(
-  response: RestDocumentContentResponse,
-): DocumentEditorLoadResult {
-  const item = toWorkspaceItem(response.document);
+  /**
+   * Saves document content and returns the incremented revision.
+   *
+   * @param input - Document save input.
+   * @returns Normalized editor content response.
+   */
+  async updateDocumentContent(input: UpdateDocumentContentInput): Promise<DocumentContentResult> {
+    try {
+      const response = await this.http.patch<BackendDocumentContent>(
+        `/api/workspace/documents/${encodeURIComponent(input.documentId)}/content`,
+        {
+          content: input.content,
+          revision: input.revision,
+          title: input.title,
+        },
+      );
 
-  if (item.kind !== 'document') {
-    throw new NormalizedApiError({
-      message: 'The requested workspace item is not a document.',
-    });
+      return toDocumentContentResult(response.data);
+    } catch (error) {
+      throwNormalizedApiError(error);
+    }
   }
-
-  return {
-    canWrite: response.canWrite,
-    document: item,
-    revision: response.revision,
-    updatedAt: response.updatedAt,
-  };
 }

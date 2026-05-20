@@ -10,6 +10,10 @@ import type { Collaborator, PermissionLevel, WorkspaceItem } from '../../types/w
 export interface ShareWorkspaceItemModalProps {
   /** Item being shared. */
   item: WorkspaceItem | null;
+  /** Fresh collaborator list for the item when available. */
+  collaborators?: Collaborator[];
+  /** Whether collaborators are being refreshed from the backend. */
+  isLoadingCollaborators?: boolean;
   /** Whether the dialog is open. */
   open: boolean;
   /** Handles dialog open state changes. */
@@ -37,6 +41,8 @@ const permissionOptions = [
 /** Renders sharing controls and existing collaborator permissions. */
 export function ShareWorkspaceItemModal({
   error,
+  collaborators,
+  isLoadingCollaborators = false,
   isSubmitting,
   item,
   onInvite,
@@ -47,6 +53,7 @@ export function ShareWorkspaceItemModal({
 }: ShareWorkspaceItemModalProps): JSX.Element {
   const [email, setEmail] = useState('');
   const [permission, setPermission] = useState<Exclude<PermissionLevel, 'owner'>>('read');
+  const visibleCollaborators = collaborators ?? item?.collaborators ?? [];
 
   useEffect(() => {
     if (open) {
@@ -116,9 +123,9 @@ export function ShareWorkspaceItemModal({
 
           <section aria-label="Existing collaborators" className="grid gap-2">
             <h3 className="m-0 text-sm font-semibold text-slate-950">Collaborators</h3>
-            {item?.collaborators.length ? (
+            {visibleCollaborators.length ? (
               <div className="grid gap-2">
-                {item.collaborators.map((collaborator) => (
+                {visibleCollaborators.map((collaborator) => (
                   <CollaboratorRow
                     collaborator={collaborator}
                     disabled={isSubmitting}
@@ -128,6 +135,10 @@ export function ShareWorkspaceItemModal({
                   />
                 ))}
               </div>
+            ) : isLoadingCollaborators ? (
+              <p className="m-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                Loading collaborators...
+              </p>
             ) : (
               <p className="m-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
                 No collaborators returned for this item.

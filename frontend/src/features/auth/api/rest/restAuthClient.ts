@@ -89,12 +89,18 @@ export class RestAuthClient implements AuthClient {
   }
 
   /**
-   * Completes local sign-out for bearer-token REST auth.
-   *
-   * The current REST backend does not expose a logout endpoint.
+   * Completes backend sign-out for bearer-token REST auth.
    */
   async signOut(): Promise<void> {
-    return Promise.resolve();
+    if (!authTokenStorage.getToken()) {
+      return;
+    }
+
+    try {
+      await this.http.post('/api/auth/sign-out');
+    } catch (error) {
+      throwNormalizedApiError(error);
+    }
   }
 
   /**

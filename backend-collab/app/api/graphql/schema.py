@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Awaitable, Callable, TypeVar
 
 import strawberry
@@ -44,6 +45,7 @@ from app.core.security import SecurityService
 from app.domain.auth.schemas import LoginRequest, RegisterRequest
 from app.domain.auth.service import AuthService
 from app.domain.documents.schemas import UpdateDocumentContentRequest
+from app.domain.documents.events import document_content_events
 from app.domain.documents.service import DocumentsService
 from app.domain.users.service import UsersService
 from app.domain.workspace.schemas import (
@@ -223,6 +225,28 @@ class Mutation:
         """Save document content and increment its revision."""
 
         return await guard(lambda: resolve_update_document_content(info, input))
+
+
+@strawberry.type
+class Subscription:
+    """GraphQL subscriptions for document content updates."""
+
+    @strawberry.subscription
+    async def document_content_updated(
+        self, info: strawberry.Info[GraphQLContext, None], document_id: strawberry.ID
+    ) -> AsyncIterator[DocumentContent]:
+        """Stream document content updates for an accessible document."""
+
+        current_user = await info.context.current_user()
+        await DocumentsService(info.context.db).get_content(
+            str(current_user.id), str(document_id), touch_last_opened_at=False
+        )
+
+        async for _event in document_content_events.subscribe(str(document_id)):
+            response = await DocumentsService(info.context.db).get_content(
+                str(current_user.id), str(document_id), touch_last_opened_at=False
+            )
+            yield to_gql_document_content(response)
 
 
 async def resolve_me(info: strawberry.Info[GraphQLContext, None]) -> User:
@@ -464,5 +488,5 @@ async def guard(callback: Callable[[], Awaitable[T]]) -> T:
         raise GraphQLError(str(error), extensions={"code": "VALIDATION_ERROR", "statusCode": 422}) from error
 
 
-schema = strawberry.Schema(query=Query, mutation=Mutation)
+schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)
 graphql_router = GraphQLRouter(schema, context_getter=get_graphql_context)

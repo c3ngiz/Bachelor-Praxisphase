@@ -1,4 +1,5 @@
 import type { DocumentItem, EntityId } from '../../workspace/types/workspace.types';
+import type { EditorSyncMode } from '../../../config/env';
 
 export type TextOp =
   | { type: 'insert'; pos: number; text: string }
@@ -71,6 +72,16 @@ export type PlainTextConnectionStatus =
   | 'disconnected'
   | 'error';
 
+/** Save state shown by the plain-text editor toolbar. */
+export type PlainTextSaveStatus =
+  | 'idle'
+  | 'live'
+  | 'unsaved'
+  | 'saving'
+  | 'saved'
+  | 'conflict'
+  | 'error';
+
 export interface RemoteOperationEvent {
   id: string;
   op: TextOp;
@@ -93,6 +104,16 @@ export interface PlainTextMetrics {
   avgAckLatencyMs: number | null;
 }
 
+/** Revision conflict detected while local edits are still unsaved. */
+export interface PlainTextConflict {
+  /** Remote revision that arrived after local editing began. */
+  remoteRevision: number;
+  /** Local revision used by the currently dirty editor state. */
+  localRevision: number;
+  /** Remote update timestamp returned by the backend. */
+  updatedAt: string;
+}
+
 export interface PlainTextEditorState {
   clientId: string;
   content: string;
@@ -105,10 +126,14 @@ export interface PlainTextEditorState {
   metrics: PlainTextMetrics;
   remoteCursors: CursorState[];
   remoteOperation: RemoteOperationEvent | null;
+  saveStatus: PlainTextSaveStatus;
   status: PlainTextConnectionStatus;
+  syncMode: EditorSyncMode;
   title: string;
   version: number;
+  conflict: PlainTextConflict | null;
   markRemoteApplied: (eventId: string) => void;
+  saveNow: () => Promise<void>;
   sendCursor: (input: { pos: number; selectionStart: number; selectionEnd: number }) => void;
   sendLocalOperation: (op: TextOp, clientHash?: string) => void;
 }
@@ -120,8 +145,49 @@ export interface DocumentEditorLoadResult {
   updatedAt: string;
 }
 
+/** JSON value accepted by the document content API. */
+export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+
+/** JSON object accepted by the document content API. */
+export interface JsonObject {
+  /** Arbitrary JSON object fields. */
+  [key: string]: JsonValue;
+}
+
+/** Document content payload normalized across REST and GraphQL clients. */
+export interface DocumentContentResult extends DocumentEditorLoadResult {
+  /** Raw JSON document content returned by the backend. */
+  content: JsonObject;
+  /** Plain-text projection rendered by CodeMirror. */
+  textContent: string;
+}
+
 export interface GetDocumentMetadataOptions {
   touch?: boolean;
+}
+
+/** Input used to save document content. */
+export interface UpdateDocumentContentInput {
+  /** Document being updated. */
+  documentId: EntityId;
+  /** Next JSON document content. */
+  content: JsonObject;
+  /** Revision being replaced optimistically. */
+  revision: number;
+  /** Optional title rename sent with the save. */
+  title?: string;
+}
+
+/** Event handlers used by GraphQL document-content subscriptions. */
+export interface DocumentContentSubscriptionHandlers {
+  /** Called after the subscription socket is accepted. */
+  onConnected?: () => void;
+  /** Called after the subscription socket closes or completes. */
+  onDisconnected?: () => void;
+  /** Called when a subscription transport or execution error occurs. */
+  onError?: (error: Error) => void;
+  /** Called for each remote document content payload. */
+  onNext: (content: DocumentContentResult) => void;
 }
 
 export interface EditorClient {
@@ -129,4 +195,13 @@ export interface EditorClient {
     documentId: EntityId,
     options?: GetDocumentMetadataOptions,
   ): Promise<DocumentEditorLoadResult>;
+  getDocumentContent(
+    documentId: EntityId,
+    options?: GetDocumentMetadataOptions,
+  ): Promise<DocumentContentResult>;
+  updateDocumentContent(input: UpdateDocumentContentInput): Promise<DocumentContentResult>;
+  subscribeToDocumentContent?(
+    documentId: EntityId,
+    handlers: DocumentContentSubscriptionHandlers,
+  ): () => void;
 }

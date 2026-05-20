@@ -23,8 +23,6 @@ def upgrade() -> None:
     op.execute('CREATE EXTENSION IF NOT EXISTS "pgcrypto"')
     workspace_item_type = postgresql.ENUM("FOLDER", "DOCUMENT", name="WorkspaceItemType")
     workspace_permission = postgresql.ENUM("READ", "WRITE", name="WorkspacePermission")
-    workspace_item_type.create(op.get_bind(), checkfirst=True)
-    workspace_permission.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
         "users",

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '../../../shared/components';
 import { WorkspaceBreadcrumbs } from '../components/WorkspaceBreadcrumbs';
@@ -16,6 +16,7 @@ import { ShareWorkspaceItemModal } from '../components/modals/ShareWorkspaceItem
 import { useWorkspace } from '../hooks/useWorkspace';
 import { getWorkspaceFolderPath } from '../utils/workspaceFormatting';
 import type {
+  Collaborator,
   EntityId,
   PermissionLevel,
   WorkspaceItem,
@@ -45,8 +46,55 @@ export function WorkspacePage({ folderId = null, params }: WorkspacePageProps): 
   const routeFolderId = folderId ?? params?.folderId ?? null;
   const workspace = useWorkspace(routeFolderId);
   const [modal, setModal] = useState<WorkspaceModalState>({ type: 'closed' });
+  const [shareCollaborators, setShareCollaborators] = useState<Collaborator[]>([]);
+  const [isLoadingShareCollaborators, setIsLoadingShareCollaborators] = useState(false);
+  const activeShareItem = modal.type === 'share' ? modal.item : null;
 
   const closeModal = (): void => setModal({ type: 'closed' });
+
+  async function refreshShareCollaborators(item: WorkspaceItem): Promise<void> {
+    setShareCollaborators(item.collaborators);
+    setIsLoadingShareCollaborators(true);
+
+    try {
+      const collaborators = await workspace.listCollaborators(item.id);
+      setShareCollaborators(collaborators);
+    } catch {
+      setShareCollaborators(item.collaborators);
+    } finally {
+      setIsLoadingShareCollaborators(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!activeShareItem) {
+      setShareCollaborators([]);
+      setIsLoadingShareCollaborators(false);
+      return;
+    }
+
+    let isActive = true;
+    setShareCollaborators(activeShareItem.collaborators);
+    setIsLoadingShareCollaborators(true);
+
+    workspace
+      .listCollaborators(activeShareItem.id)
+      .then((collaborators) => {
+        if (isActive) {
+          setShareCollaborators(collaborators);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (isActive) {
+          setIsLoadingShareCollaborators(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [activeShareItem?.id]);
 
   function handleOpenFolder(item: WorkspaceItem): void {
     if (item.kind !== 'folder') {
@@ -101,7 +149,8 @@ export function WorkspacePage({ folderId = null, params }: WorkspacePageProps): 
       return;
     }
 
-    await workspace.shareItem({ email, itemId: modal.item.id, permission });
+    const item = await workspace.shareItem({ email, itemId: modal.item.id, permission });
+    await refreshShareCollaborators(item);
   }
 
   async function handleUpdateCollaborator(
@@ -112,7 +161,12 @@ export function WorkspacePage({ folderId = null, params }: WorkspacePageProps): 
       return;
     }
 
-    await workspace.updateCollaborator({ collaboratorId, itemId: modal.item.id, permission });
+    const item = await workspace.updateCollaborator({
+      collaboratorId,
+      itemId: modal.item.id,
+      permission,
+    });
+    await refreshShareCollaborators(item);
   }
 
   async function handleRemoveCollaborator(collaboratorId: string): Promise<void> {
@@ -120,7 +174,8 @@ export function WorkspacePage({ folderId = null, params }: WorkspacePageProps): 
       return;
     }
 
-    await workspace.removeCollaborator({ collaboratorId, itemId: modal.item.id });
+    const item = await workspace.removeCollaborator({ collaboratorId, itemId: modal.item.id });
+    await refreshShareCollaborators(item);
   }
 
   return (
@@ -214,7 +269,9 @@ export function WorkspacePage({ folderId = null, params }: WorkspacePageProps): 
         targets={workspace.moveTargets}
       />
       <ShareWorkspaceItemModal
+        collaborators={shareCollaborators}
         error={workspace.mutationError}
+        isLoadingCollaborators={isLoadingShareCollaborators}
         isSubmitting={workspace.isSharing}
         item={modal.type === 'share' ? modal.item : null}
         onInvite={handleInvite}

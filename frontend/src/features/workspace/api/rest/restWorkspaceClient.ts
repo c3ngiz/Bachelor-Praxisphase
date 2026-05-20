@@ -4,14 +4,17 @@ import { env } from '../../../../config/env';
 import { throwNormalizedApiError } from '../../../auth/api/authApiError';
 import { authTokenStorage } from '../../../auth/api/authTokenStorage';
 import {
+  toCollaborators,
   toMoveTargets,
   toWorkspaceItem,
   toWorkspaceItemsResult,
+  type BackendCollaborator,
   type BackendMoveTarget,
   type BackendWorkspaceItem,
   type BackendWorkspaceItemsResponse,
 } from '../workspaceMappers';
 import type {
+  Collaborator,
   CreateDocumentInput,
   CreateFolderInput,
   DeleteItemInput,
@@ -42,6 +45,11 @@ interface RestWorkspaceItemsResponse {
 interface RestMoveTargetsResponse {
   /** Valid move destinations returned by REST. */
   targets: BackendMoveTarget[];
+}
+
+interface RestCollaboratorsResponse {
+  /** Direct collaborators returned by REST. */
+  collaborators: BackendCollaborator[];
 }
 
 /** REST client for assumed persisted workspace hierarchy endpoints. */
@@ -84,6 +92,23 @@ export class RestWorkspaceClient implements WorkspaceClient {
       >(`/api/workspace/items${query}`);
       const payload = 'workspace' in response.data ? response.data.workspace : response.data;
       return toWorkspaceItemsResult(payload);
+    } catch (error) {
+      throwNormalizedApiError(error);
+    }
+  }
+
+  /**
+   * Lists direct collaborators for an accessible item.
+   *
+   * @param itemId - Item whose collaborators should load.
+   * @returns Normalized collaborator entries.
+   */
+  async listCollaborators(itemId: EntityId): Promise<Collaborator[]> {
+    try {
+      const response = await this.http.get<RestCollaboratorsResponse>(
+        `/api/workspace/items/${encodeURIComponent(itemId)}/collaborators`,
+      );
+      return toCollaborators(response.data.collaborators);
     } catch (error) {
       throwNormalizedApiError(error);
     }

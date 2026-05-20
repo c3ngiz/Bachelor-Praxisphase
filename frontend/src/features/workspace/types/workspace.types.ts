@@ -199,6 +199,13 @@ export interface WorkspaceClient {
    */
   listItems(parentId: EntityId | null): Promise<WorkspaceItemsResult>;
   /**
+   * Lists direct collaborators for an accessible item.
+   *
+   * @param itemId - Item whose direct collaborators should load.
+   * @returns Normalized collaborator entries.
+   */
+  listCollaborators(itemId: EntityId): Promise<Collaborator[]>;
+  /**
    * Creates a folder in the current workspace hierarchy.
    *
    * @param input - Folder creation input.

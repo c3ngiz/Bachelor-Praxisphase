@@ -5,9 +5,11 @@ import { normalizeApiError } from '../../auth/api/authApiError';
 import { authTokenStorage } from '../../auth/api/authTokenStorage';
 import { useAuth } from '../../auth/hooks/useAuth';
 import type { DocumentItem } from '../../workspace/types/workspace.types';
+import { plainTextToTiptap } from '../services/editorContentMappers';
 import { editorService } from '../services/editorService';
 import { getEditorUserColor, normalizeEditorColor } from '../utils/editorIdentity';
 import {
+  applyTextOperation,
   transformCursor,
   transformTextOperation,
   type OperationIdentity,
@@ -15,6 +17,7 @@ import {
 import type {
   ClientMessage,
   CursorState,
+  DocumentContentResult,
   PlainTextEditorState,
   PlainTextLatencySample,
   PlainTextMetrics,
@@ -40,7 +43,31 @@ const emptyMetrics: PlainTextMetrics = {
   transformedOps: 0,
 };
 
+/**
+ * Selects the configured editor synchronization transport for a document route.
+ *
+ * @param documentId - Workspace document identifier.
+ * @returns Plain-text editor state and command handlers.
+ */
 export function usePlainTextCollaboration(documentId: string): PlainTextEditorState {
+  if (env.editorSyncMode === 'polling') {
+    return usePollingPlainTextEditor(documentId, 'polling');
+  }
+
+  if (env.editorSyncMode === 'subscription') {
+    return usePollingPlainTextEditor(documentId, 'subscription');
+  }
+
+  return useWebSocketPlainTextEditor(documentId);
+}
+
+/**
+ * Uses the backend WebSocket OT protocol for low-latency collaborative editing.
+ *
+ * @param documentId - Workspace document identifier.
+ * @returns Plain-text editor state.
+ */
+function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
   const { user } = useAuth();
   const clientId = useMemo(() => createClientId(), []);
   const localUser = useMemo<CursorState>(() => {
@@ -373,10 +400,12 @@ export function usePlainTextCollaboration(documentId: string): PlainTextEditorSt
   const markRemoteApplied = useCallback((eventId: string) => {
     setRemoteOperation((current) => (current?.id === eventId ? null : current));
   }, []);
+  const saveNow = useCallback(() => Promise.resolve(), []);
 
   return {
     canWrite,
     clientId,
+    conflict: null,
     content,
     contentSerial,
     document,
@@ -387,9 +416,293 @@ export function usePlainTextCollaboration(documentId: string): PlainTextEditorSt
     metrics,
     remoteCursors,
     remoteOperation,
+    saveNow,
+    saveStatus: 'live',
     sendCursor,
     sendLocalOperation,
     status,
+    syncMode: 'websocket',
+    title,
+    version,
+  };
+}
+
+/**
+ * Uses HTTP polling or GraphQL subscriptions with REST/GraphQL content saves.
+ *
+ * @param documentId - Workspace document identifier.
+ * @param syncMode - Configured non-WebSocket synchronization mode.
+ * @returns Plain-text editor state.
+ */
+function usePollingPlainTextEditor(
+  documentId: string,
+  syncMode: 'polling' | 'subscription',
+): PlainTextEditorState {
+  const { user } = useAuth();
+  const clientId = useMemo(() => createClientId(), []);
+  const localUser = useMemo<CursorState>(() => {
+    const userId = user?.id ?? `anonymous-${clientId}`;
+
+    return {
+      client_id: clientId,
+      color: normalizeEditorColor(user?.avatarColor, getEditorUserColor(userId)),
+      display_name: user?.name ?? 'Anonymous user',
+      pos: 0,
+      selection_end: 0,
+      selection_start: 0,
+      ts: new Date().toISOString(),
+      user_id: userId,
+    };
+  }, [clientId, user]);
+  const [document, setDocument] = useState<DocumentItem | null>(null);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [contentSerial, setContentSerial] = useState(0);
+  const [canWrite, setCanWrite] = useState(false);
+  const [version, setVersion] = useState(0);
+  const [status, setStatus] = useState<PlainTextEditorState['status']>('loading');
+  const [saveStatus, setSaveStatus] = useState<PlainTextEditorState['saveStatus']>('idle');
+  const [conflict, setConflict] = useState<PlainTextEditorState['conflict']>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<PlainTextMetrics>(emptyMetrics);
+  const [subscriptionFallbackEnabled, setSubscriptionFallbackEnabled] = useState(false);
+  const contentRef = useRef('');
+  const revisionRef = useRef(0);
+  const canWriteRef = useRef(false);
+  const lastSavedContentRef = useRef('');
+  const dirtyRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+
+  const applyContentResult = useCallback(
+    (result: DocumentContentResult, source: 'initial' | 'remote' | 'save') => {
+      const isNewRemoteRevision = result.revision > revisionRef.current;
+
+      if (source === 'remote' && dirtyRef.current) {
+        if (isNewRemoteRevision) {
+          setConflict({
+            localRevision: revisionRef.current,
+            remoteRevision: result.revision,
+            updatedAt: result.updatedAt,
+          });
+          setSaveStatus('conflict');
+        }
+        setCanWrite(result.canWrite);
+        canWriteRef.current = result.canWrite;
+        setDocument(result.document);
+        setTitle(result.document.name);
+        return;
+      }
+
+      setDocument(result.document);
+      setTitle(result.document.name);
+      setCanWrite(result.canWrite);
+      canWriteRef.current = result.canWrite;
+      setVersion(result.revision);
+      revisionRef.current = result.revision;
+      setStatus('connected');
+
+      if (source === 'initial' || source === 'remote') {
+        setContent(result.textContent);
+        contentRef.current = result.textContent;
+        lastSavedContentRef.current = result.textContent;
+        dirtyRef.current = false;
+        setContentSerial((current) => current + 1);
+        setConflict(null);
+        setSaveStatus(result.canWrite ? 'saved' : 'idle');
+      }
+
+      if (source === 'save') {
+        lastSavedContentRef.current = contentRef.current;
+        dirtyRef.current = false;
+        setConflict(null);
+        setSaveStatus('saved');
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    setDocument(null);
+    setTitle('');
+    setContent('');
+    contentRef.current = '';
+    setContentSerial((current) => current + 1);
+    setCanWrite(false);
+    canWriteRef.current = false;
+    setVersion(0);
+    revisionRef.current = 0;
+    dirtyRef.current = false;
+    setConflict(null);
+    setError(null);
+    setSaveStatus('idle');
+    setStatus('loading');
+
+    editorService
+      .getDocumentContent(documentId)
+      .then((result) => {
+        if (isActive) {
+          applyContentResult(result, 'initial');
+        }
+      })
+      .catch((requestError) => {
+        if (!isActive) {
+          return;
+        }
+
+        setError(normalizeApiError(requestError).message);
+        setStatus('error');
+        setSaveStatus('error');
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [applyContentResult, documentId]);
+
+  const saveNow = useCallback(async () => {
+    if (!canWriteRef.current || saveInFlightRef.current || conflict) {
+      return;
+    }
+
+    if (!dirtyRef.current && contentRef.current === lastSavedContentRef.current) {
+      setSaveStatus('saved');
+      return;
+    }
+
+    saveInFlightRef.current = true;
+    setSaveStatus('saving');
+    setError(null);
+
+    try {
+      const result = await editorService.updateDocumentContent({
+        content: plainTextToTiptap(contentRef.current),
+        documentId,
+        revision: revisionRef.current,
+        title,
+      });
+      applyContentResult(result, 'save');
+    } catch (requestError) {
+      const normalizedError = normalizeApiError(requestError);
+
+      if (normalizedError.code === 'DOCUMENT_REVISION_CONFLICT' || normalizedError.statusCode === 409) {
+        setConflict({
+          localRevision: revisionRef.current,
+          remoteRevision: revisionRef.current + 1,
+          updatedAt: new Date().toISOString(),
+        });
+        setSaveStatus('conflict');
+      } else {
+        setError(normalizedError.message);
+        setSaveStatus('error');
+      }
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, [applyContentResult, conflict, documentId, title]);
+
+  const sendLocalOperation = useCallback((op: TextOp) => {
+    if (!canWriteRef.current) {
+      return;
+    }
+
+    const nextContent = applyTextOperation(contentRef.current, op);
+    contentRef.current = nextContent;
+    dirtyRef.current = true;
+    setContent(nextContent);
+    setSaveStatus((current) => (current === 'conflict' ? 'conflict' : 'unsaved'));
+    setMetrics((current) => ({ ...current, sentOps: current.sentOps + 1 }));
+  }, []);
+
+  const sendCursor = useCallback(() => undefined, []);
+  const markRemoteApplied = useCallback(() => undefined, []);
+
+  useEffect(() => {
+    if (!canWrite || conflict || !dirtyRef.current || status !== 'connected') {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void saveNow();
+    }, env.editorAutosaveDebounceMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [canWrite, conflict, content, saveNow, status]);
+
+  useEffect(() => {
+    if (syncMode !== 'subscription' || !editorService.subscribeToDocumentContent) {
+      setSubscriptionFallbackEnabled(syncMode === 'subscription');
+      return undefined;
+    }
+
+    setStatus((current) => (current === 'loading' ? current : 'connecting'));
+
+    return editorService.subscribeToDocumentContent(documentId, {
+      onConnected: () => {
+        setSubscriptionFallbackEnabled(false);
+        setStatus('connected');
+      },
+      onDisconnected: () => {
+        setSubscriptionFallbackEnabled(true);
+        setStatus((current) => (current === 'error' ? current : 'disconnected'));
+      },
+      onError: (subscriptionError) => {
+        setSubscriptionFallbackEnabled(true);
+        setError(subscriptionError.message);
+        setStatus((current) => (current === 'error' ? current : 'disconnected'));
+      },
+      onNext: (result) => applyContentResult(result, 'remote'),
+    });
+  }, [applyContentResult, documentId, syncMode]);
+
+  useEffect(() => {
+    const shouldPoll = syncMode === 'polling' || subscriptionFallbackEnabled;
+
+    if (!shouldPoll || status === 'loading') {
+      return undefined;
+    }
+
+    const poll = async (): Promise<void> => {
+      try {
+        const result = await editorService.getDocumentContent(documentId, { touch: false });
+
+        if (result.revision >= revisionRef.current) {
+          applyContentResult(result, 'remote');
+        }
+      } catch (requestError) {
+        setError(normalizeApiError(requestError).message);
+        setStatus('disconnected');
+      }
+    };
+
+    const intervalId = window.setInterval(() => {
+      void poll();
+    }, env.editorPollingIntervalMs);
+
+    return () => window.clearInterval(intervalId);
+  }, [applyContentResult, documentId, status, subscriptionFallbackEnabled, syncMode]);
+
+  return {
+    canWrite,
+    clientId,
+    conflict,
+    content,
+    contentSerial,
+    document,
+    error,
+    isLoading: status === 'loading',
+    localUser,
+    markRemoteApplied,
+    metrics,
+    remoteCursors: [],
+    remoteOperation: null,
+    saveNow,
+    saveStatus,
+    sendCursor,
+    sendLocalOperation,
+    status,
+    syncMode,
     title,
     version,
   };

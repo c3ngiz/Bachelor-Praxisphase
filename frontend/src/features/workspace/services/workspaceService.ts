@@ -2,6 +2,7 @@ import { env } from '../../../config/env';
 import { GraphqlWorkspaceClient } from '../api/graphql/graphqlWorkspaceClient';
 import { RestWorkspaceClient } from '../api/rest/restWorkspaceClient';
 import type {
+  Collaborator,
   CreateDocumentInput,
   CreateFolderInput,
   DeleteItemInput,
@@ -44,6 +45,16 @@ export const workspaceService = {
    */
   listItems(parentId: EntityId | null): Promise<WorkspaceItemsResult> {
     return workspaceClient.listItems(parentId);
+  },
+
+  /**
+   * Lists direct collaborators for an accessible item.
+   *
+   * @param itemId - Item whose direct collaborators should load.
+   * @returns Normalized collaborators.
+   */
+  listCollaborators(itemId: EntityId): Promise<Collaborator[]> {
+    return workspaceClient.listCollaborators(itemId);
   },
 
   /**

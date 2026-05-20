@@ -202,7 +202,7 @@ export function toWorkspaceItem(item: BackendWorkspaceItem): WorkspaceItem {
     canDelete: item.canDelete ?? permission === 'owner',
     canManage,
     canWrite,
-    collaborators: (item.collaborators ?? []).map(toCollaborator),
+    collaborators: toCollaborators(item.collaborators ?? []),
     createdAt: item.createdAt ?? fallbackTimestamp,
     id: item.id,
     name: item.name ?? item.title ?? 'Untitled',
@@ -242,6 +242,16 @@ export function toMoveTargets(targets: BackendMoveTarget[]): MoveTarget[] {
     name: target.name ?? 'Workspace',
     path: target.path ?? target.name ?? 'Workspace',
   }));
+}
+
+/**
+ * Maps backend collaborator objects into normalized frontend collaborator rows.
+ *
+ * @param collaborators - Backend collaborators returned by REST or GraphQL.
+ * @returns Normalized collaborator entries.
+ */
+export function toCollaborators(collaborators: BackendCollaborator[]): Collaborator[] {
+  return collaborators.map(toCollaborator);
 }
 
 /**
