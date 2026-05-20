@@ -3,6 +3,7 @@ import { AlertTriangle, Clock3, LockKeyhole, PencilLine, RadioTower } from 'luci
 
 import { Badge, Button, Card } from '../../../shared/components';
 import type { PlainTextEditorState } from '../types/editor.types';
+import { DivergenceStatusBadge } from './DivergenceStatusBadge';
 import { PlainTextContextSidebar } from './PlainTextContextSidebar';
 import { PlainTextEditorSurface } from './PlainTextEditorSurface';
 
@@ -28,6 +29,7 @@ export function PlainTextEditorLayout({ state }: PlainTextEditorLayoutProps): JS
               content={state.content}
               contentSerial={state.contentSerial}
               markRemoteApplied={state.markRemoteApplied}
+              onContentChanged={state.onContentChanged}
               remoteCursors={state.remoteCursors}
               remoteOperation={state.remoteOperation}
               sendCursor={state.sendCursor}
@@ -66,6 +68,7 @@ function EditorHeader({ state }: PlainTextEditorLayoutProps): JSX.Element {
         </Badge>
         <ConnectionBadge status={state.status} />
         <SaveStatusBadge status={state.saveStatus} />
+        <DivergenceStatusBadge divergence={state.divergence} />
         {state.syncMode !== 'websocket' ? (
           <Button
             disabled={!state.canWrite || Boolean(state.conflict)}
@@ -125,6 +128,15 @@ function EditorNotice({ state }: PlainTextEditorLayoutProps): JSX.Element | null
       <Notice tone="warning">
         <RadioTower aria-hidden="true" className="h-4 w-4 shrink-0" />
         Collaboration is disconnected. Editing will resume when the transport reconnects.
+      </Notice>
+    );
+  }
+
+  if (state.divergence.state === 'divergence_detected') {
+    return (
+      <Notice tone="error">
+        <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
+        This client no longer matches the server snapshot. Use Resync in the sidebar before continuing.
       </Notice>
     );
   }

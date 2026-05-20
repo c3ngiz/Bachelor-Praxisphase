@@ -1,20 +1,17 @@
 import type { DocumentItem, EntityId } from '../../workspace/types/workspace.types';
 import type { EditorSyncMode } from '../../../config/env';
+import type {
+  CollaborationClientMetrics,
+  CollaborationCursorState,
+  CollaborationTextOperation,
+  DivergenceStatus,
+} from '../../collaboration/types/collaboration.types';
 
-export type TextOp =
-  | { type: 'insert'; pos: number; text: string }
-  | { type: 'delete'; pos: number; len: number };
+/** Plain-text insert/delete operation used by the editor collaboration hook. */
+export type TextOp = CollaborationTextOperation;
 
-export interface CursorState {
-  user_id: string;
-  client_id: string;
-  pos: number;
-  selection_start: number;
-  selection_end: number;
-  color: string;
-  display_name: string;
-  ts: string;
-}
+/** Remote cursor and selection state used by the editor UI. */
+export type CursorState = CollaborationCursorState;
 
 export type ClientMessage =
   | { type: 'join'; client_id: string }
@@ -49,6 +46,8 @@ export type ServerMessage =
       op: TextOp;
       transform_required: boolean;
       server_ts: string;
+      server_processing_ms?: number | null;
+      transform_case_counts?: CollaborationClientMetrics['transformCaseCounts'];
     }
   | {
       type: 'broadcast_op';
@@ -95,14 +94,8 @@ export interface PlainTextLatencySample {
   transformRequired: boolean;
 }
 
-export interface PlainTextMetrics {
-  sentOps: number;
-  ackedOps: number;
-  receivedRemoteOps: number;
-  transformedOps: number;
-  lastAckLatencyMs: number | null;
-  avgAckLatencyMs: number | null;
-}
+/** Client-side collaboration metrics shown in the editor sidebar. */
+export type PlainTextMetrics = CollaborationClientMetrics;
 
 /** Revision conflict detected while local edits are still unsaved. */
 export interface PlainTextConflict {
@@ -120,6 +113,7 @@ export interface PlainTextEditorState {
   contentSerial: number;
   canWrite: boolean;
   document: DocumentItem | null;
+  divergence: DivergenceStatus;
   error: string | null;
   isLoading: boolean;
   localUser: CursorState;
@@ -133,6 +127,8 @@ export interface PlainTextEditorState {
   version: number;
   conflict: PlainTextConflict | null;
   markRemoteApplied: (eventId: string) => void;
+  onContentChanged: (content: string) => void;
+  resyncDocument: () => Promise<void>;
   saveNow: () => Promise<void>;
   sendCursor: (input: { pos: number; selectionStart: number; selectionEnd: number }) => void;
   sendLocalOperation: (op: TextOp, clientHash?: string) => void;

@@ -7,8 +7,8 @@ import {
   codePointLength,
   codePointOffsetToCodeUnitOffset,
   codeUnitOffsetToCodePointOffset,
-  hashText,
 } from '../utils/otTransform';
+import { stableTextHash } from '../../collaboration/utils/contentHash';
 import { remoteCursorField, setRemoteCursorsEffect } from '../extensions/remoteCursorExtension';
 import type {
   CursorState,
@@ -18,21 +18,38 @@ import type {
 } from '../types/editor.types';
 
 export interface PlainTextEditorSurfaceProps {
+  /** Whether the editor should accept local text changes. */
   canWrite: boolean;
+  /** Latest server or resync content snapshot. */
   content: string;
+  /** Monotonic marker used to force full snapshot replacement. */
   contentSerial: number;
+  /** Marks a remote operation as applied to CodeMirror. */
   markRemoteApplied: PlainTextEditorState['markRemoteApplied'];
+  /** Reports the editor's latest plain-text content to the collaboration hook. */
+  onContentChanged: PlainTextEditorState['onContentChanged'];
+  /** Remote cursors rendered inside CodeMirror. */
   remoteCursors: CursorState[];
+  /** Remote operation waiting to be applied to the local CodeMirror document. */
   remoteOperation: RemoteOperationEvent | null;
+  /** Sends the local cursor position through the collaboration transport. */
   sendCursor: PlainTextEditorState['sendCursor'];
+  /** Sends a local text operation through the collaboration transport. */
   sendLocalOperation: PlainTextEditorState['sendLocalOperation'];
 }
 
+/**
+ * CodeMirror surface for the collaborative plain-text editor.
+ *
+ * @param props - Editor surface props.
+ * @returns Mounted CodeMirror editor container.
+ */
 export function PlainTextEditorSurface({
   canWrite,
   content,
   contentSerial,
   markRemoteApplied,
+  onContentChanged,
   remoteCursors,
   remoteOperation,
   sendCursor,
@@ -44,13 +61,15 @@ export function PlainTextEditorSurface({
   const appliedContentSerialRef = useRef(-1);
   const appliedRemoteEventRef = useRef<string | null>(null);
   const editableCompartmentRef = useRef(new Compartment());
+  const onContentChangedRef = useRef(onContentChanged);
   const sendCursorRef = useRef(sendCursor);
   const sendLocalOperationRef = useRef(sendLocalOperation);
 
   useEffect(() => {
+    onContentChangedRef.current = onContentChanged;
     sendCursorRef.current = sendCursor;
     sendLocalOperationRef.current = sendLocalOperation;
-  }, [sendCursor, sendLocalOperation]);
+  }, [onContentChanged, sendCursor, sendLocalOperation]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -119,6 +138,7 @@ export function PlainTextEditorSurface({
 
             if (update.docChanged) {
               emitLocalOperations(update, sendLocalOperationRef.current);
+              onContentChangedRef.current(update.state.doc.toString());
             }
 
             if (update.docChanged || update.selectionSet) {
@@ -165,8 +185,9 @@ export function PlainTextEditorSurface({
         to: view.state.doc.length,
       },
     });
+    onContentChanged(content);
     applyingRemoteRef.current = false;
-  }, [content, contentSerial]);
+  }, [content, contentSerial, onContentChanged]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -177,9 +198,10 @@ export function PlainTextEditorSurface({
     appliedRemoteEventRef.current = remoteOperation.id;
     applyingRemoteRef.current = true;
     applyRemoteOperation(view, remoteOperation.op);
+    onContentChanged(view.state.doc.toString());
     applyingRemoteRef.current = false;
     markRemoteApplied(remoteOperation.id);
-  }, [markRemoteApplied, remoteOperation]);
+  }, [markRemoteApplied, onContentChanged, remoteOperation]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -208,7 +230,7 @@ function emitLocalOperations(
 ): void {
   const before = update.startState.doc.toString();
   const after = update.state.doc.toString();
-  const clientHash = hashText(after);
+  const clientHash = stableTextHash(after);
   let positionDelta = 0;
 
   update.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {

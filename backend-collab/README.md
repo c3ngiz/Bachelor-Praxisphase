@@ -34,6 +34,10 @@ REST defaults to `VITE_REST_API_URL=http://localhost:4000` and uses:
 - `DELETE /api/workspace/items/:itemId/collaborators/:userId`
 - `GET /api/workspace/documents/:documentId/content`
 - `PATCH /api/workspace/documents/:documentId/content`
+- `GET /api/collaboration/documents/:documentId/snapshot`
+- `POST /api/collaboration/documents/:documentId/hash-check`
+- `GET /api/collaboration/documents/:documentId/metrics`
+- `GET /api/collaboration/documents/:documentId/metrics.csv`
 
 GraphQL defaults to `VITE_GRAPHQL_API_URL=http://localhost:4000/graphql` and
 exposes frontend-compatible operations including `register`, `login`, `me`,
@@ -41,7 +45,8 @@ exposes frontend-compatible operations including `register`, `login`, `me`,
 `documentContent`, `createFolder`, `createDocument`, `renameWorkspaceItem`,
 `moveWorkspaceItem`, `deleteWorkspaceItem`, `shareWorkspaceItem`,
 `updateWorkspaceCollaborator`, `removeWorkspaceCollaborator`, and
-`updateDocumentContent`.
+`updateDocumentContent`. Collaboration diagnostics are available through
+`collaborationMetrics`, `collaborationHashCheck`, and `collaborationSnapshot`.
 
 The editor WebSocket uses:
 
@@ -57,6 +62,25 @@ The first message must be:
 
 If you keep the existing frontend `.env` value `VITE_COLLABORATION_URL=ws://localhost:4100`,
 run this same app on port 4100 or change the frontend URL to port 4000.
+
+## Plain-Text OT Rules
+
+The collaboration protocol accepts only plain-text `insert` and `delete`
+operations with code-point positions. When a client sends an operation against an
+older base version, the server transforms it over missed operations in server
+version order. The four pairwise transform cases are counted for diagnostics:
+`insert/insert`, `insert/delete`, `delete/insert`, and `delete/delete`.
+
+Concurrent inserts at the same position use a deterministic tie-breaker:
+`(client_id, op_id)` is compared lexicographically. The smaller identity remains
+to the left and the larger identity shifts right by the accepted insert length.
+Cursor and selection positions use the same insert/delete position-shifting
+rules and are clamped to the current document length.
+
+The divergence checker computes `fnv1a32:<utf8ByteLength>:<hex>` over the current
+plain text. Clients periodically compare their hash and version with the server
+snapshot, record divergence events when mismatches occur, and can resync by
+loading the latest server-owned snapshot.
 
 ## Architecture
 
@@ -80,6 +104,13 @@ backend-collab/
     domain/workspace/
     domain/documents/
     domain/collaboration/
+      operations.py
+      transform.py
+      cursor_transform.py
+      metrics.py
+      divergence.py
+      service.py
+      schemas.py
     main.py
   tests/
 ```
@@ -193,6 +224,44 @@ query WorkspaceItems($parentId: ID) {
 }
 ```
 
+```bash
+curl http://localhost:4000/api/collaboration/documents/$DOCUMENT_ID/metrics \
+  -H "authorization: Bearer $TOKEN"
+```
+
+```bash
+curl -X POST http://localhost:4000/api/collaboration/documents/$DOCUMENT_ID/hash-check \
+  -H 'content-type: application/json' \
+  -H "authorization: Bearer $TOKEN" \
+  -d '{"version":3,"hash":"fnv1a32:5:4f9f2cab"}'
+```
+
+```graphql
+query CollaborationMetrics($documentId: ID!) {
+  collaborationMetrics(documentId: $documentId) {
+    version
+    totalOperationsSent
+    acknowledgedOperations
+    transformedOperations
+    transformCaseCounts { insertInsert insertDelete deleteInsert deleteDelete }
+    avgAckLatencyMs
+    avgServerProcessingMs
+    divergenceEvents
+  }
+}
+```
+
+```graphql
+query CollaborationHashCheck($documentId: ID!, $version: Int!, $hash: String!) {
+  collaborationHashCheck(documentId: $documentId, version: $version, clientHash: $hash) {
+    inSync
+    versionMatches
+    hashMatches
+    serverHash
+  }
+}
+```
+
 ## Verification Checklist
 
 - Auth: register, login, `GET /api/auth/me`, no-op sign out.
@@ -204,6 +273,15 @@ query WorkspaceItems($parentId: ID) {
   `touch=false` does not change last-opened metadata.
 - Collaboration: connect two WebSocket clients, edit from client A, verify client
   B receives `broadcast_op`, and verify document revision metadata updates.
+- OT tie-breaking: submit same-position inserts from two clients and verify the
+  smaller `(client_id, op_id)` identity appears first.
+- Cursor transform: keep a remote cursor after an insert/delete point and verify
+  it shifts or collapses to the delete start.
+- Metrics: verify transform counters, ack latency, server processing time, and
+  CSV output update after edits.
+- Divergence: verify normal editing reports `in sync`, then send an incorrect
+  hash to `/api/collaboration/documents/:documentId/hash-check` and resync from
+  `/api/collaboration/documents/:documentId/snapshot`.
 - GraphQL: run equivalent auth, workspace, sharing, and document mutations.
 
 ## Quality Commands

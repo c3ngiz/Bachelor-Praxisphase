@@ -13,6 +13,9 @@ from app.api.graphql.context import GraphQLContext, get_graphql_context
 from app.api.graphql.types import (
     AuthSession,
     Collaborator,
+    CollaborationHashCheck,
+    CollaborationMetrics,
+    CollaborationSnapshot,
     CreateDocumentInput,
     CreateFolderInput,
     DeleteResult,
@@ -33,6 +36,9 @@ from app.api.graphql.types import (
     WorkspaceItems,
     ensure_json_object,
     to_gql_auth_session,
+    to_gql_collaboration_hash_check,
+    to_gql_collaboration_metrics,
+    to_gql_collaboration_snapshot,
     to_gql_document_content,
     to_gql_move_target,
     to_gql_user,
@@ -44,6 +50,7 @@ from app.core.errors import AppError
 from app.core.security import SecurityService
 from app.domain.auth.schemas import LoginRequest, RegisterRequest
 from app.domain.auth.service import AuthService
+from app.domain.collaboration.service import CollaborationQueryService
 from app.domain.documents.schemas import UpdateDocumentContentRequest
 from app.domain.documents.events import document_content_events
 from app.domain.documents.service import DocumentsService
@@ -109,6 +116,36 @@ class Query:
         """Load document content, revision, and permission state."""
 
         return await guard(lambda: resolve_document_content(info, document_id))
+
+    @strawberry.field
+    async def collaboration_metrics(
+        self, info: strawberry.Info[GraphQLContext, None], document_id: strawberry.ID
+    ) -> CollaborationMetrics:
+        """Load collaboration metrics for an accessible document."""
+
+        return await guard(lambda: resolve_collaboration_metrics(info, document_id))
+
+    @strawberry.field
+    async def collaboration_hash_check(
+        self,
+        info: strawberry.Info[GraphQLContext, None],
+        document_id: strawberry.ID,
+        version: int,
+        client_hash: str,
+    ) -> CollaborationHashCheck:
+        """Compare a client text hash with the server collaboration snapshot."""
+
+        return await guard(
+            lambda: resolve_collaboration_hash_check(info, document_id, version, client_hash)
+        )
+
+    @strawberry.field
+    async def collaboration_snapshot(
+        self, info: strawberry.Info[GraphQLContext, None], document_id: strawberry.ID
+    ) -> CollaborationSnapshot:
+        """Load the current plain-text collaboration snapshot for resync."""
+
+        return await guard(lambda: resolve_collaboration_snapshot(info, document_id))
 
 
 @strawberry.type
@@ -343,6 +380,50 @@ async def resolve_document_content(
         str(current_user.id), str(document_id)
     )
     return to_gql_document_content(response)
+
+
+async def resolve_collaboration_metrics(
+    info: strawberry.Info[GraphQLContext, None], document_id: strawberry.ID
+) -> CollaborationMetrics:
+    """Resolver implementation for collaboration metrics loading."""
+
+    current_user = await info.context.current_user()
+    response = await CollaborationQueryService(info.context.db).get_metrics(
+        str(current_user.id),
+        str(document_id),
+    )
+    return to_gql_collaboration_metrics(response)
+
+
+async def resolve_collaboration_hash_check(
+    info: strawberry.Info[GraphQLContext, None],
+    document_id: strawberry.ID,
+    version: int,
+    client_hash: str,
+) -> CollaborationHashCheck:
+    """Resolver implementation for collaboration hash comparisons."""
+
+    current_user = await info.context.current_user()
+    response = await CollaborationQueryService(info.context.db).compare_hash(
+        str(current_user.id),
+        str(document_id),
+        client_version=version,
+        client_hash=client_hash,
+    )
+    return to_gql_collaboration_hash_check(response)
+
+
+async def resolve_collaboration_snapshot(
+    info: strawberry.Info[GraphQLContext, None], document_id: strawberry.ID
+) -> CollaborationSnapshot:
+    """Resolver implementation for collaboration snapshot loading."""
+
+    current_user = await info.context.current_user()
+    response = await CollaborationQueryService(info.context.db).get_snapshot(
+        str(current_user.id),
+        str(document_id),
+    )
+    return to_gql_collaboration_snapshot(response)
 
 
 async def resolve_create_folder(

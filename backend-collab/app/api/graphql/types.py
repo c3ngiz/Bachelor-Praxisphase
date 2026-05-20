@@ -8,6 +8,11 @@ import strawberry
 from strawberry.scalars import JSON
 
 from app.domain.auth.schemas import AuthSessionResponse, AuthUserResponse
+from app.domain.collaboration.schemas import (
+    CollaborationHashCheckResponse,
+    CollaborationMetricsResponse,
+    CollaborationSnapshotResponse,
+)
 from app.domain.documents.schemas import DocumentContentResponse
 from app.domain.workspace.schemas import (
     CollaboratorResponse,
@@ -133,6 +138,61 @@ class DocumentContent:
     document: WorkspaceItem
     content: JSON
     revision: int
+    can_write: bool
+    updated_at: str
+
+
+@strawberry.type
+class CollaborationTransformCaseCounts:
+    """GraphQL counters for pairwise OT transform cases."""
+
+    insert_insert: int
+    insert_delete: int
+    delete_insert: int
+    delete_delete: int
+
+
+@strawberry.type
+class CollaborationMetrics:
+    """GraphQL collaboration metrics for one document."""
+
+    document_id: strawberry.ID
+    version: int
+    content_length: int
+    total_operations_sent: int
+    acknowledged_operations: int
+    remote_operations_received: int
+    transformed_operations: int
+    transform_case_counts: CollaborationTransformCaseCounts
+    avg_ack_latency_ms: float | None
+    avg_server_processing_ms: float | None
+    divergence_events: int
+    last_operation_at: str | None
+
+
+@strawberry.type
+class CollaborationHashCheck:
+    """GraphQL hash comparison result for divergence detection."""
+
+    document_id: strawberry.ID
+    version: int
+    client_version: int
+    server_hash: str
+    client_hash: str
+    in_sync: bool
+    version_matches: bool
+    hash_matches: bool
+    checked_at: str
+
+
+@strawberry.type
+class CollaborationSnapshot:
+    """GraphQL plain-text collaboration snapshot for resync."""
+
+    document_id: strawberry.ID
+    content: str
+    version: int
+    hash: str
     can_write: bool
     updated_at: str
 
@@ -355,6 +415,61 @@ def to_gql_document_content(response: DocumentContentResponse) -> DocumentConten
         document=to_gql_workspace_item(response.document),
         content=response.content,
         revision=response.revision,
+        can_write=response.can_write,
+        updated_at=response.updated_at,
+    )
+
+
+def to_gql_collaboration_metrics(response: CollaborationMetricsResponse) -> CollaborationMetrics:
+    """Map collaboration metrics into a GraphQL output type."""
+
+    return CollaborationMetrics(
+        document_id=strawberry.ID(response.document_id),
+        version=response.version,
+        content_length=response.content_length,
+        total_operations_sent=response.total_operations_sent,
+        acknowledged_operations=response.acknowledged_operations,
+        remote_operations_received=response.remote_operations_received,
+        transformed_operations=response.transformed_operations,
+        transform_case_counts=CollaborationTransformCaseCounts(
+            insert_insert=response.transform_case_counts.insert_insert,
+            insert_delete=response.transform_case_counts.insert_delete,
+            delete_insert=response.transform_case_counts.delete_insert,
+            delete_delete=response.transform_case_counts.delete_delete,
+        ),
+        avg_ack_latency_ms=response.avg_ack_latency_ms,
+        avg_server_processing_ms=response.avg_server_processing_ms,
+        divergence_events=response.divergence_events,
+        last_operation_at=response.last_operation_at,
+    )
+
+
+def to_gql_collaboration_hash_check(
+    response: CollaborationHashCheckResponse,
+) -> CollaborationHashCheck:
+    """Map a hash-check response into a GraphQL output type."""
+
+    return CollaborationHashCheck(
+        document_id=strawberry.ID(response.document_id),
+        version=response.version,
+        client_version=response.client_version,
+        server_hash=response.server_hash,
+        client_hash=response.client_hash,
+        in_sync=response.in_sync,
+        version_matches=response.version_matches,
+        hash_matches=response.hash_matches,
+        checked_at=response.checked_at,
+    )
+
+
+def to_gql_collaboration_snapshot(response: CollaborationSnapshotResponse) -> CollaborationSnapshot:
+    """Map a collaboration snapshot response into a GraphQL output type."""
+
+    return CollaborationSnapshot(
+        document_id=strawberry.ID(response.document_id),
+        content=response.content,
+        version=response.version,
+        hash=response.hash,
         can_write=response.can_write,
         updated_at=response.updated_at,
     )

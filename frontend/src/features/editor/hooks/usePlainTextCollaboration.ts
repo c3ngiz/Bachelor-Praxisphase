@@ -4,6 +4,12 @@ import { env } from '../../../config/env';
 import { normalizeApiError } from '../../auth/api/authApiError';
 import { authTokenStorage } from '../../auth/api/authTokenStorage';
 import { useAuth } from '../../auth/hooks/useAuth';
+import {
+  emptyCollaborationMetrics,
+  useCollaborationMetrics,
+} from '../../collaboration/hooks/useCollaborationMetrics';
+import { useDivergenceStatus } from '../../collaboration/hooks/useDivergenceStatus';
+import type { CollaborationSnapshot } from '../../collaboration/types/collaboration.types';
 import type { DocumentItem } from '../../workspace/types/workspace.types';
 import { plainTextToTiptap } from '../services/editorContentMappers';
 import { editorService } from '../services/editorService';
@@ -19,8 +25,6 @@ import type {
   CursorState,
   DocumentContentResult,
   PlainTextEditorState,
-  PlainTextLatencySample,
-  PlainTextMetrics,
   RemoteOperationEvent,
   ServerMessage,
   TextOp,
@@ -33,15 +37,6 @@ interface QueuedOperation {
   clientHash?: string;
   sendStartedAt: number | null;
 }
-
-const emptyMetrics: PlainTextMetrics = {
-  ackedOps: 0,
-  avgAckLatencyMs: null,
-  lastAckLatencyMs: null,
-  receivedRemoteOps: 0,
-  sentOps: 0,
-  transformedOps: 0,
-};
 
 /**
  * Selects the configured editor synchronization transport for a document route.
@@ -94,12 +89,12 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
   const [error, setError] = useState<string | null>(null);
   const [remoteCursors, setRemoteCursors] = useState<CursorState[]>([]);
   const [remoteOperation, setRemoteOperation] = useState<RemoteOperationEvent | null>(null);
-  const [metrics, setMetrics] = useState<PlainTextMetrics>(emptyMetrics);
+  const [metrics, metricsActions] = useCollaborationMetrics();
   const wsRef = useRef<WebSocket | null>(null);
   const queueRef = useRef<QueuedOperation[]>([]);
   const inFlightRef = useRef<QueuedOperation | null>(null);
   const versionRef = useRef(0);
-  const latencySamplesRef = useRef<PlainTextLatencySample[]>([]);
+  const latestContentRef = useRef('');
   const lastCursorSentAtRef = useRef(0);
 
   useEffect(() => {
@@ -134,6 +129,12 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     };
   }, [documentId]);
 
+  const refreshPendingMetrics = useCallback(() => {
+    metricsActions.setPendingOperationCount(
+      getPendingOperations(inFlightRef.current, queueRef.current).length,
+    );
+  }, [metricsActions]);
+
   const sendNextQueuedOperation = useCallback(() => {
     const websocket = wsRef.current;
 
@@ -149,6 +150,7 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
 
     next.sendStartedAt = performance.now();
     inFlightRef.current = next;
+    refreshPendingMetrics();
 
     const message: ClientMessage = {
       base_version: versionRef.current,
@@ -162,7 +164,7 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     };
 
     websocket.send(JSON.stringify(message));
-  }, [clientId, documentId]);
+  }, [clientId, documentId, refreshPendingMetrics]);
 
   const sendLocalOperation = useCallback(
     (op: TextOp, clientHash?: string) => {
@@ -177,10 +179,11 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
         opId: createClientId(),
         sendStartedAt: null,
       });
-      setMetrics((current) => ({ ...current, sentOps: current.sentOps + 1 }));
+      metricsActions.recordSentOperation();
+      refreshPendingMetrics();
       sendNextQueuedOperation();
     },
-    [canWrite, sendNextQueuedOperation],
+    [canWrite, metricsActions, refreshPendingMetrics, sendNextQueuedOperation],
   );
 
   const sendCursor = useCallback(
@@ -220,37 +223,21 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
       if (inFlight?.opId === message.op_id) {
         if (inFlight.sendStartedAt !== null) {
           const latencyMs = performance.now() - inFlight.sendStartedAt;
-          latencySamplesRef.current = [
-            ...latencySamplesRef.current.slice(-99),
-            {
-              latencyMs,
-              opId: message.op_id,
-              transformRequired: message.transform_required,
-            },
-          ];
-          setMetrics((current) => {
-            const samples = latencySamplesRef.current;
-            const avg =
-              samples.reduce((sum, sample) => sum + sample.latencyMs, 0) / samples.length;
-
-            return {
-              ...current,
-              ackedOps: current.ackedOps + 1,
-              avgAckLatencyMs: avg,
-              lastAckLatencyMs: latencyMs,
-              transformedOps: message.transform_required
-                ? current.transformedOps + 1
-                : current.transformedOps,
-            };
+          metricsActions.recordAcknowledgement({
+            latencyMs,
+            serverProcessingMs: message.server_processing_ms ?? null,
+            transformCaseCounts: message.transform_case_counts,
+            transformRequired: message.transform_required,
           });
         }
 
         inFlightRef.current = null;
+        refreshPendingMetrics();
       }
 
       sendNextQueuedOperation();
     },
-    [sendNextQueuedOperation],
+    [metricsActions, refreshPendingMetrics, sendNextQueuedOperation],
   );
 
   const handleRemoteOperation = useCallback(
@@ -289,10 +276,8 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
       versionRef.current = Math.max(versionRef.current, message.server_version);
       setVersion(versionRef.current);
       setRemoteCursors((current) => current.map((cursor) => transformCursor(cursor, message.op)));
-      setMetrics((current) => ({
-        ...current,
-        receivedRemoteOps: current.receivedRemoteOps + 1,
-      }));
+      metricsActions.recordRemoteOperation();
+      refreshPendingMetrics();
 
       if (operationForLocalDocument) {
         setRemoteOperation({
@@ -303,7 +288,7 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
         });
       }
     },
-    [clientId],
+    [clientId, metricsActions, refreshPendingMetrics],
   );
 
   useEffect(() => {
@@ -365,6 +350,8 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
           versionRef.current = message.version;
           queueRef.current = [];
           inFlightRef.current = null;
+          latestContentRef.current = message.content;
+          metricsActions.resetMetrics();
           setCanWrite(message.can_write);
           setContent(message.content);
           setContentSerial((current) => current + 1);
@@ -376,6 +363,7 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
           setVersion(message.version);
           setStatus('connected');
           setError(null);
+          refreshPendingMetrics();
           return;
         }
 
@@ -451,7 +439,45 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
         wsRef.current = null;
       }
     };
-  }, [clientId, documentId, handleAck, handleRemoteOperation]);
+  }, [
+    clientId,
+    documentId,
+    handleAck,
+    handleRemoteOperation,
+    metricsActions,
+    refreshPendingMetrics,
+  ]);
+
+  const onContentChanged = useCallback((nextContent: string) => {
+    latestContentRef.current = nextContent;
+  }, []);
+
+  const handleResyncSnapshot = useCallback(
+    (snapshot: CollaborationSnapshot) => {
+      versionRef.current = snapshot.version;
+      queueRef.current = [];
+      inFlightRef.current = null;
+      latestContentRef.current = snapshot.content;
+      metricsActions.resetMetrics();
+      setCanWrite(snapshot.canWrite);
+      setContent(snapshot.content);
+      setContentSerial((current) => current + 1);
+      setRemoteOperation(null);
+      setVersion(snapshot.version);
+      setError(null);
+      refreshPendingMetrics();
+    },
+    [metricsActions, refreshPendingMetrics],
+  );
+
+  const { divergence, resyncDocument } = useDivergenceStatus({
+    contentRef: latestContentRef,
+    documentId,
+    enabled: status === 'connected' && remoteOperation === null,
+    onResyncSnapshot: handleResyncSnapshot,
+    pendingOperationCount: metrics.pendingOps,
+    version,
+  });
 
   const markRemoteApplied = useCallback((eventId: string) => {
     setRemoteOperation((current) => (current?.id === eventId ? null : current));
@@ -465,13 +491,16 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     content,
     contentSerial,
     document,
+    divergence,
     error,
     isLoading: status === 'loading',
     localUser,
     markRemoteApplied,
     metrics,
+    onContentChanged,
     remoteCursors,
     remoteOperation,
+    resyncDocument,
     saveNow,
     saveStatus: 'live',
     sendCursor,
@@ -520,7 +549,7 @@ function usePollingPlainTextEditor(
   const [saveStatus, setSaveStatus] = useState<PlainTextEditorState['saveStatus']>('idle');
   const [conflict, setConflict] = useState<PlainTextEditorState['conflict']>(null);
   const [error, setError] = useState<string | null>(null);
-  const [metrics, setMetrics] = useState<PlainTextMetrics>(emptyMetrics);
+  const [metrics, metricsActions] = useCollaborationMetrics();
   const [subscriptionFallbackEnabled, setSubscriptionFallbackEnabled] = useState(false);
   const contentRef = useRef('');
   const revisionRef = useRef(0);
@@ -594,6 +623,7 @@ function usePollingPlainTextEditor(
     setError(null);
     setSaveStatus('idle');
     setStatus('loading');
+    metricsActions.resetMetrics();
 
     editorService
       .getDocumentContent(documentId)
@@ -615,7 +645,7 @@ function usePollingPlainTextEditor(
     return () => {
       isActive = false;
     };
-  }, [applyContentResult, documentId]);
+  }, [applyContentResult, documentId, metricsActions]);
 
   const saveNow = useCallback(async () => {
     if (!canWriteRef.current || saveInFlightRef.current || conflict) {
@@ -668,11 +698,18 @@ function usePollingPlainTextEditor(
     dirtyRef.current = true;
     setContent(nextContent);
     setSaveStatus((current) => (current === 'conflict' ? 'conflict' : 'unsaved'));
-    setMetrics((current) => ({ ...current, sentOps: current.sentOps + 1 }));
-  }, []);
+    metricsActions.recordSentOperation();
+  }, [metricsActions]);
 
   const sendCursor = useCallback(() => undefined, []);
   const markRemoteApplied = useCallback(() => undefined, []);
+  const onContentChanged = useCallback((nextContent: string) => {
+    contentRef.current = nextContent;
+  }, []);
+  const resyncDocument = useCallback(async () => {
+    const result = await editorService.getDocumentContent(documentId, { touch: false });
+    applyContentResult(result, 'remote');
+  }, [applyContentResult, documentId]);
 
   useEffect(() => {
     if (!canWrite || conflict || !dirtyRef.current || status !== 'connected') {
@@ -746,13 +783,21 @@ function usePollingPlainTextEditor(
     content,
     contentSerial,
     document,
+    divergence: {
+      error: null,
+      lastCheck: null,
+      lastCheckedAt: null,
+      state: 'in_sync',
+    },
     error,
     isLoading: status === 'loading',
     localUser,
     markRemoteApplied,
     metrics,
+    onContentChanged,
     remoteCursors: [],
     remoteOperation: null,
+    resyncDocument,
     saveNow,
     saveStatus,
     sendCursor,

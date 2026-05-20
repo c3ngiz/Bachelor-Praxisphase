@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -13,7 +14,7 @@ from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.common.datetime import utc_now
+from app.common.datetime import to_iso, utc_now
 from app.core.config import Settings
 from app.core.errors import UnauthorizedError
 from app.core.security import SecurityService
@@ -25,20 +26,32 @@ from app.db.models.collaboration import (
 )
 from app.db.models.document import DocumentContent
 from app.db.models.workspace import WorkspaceItem
-from app.domain.documents.events import document_content_events
+from app.domain.collaboration.cursor_transform import transform_cursor_state
+from app.domain.collaboration.divergence import compare_document_hash, stable_text_hash
+from app.domain.collaboration.metrics import (
+    RoomMetrics,
+    TransformCase,
+    empty_transform_case_counts,
+    transform_over_history_with_metrics,
+)
+from app.domain.collaboration.operations import OperationIdentity, apply_operation
 from app.domain.collaboration.schemas import (
     AcceptedOperation,
     ClientMessage,
     ClientOpMessage,
+    CollaborationHashCheckResponse,
+    CollaborationMetricsResponse,
+    CollaborationSnapshotResponse,
     CursorState,
     DocumentSnapshot,
+    TransformCaseCounts,
     UserSession,
     WorkspaceAccess,
 )
+from app.domain.documents.events import document_content_events
 from app.domain.documents.service import DocumentsService, extract_tiptap_text, plain_text_to_tiptap
 from app.domain.users.service import UsersService
 from app.domain.workspace.service import WorkspaceService
-from app.ot import OperationIdentity, apply_operation, transform_over_history
 
 client_message_adapter = TypeAdapter(ClientMessage)
 
@@ -247,12 +260,196 @@ class CollaborationRepository:
     def snapshot_from_model(self, document: CollabDocument) -> DocumentSnapshot:
         """Map an ORM collaboration document into a WebSocket snapshot."""
 
-        return DocumentSnapshot(
-            doc_id=str(document.doc_id),
-            content=document.content,
-            version=document.version,
-            updated_at=document.updated_at,
+        return document_snapshot_from_model(document)
+
+
+class CollaborationQueryService:
+    """Read-side collaboration service shared by REST and GraphQL APIs."""
+
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+        self.workspace = WorkspaceService(db)
+
+    async def get_snapshot(
+        self,
+        user_id: str,
+        document_id: str,
+    ) -> CollaborationSnapshotResponse:
+        """Return the latest server-owned plain-text snapshot for one document."""
+
+        access = await self.resolve_access(user_id, document_id)
+        snapshot = await self.get_or_create_document_snapshot(user_id, document_id)
+        return CollaborationSnapshotResponse(
+            document_id=snapshot.doc_id,
+            content=snapshot.content,
+            version=snapshot.version,
+            hash=stable_text_hash(snapshot.content),
+            can_write=access.can_write,
+            updated_at=to_iso(snapshot.updated_at) or "",
         )
+
+    async def compare_hash(
+        self,
+        user_id: str,
+        document_id: str,
+        *,
+        client_version: int,
+        client_hash: str,
+    ) -> CollaborationHashCheckResponse:
+        """Compare a client hash with the current server text and record divergence."""
+
+        await self.resolve_access(user_id, document_id)
+        snapshot = await self.get_or_create_document_snapshot(user_id, document_id)
+        comparison = compare_document_hash(
+            document_id=document_id,
+            server_content=snapshot.content,
+            server_version=snapshot.version,
+            client_version=client_version,
+            client_hash=client_hash,
+        )
+
+        if not comparison.in_sync:
+            self.db.add(
+                CollabMetricEvent(
+                    doc_id=UUID(document_id),
+                    event_type="divergence_detected",
+                    payload={
+                        "client_version": comparison.client_version,
+                        "server_version": comparison.version,
+                        "client_hash": comparison.client_hash,
+                        "server_hash": comparison.server_hash,
+                        "version_matches": comparison.version_matches,
+                        "hash_matches": comparison.hash_matches,
+                    },
+                )
+            )
+            await self.db.commit()
+
+        return CollaborationHashCheckResponse(
+            document_id=comparison.document_id,
+            version=comparison.version,
+            client_version=comparison.client_version,
+            server_hash=comparison.server_hash,
+            client_hash=comparison.client_hash,
+            in_sync=comparison.in_sync,
+            version_matches=comparison.version_matches,
+            hash_matches=comparison.hash_matches,
+            checked_at=utc_now().isoformat(),
+        )
+
+    async def get_metrics(
+        self,
+        user_id: str,
+        document_id: str,
+    ) -> CollaborationMetricsResponse:
+        """Return persisted document-level metrics for an accessible document."""
+
+        await self.resolve_access(user_id, document_id)
+        snapshot = await self.get_or_create_document_snapshot(user_id, document_id)
+        operations = await self.load_operations(document_id)
+        events = await self.load_metric_events(document_id)
+        case_counts = empty_transform_case_counts()
+        server_processing_ms: list[float] = []
+        ack_latency_ms: list[float] = []
+        broadcast_deliveries = 0
+        divergence_events = 0
+
+        for event in events:
+            if event.event_type == "divergence_detected":
+                divergence_events += 1
+                continue
+
+            if event.event_type != "operation_accepted":
+                continue
+
+            payload = event.payload
+            event_case_counts = payload.get("transform_case_counts", {})
+            if isinstance(event_case_counts, dict):
+                for case in case_counts:
+                    case_counts[case] += int(event_case_counts.get(case, 0))
+
+            broadcast_deliveries += int(payload.get("broadcast_recipient_count", 0) or 0)
+            append_float(server_processing_ms, payload.get("server_processing_ms"))
+            append_float(ack_latency_ms, payload.get("client_latency_ms"))
+
+        last_operation = max((operation.created_at for operation in operations), default=None)
+        avg_server_processing_ms = average(server_processing_ms)
+        if avg_server_processing_ms is None:
+            avg_server_processing_ms = average([operation.transform_ms for operation in operations])
+
+        return CollaborationMetricsResponse(
+            document_id=document_id,
+            version=snapshot.version,
+            content_length=len(snapshot.content),
+            total_operations_sent=len(operations),
+            acknowledged_operations=len(operations),
+            remote_operations_received=broadcast_deliveries,
+            transformed_operations=sum(1 for operation in operations if operation.transform_required),
+            transform_case_counts=to_transform_case_counts(case_counts),
+            avg_ack_latency_ms=average(ack_latency_ms),
+            avg_server_processing_ms=avg_server_processing_ms,
+            divergence_events=divergence_events,
+            last_operation_at=to_iso(last_operation) if last_operation else None,
+        )
+
+    async def resolve_access(self, user_id: str, document_id: str) -> WorkspaceAccess:
+        """Resolve and validate read access for a collaboration document."""
+
+        item = await self.workspace.get_accessible_record(user_id, document_id)
+        self.workspace.assert_document(item)
+        access = await self.workspace.resolve_access_or_throw(user_id, item)
+        return WorkspaceAccess(doc_id=str(item.id), title=item.name, permission=access.permission)
+
+    async def get_or_create_document_snapshot(
+        self,
+        user_id: str,
+        document_id: str,
+    ) -> DocumentSnapshot:
+        """Load or create the collaboration document without opening a WebSocket."""
+
+        doc_uuid = UUID(document_id)
+        result = await self.db.execute(
+            select(CollabDocument).where(CollabDocument.doc_id == doc_uuid)
+        )
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            return document_snapshot_from_model(existing)
+
+        content_response = await DocumentsService(self.db).get_content(
+            user_id,
+            document_id,
+            touch_last_opened_at=False,
+        )
+        document = CollabDocument(
+            doc_id=doc_uuid,
+            content=extract_tiptap_text(content_response.content),
+            version=0,
+        )
+        self.db.add(document)
+        await self.db.commit()
+        await self.db.refresh(document)
+        return document_snapshot_from_model(document)
+
+    async def load_operations(self, document_id: str) -> list[CollabOperation]:
+        """Load persisted operations for a document in server-version order."""
+
+        result = await self.db.execute(
+            select(CollabOperation)
+            .where(CollabOperation.doc_id == UUID(document_id))
+            .order_by(CollabOperation.server_version.asc())
+        )
+        return list(result.scalars().all())
+
+    async def load_metric_events(self, document_id: str) -> list[CollabMetricEvent]:
+        """Load persisted metric events for a document in creation order."""
+
+        result = await self.db.execute(
+            select(CollabMetricEvent)
+            .where(CollabMetricEvent.doc_id == UUID(document_id))
+            .order_by(CollabMetricEvent.created_at.asc())
+        )
+        return list(result.scalars().all())
 
 
 class CollaborationAuthService:
@@ -313,6 +510,7 @@ class Room:
         self.settings = settings
         self.clients: dict[str, ClientConnection] = {}
         self.lock = asyncio.Lock()
+        self.metrics = RoomMetrics()
 
     async def join(self, connection: ClientConnection) -> None:
         """Add a client and send the current document snapshot."""
@@ -378,6 +576,8 @@ class Room:
             await self.send_error(connection.websocket, "DOC_MISMATCH", "Operation doc_id mismatch.", False)
             return
 
+        self.metrics.record_operation_sent()
+        processing_started_at = time.perf_counter()
         existing = await self.repository.operation_by_id(str(message.op_id))
         if existing:
             await self.send_ack(
@@ -386,12 +586,15 @@ class Room:
                 existing.server_version,
                 existing.op,
                 transform_required=False,
+                server_processing_ms=(time.perf_counter() - processing_started_at) * 1000,
+                transform_case_counts=empty_transform_case_counts(),
             )
             return
 
+        transform_case_counts = empty_transform_case_counts()
         async with self.lock:
             raw_op = message.op.model_dump(mode="json")
-            transformed_op = raw_op
+            transformed_op: dict[str, Any] | None = raw_op
             transform_required = message.base_version < self.version
             started_at = time.perf_counter()
 
@@ -406,21 +609,31 @@ class Room:
                     )
                     for accepted in missed_operations
                 ]
-                transformed_op = transform_over_history(
+                transform_result = transform_over_history_with_metrics(
                     raw_op,
                     OperationIdentity(client_id=message.client_id, op_id=str(message.op_id)),
                     history,
                 )
+                transformed_op = transform_result.op
+                transform_case_counts = transform_result.metrics.case_counts
 
             transform_ms = (time.perf_counter() - started_at) * 1000
 
             if transformed_op is None:
+                server_processing_ms = (time.perf_counter() - processing_started_at) * 1000
+                self.metrics.record_transform(
+                    transform_required=transform_required,
+                    case_counts=transform_case_counts,
+                    server_processing_ms=server_processing_ms,
+                )
                 await self.send_ack(
                     connection,
                     str(message.op_id),
                     self.version,
                     raw_op,
                     transform_required=transform_required,
+                    server_processing_ms=server_processing_ms,
+                    transform_case_counts=transform_case_counts,
                 )
                 return
 
@@ -442,11 +655,22 @@ class Room:
             )
             self.content = next_content
             self.version = next_version
+            self.transform_cursors_after_operation(
+                transformed_op,
+                document_length=len(next_content),
+                exclude_key=connection.key,
+            )
 
             if self.settings.snapshot_every_ops > 0 and next_version % self.settings.snapshot_every_ops == 0:
                 await self.repository.persist_snapshot(self.doc_id, next_version, next_content)
 
         server_ts = utc_now().isoformat()
+        server_processing_ms = (time.perf_counter() - processing_started_at) * 1000
+        self.metrics.record_transform(
+            transform_required=transform_required,
+            case_counts=transform_case_counts,
+            server_processing_ms=server_processing_ms,
+        )
         await self.send_ack(
             connection,
             str(message.op_id),
@@ -454,8 +678,10 @@ class Room:
             transformed_op,
             transform_required=transform_required,
             server_ts=server_ts,
+            server_processing_ms=server_processing_ms,
+            transform_case_counts=transform_case_counts,
         )
-        await self.broadcast(
+        broadcast_recipient_count = await self.broadcast(
             {
                 "type": "broadcast_op",
                 "op_id": str(message.op_id),
@@ -468,6 +694,7 @@ class Room:
             },
             exclude_key=connection.key,
         )
+        self.metrics.record_remote_delivery(broadcast_recipient_count)
         await self.repository.record_metric(
             self.doc_id,
             "operation_accepted",
@@ -475,6 +702,10 @@ class Room:
                 "server_version": next_version,
                 "transform_required": transform_required,
                 "transform_ms": transform_ms,
+                "transform_case_counts": dict(transform_case_counts),
+                "server_processing_ms": server_processing_ms,
+                "broadcast_recipient_count": broadcast_recipient_count,
+                "client_latency_ms": latency_since_client_ts(message.client_ts),
             },
         )
 
@@ -493,6 +724,8 @@ class Room:
         *,
         transform_required: bool,
         server_ts: str | None = None,
+        server_processing_ms: float | None = None,
+        transform_case_counts: dict[TransformCase, int] | None = None,
     ) -> None:
         """Send an operation acknowledgement to one client."""
 
@@ -505,8 +738,11 @@ class Room:
                 "op": op,
                 "transform_required": transform_required,
                 "server_ts": server_ts or utc_now().isoformat(),
+                "server_processing_ms": server_processing_ms,
+                "transform_case_counts": dict(transform_case_counts or empty_transform_case_counts()),
             },
         )
+        self.metrics.record_acknowledgement()
 
     async def broadcast_presence(self) -> None:
         """Broadcast current in-room presence to all connected clients."""
@@ -536,21 +772,44 @@ class Room:
 
         return users
 
-    async def broadcast(self, payload: dict[str, Any], *, exclude_key: str | None = None) -> None:
-        """Send a JSON payload to all connected clients except one optional key."""
+    def transform_cursors_after_operation(
+        self,
+        op: dict[str, Any],
+        *,
+        document_length: int,
+        exclude_key: str | None = None,
+    ) -> None:
+        """Shift stored remote cursor coordinates after an accepted operation."""
+
+        for key, connection in self.clients.items():
+            if key == exclude_key or connection.cursor is None:
+                continue
+
+            connection.cursor = transform_cursor_state(
+                connection.cursor,
+                op,
+                document_length=document_length,
+            )
+
+    async def broadcast(self, payload: dict[str, Any], *, exclude_key: str | None = None) -> int:
+        """Send a JSON payload to connected clients and return successful sends."""
 
         stale_keys: list[str] = []
+        delivered_count = 0
 
         for key, connection in self.clients.items():
             if key == exclude_key:
                 continue
             try:
                 await self.send(connection.websocket, payload)
+                delivered_count += 1
             except RuntimeError:
                 stale_keys.append(key)
 
         for key in stale_keys:
             self.clients.pop(key, None)
+
+        return delivered_count
 
     async def send(self, websocket: WebSocket, payload: dict[str, Any]) -> None:
         """Send a JSON payload over a WebSocket."""
@@ -600,3 +859,61 @@ def operation_from_model(operation: CollabOperation) -> AcceptedOperation:
         op=operation.op,
         server_version=operation.server_version,
     )
+
+
+def document_snapshot_from_model(document: CollabDocument) -> DocumentSnapshot:
+    """Map an ORM collaboration document into a domain snapshot."""
+
+    return DocumentSnapshot(
+        doc_id=str(document.doc_id),
+        content=document.content,
+        version=document.version,
+        updated_at=document.updated_at,
+    )
+
+
+def append_float(values: list[float], value: object) -> None:
+    """Append a finite float-like metric value when it can be parsed."""
+
+    if value is None:
+        return
+
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return
+
+    values.append(parsed)
+
+
+def average(values: list[float]) -> float | None:
+    """Return an arithmetic average or ``None`` for an empty sample list."""
+
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def to_transform_case_counts(case_counts: dict[TransformCase, int]) -> TransformCaseCounts:
+    """Map slash-separated transform counters into API response fields."""
+
+    return TransformCaseCounts(
+        insert_insert=case_counts["insert/insert"],
+        insert_delete=case_counts["insert/delete"],
+        delete_insert=case_counts["delete/insert"],
+        delete_delete=case_counts["delete/delete"],
+    )
+
+
+def latency_since_client_ts(client_ts: datetime | None) -> float | None:
+    """Return server-observed latency from client timestamp to now in milliseconds."""
+
+    if client_ts is None:
+        return None
+
+    now = utc_now()
+    comparable_ts = client_ts
+    if comparable_ts.tzinfo is None:
+        comparable_ts = comparable_ts.replace(tzinfo=now.tzinfo)
+
+    return max(0.0, (now - comparable_ts).total_seconds() * 1000)

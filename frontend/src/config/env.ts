@@ -27,6 +27,10 @@ export interface EnvConfig {
   editorAutosaveDebounceMs: number;
   /** Interval used by polling editor sync and subscription fallback. */
   editorPollingIntervalMs: number;
+  /** Interval used by WebSocket editor hash comparison checks. */
+  collaborationHashCheckIntervalMs: number;
+  /** Delay before the first divergence hash check after connection changes. */
+  collaborationHashCheckDebounceMs: number;
   /** Display name for the application. */
   appName: string;
 }
@@ -107,6 +111,14 @@ export const env: EnvConfig = {
   apiMode: parseApiMode(import.meta.env.VITE_API_MODE),
   appName: readEnvValue('VITE_APP_NAME', 'Frontend New'),
   collaborationUrl: readEnvValue('VITE_COLLABORATION_URL', 'ws://localhost:4000'),
+  collaborationHashCheckDebounceMs: readPositiveIntegerEnvValue(
+    'VITE_COLLABORATION_HASH_CHECK_DEBOUNCE_MS',
+    1200,
+  ),
+  collaborationHashCheckIntervalMs: readPositiveIntegerEnvValue(
+    'VITE_COLLABORATION_HASH_CHECK_INTERVAL_MS',
+    8000,
+  ),
   editorAutosaveDebounceMs: readPositiveIntegerEnvValue('VITE_EDITOR_AUTOSAVE_DEBOUNCE_MS', 900),
   editorPollingIntervalMs: readPositiveIntegerEnvValue('VITE_EDITOR_POLLING_INTERVAL_MS', 2500),
   editorSyncMode: parseEditorSyncMode(import.meta.env.VITE_EDITOR_SYNC_MODE),

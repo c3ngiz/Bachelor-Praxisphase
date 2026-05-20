@@ -15,9 +15,11 @@ import type {
   CursorState,
   PlainTextConnectionStatus,
   PlainTextEditorState,
-  PlainTextMetrics,
 } from '../types/editor.types';
 import { getInitials } from '../utils/editorIdentity';
+import { CollaborationMetricsPanel } from './CollaborationMetricsPanel';
+import { DivergenceStatusBadge } from './DivergenceStatusBadge';
+import { ResyncDocumentButton } from './ResyncDocumentButton';
 
 export interface PlainTextContextSidebarProps {
   state: PlainTextEditorState;
@@ -94,7 +96,26 @@ export function PlainTextContextSidebar({ state }: PlainTextContextSidebarProps)
           </section>
 
           <CollapsibleSection icon={Activity} title="Metrics">
-            <MetricsRows metrics={state.metrics} />
+            <CollaborationMetricsPanel metrics={state.metrics} />
+          </CollapsibleSection>
+
+          <CollapsibleSection icon={FileText} title="Consistency">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs text-slate-500">Hash status</span>
+              <DivergenceStatusBadge divergence={state.divergence} />
+            </div>
+            {state.divergence.lastCheck ? (
+              <SummaryRow label="Server hash" value={state.divergence.lastCheck.serverHash} />
+            ) : null}
+            {state.divergence.error ? (
+              <p className="m-0 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+                {state.divergence.error}
+              </p>
+            ) : null}
+            <ResyncDocumentButton
+              divergence={state.divergence}
+              onResync={state.resyncDocument}
+            />
           </CollapsibleSection>
 
           <CollapsibleSection icon={FileText} title="Details">
@@ -179,25 +200,6 @@ function PersonRow({ cursor, detail, isCurrentUser = false }: PersonRowProps): J
         </div>
         <p className="m-0 text-xs text-slate-500">{detail}</p>
       </div>
-    </div>
-  );
-}
-
-function MetricsRows({ metrics }: { metrics: PlainTextMetrics }): JSX.Element {
-  return (
-    <div className="grid gap-2">
-      <SummaryRow label="Sent" value={String(metrics.sentOps)} />
-      <SummaryRow label="Acked" value={String(metrics.ackedOps)} />
-      <SummaryRow label="Remote ops" value={String(metrics.receivedRemoteOps)} />
-      <SummaryRow label="Transforms" value={String(metrics.transformedOps)} />
-      <SummaryRow
-        label="Last ack"
-        value={metrics.lastAckLatencyMs === null ? '-' : `${metrics.lastAckLatencyMs.toFixed(1)} ms`}
-      />
-      <SummaryRow
-        label="Avg ack"
-        value={metrics.avgAckLatencyMs === null ? '-' : `${metrics.avgAckLatencyMs.toFixed(1)} ms`}
-      />
     </div>
   );
 }

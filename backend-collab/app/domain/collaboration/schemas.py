@@ -1,10 +1,12 @@
-"""Pydantic schemas used by the WebSocket collaboration protocol."""
+"""Pydantic schemas used by collaboration WebSocket, REST, and GraphQL APIs."""
 
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
+
+from app.common.schemas import CamelModel
 
 from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
 
@@ -130,3 +132,61 @@ class AcceptedOperation(BaseModel):
     client_id: str
     op: dict
     server_version: int
+
+
+class TransformCaseCounts(CamelModel):
+    """Counters for the four plain-text pairwise OT transform cases."""
+
+    insert_insert: int = 0
+    insert_delete: int = 0
+    delete_insert: int = 0
+    delete_delete: int = 0
+
+
+class CollaborationMetricsResponse(CamelModel):
+    """Document-level collaboration metrics returned by REST and GraphQL."""
+
+    document_id: str
+    version: int
+    content_length: int
+    total_operations_sent: int
+    acknowledged_operations: int
+    remote_operations_received: int
+    transformed_operations: int
+    transform_case_counts: TransformCaseCounts
+    avg_ack_latency_ms: float | None = None
+    avg_server_processing_ms: float | None = None
+    divergence_events: int = 0
+    last_operation_at: str | None = None
+
+
+class CollaborationHashCheckRequest(CamelModel):
+    """Client hash comparison request for divergence detection."""
+
+    version: NonNegativeInt
+    hash: str
+
+
+class CollaborationHashCheckResponse(CamelModel):
+    """Hash comparison result used by the editor divergence indicator."""
+
+    document_id: str
+    version: int
+    client_version: int
+    server_hash: str
+    client_hash: str
+    in_sync: bool
+    version_matches: bool
+    hash_matches: bool
+    checked_at: str
+
+
+class CollaborationSnapshotResponse(CamelModel):
+    """Plain-text server snapshot used for safe client resynchronization."""
+
+    document_id: str
+    content: str
+    version: int
+    hash: str
+    can_write: bool
+    updated_at: str
