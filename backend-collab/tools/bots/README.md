@@ -80,6 +80,11 @@ Checks:
   [PASS] divergence detection
   [PASS] metrics
 Final hash: fnv1a32:<bytes>:<hex>
+Metrics:
+  Server: version=<n>, ops=<n>, acks=<n>, remote=<n>, transformed=<n>, avgAckMs=<ms>, avgServerMs=<ms>
+  Transform cases: insert/insert=<n>, insert/delete=<n>, delete/insert=<n>, delete/delete=<n>
+  Owner client: sent=<n>, acks=<n>, remote=<n>, avgAckMs=<ms>, avgConvergenceMs=<ms>
+  Collaborator client: sent=<n>, acks=<n>, remote=<n>, avgAckMs=<ms>, avgConvergenceMs=<ms>
 ```
 
 The same run also prints a structured JSON report containing auth identities,
@@ -96,4 +101,3 @@ final hash, server metrics, and client-side latency counters.
 - Verify `finalHash` matches the backend hash-check response.
 - Verify `serverMetrics.totalOperationsSent` and transform counters increased
   after concurrent/conflict scenarios.
-

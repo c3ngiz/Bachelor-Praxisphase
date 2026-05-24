@@ -74,8 +74,72 @@ def format_human_report(report: ScenarioReport) -> str:
         lines.append(f"Final hash: {report.final_hash}")
     if report.final_content:
         lines.append(f"Final content: {report.final_content!r}")
+    lines.extend(format_metrics_lines(report))
 
     return "\n".join(lines)
+
+
+def format_metrics_lines(report: ScenarioReport) -> list[str]:
+    """Create terminal-friendly server and client metrics lines."""
+
+    lines: list[str] = []
+    server_metrics = report.server_metrics
+    client_metrics = report.client_metrics
+
+    if server_metrics:
+        lines.append("Metrics:")
+        lines.append(
+            "  Server: "
+            f"version={server_metrics.get('version')}, "
+            f"ops={server_metrics.get('totalOperationsSent')}, "
+            f"acks={server_metrics.get('acknowledgedOperations')}, "
+            f"remote={server_metrics.get('remoteOperationsReceived')}, "
+            f"transformed={server_metrics.get('transformedOperations')}, "
+            f"avgAckMs={format_metric(server_metrics.get('avgAckLatencyMs'))}, "
+            f"avgServerMs={format_metric(server_metrics.get('avgServerProcessingMs'))}"
+        )
+        cases = server_metrics.get("transformCaseCounts")
+        if isinstance(cases, dict):
+            lines.append(
+                "  Transform cases: "
+                f"insert/insert={cases.get('insertInsert')}, "
+                f"insert/delete={cases.get('insertDelete')}, "
+                f"delete/insert={cases.get('deleteInsert')}, "
+                f"delete/delete={cases.get('deleteDelete')}"
+            )
+
+    if client_metrics:
+        if not lines:
+            lines.append("Metrics:")
+
+        for role in ("owner", "collaborator"):
+            metrics = client_metrics.get(role)
+            if not isinstance(metrics, dict):
+                continue
+
+            label = "Owner client" if role == "owner" else "Collaborator client"
+            lines.append(
+                f"  {label}: "
+                f"sent={metrics.get('operationsSent')}, "
+                f"acks={metrics.get('acksReceived')}, "
+                f"remote={metrics.get('remoteOperationsReceived')}, "
+                f"avgAckMs={format_metric(metrics.get('averageAckLatencyMs'))}, "
+                f"avgConvergenceMs={format_metric(metrics.get('averageConvergenceMs'))}"
+            )
+
+    return lines
+
+
+def format_metric(value: object) -> str:
+    """Format optional metric values compactly for terminal output."""
+
+    if value is None:
+        return "n/a"
+
+    if isinstance(value, float):
+        return f"{value:.2f}"
+
+    return str(value)
 
 
 def main() -> int:
@@ -100,4 +164,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
