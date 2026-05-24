@@ -12,7 +12,10 @@ for plain-text collaboration checks.
 - Both bots join `/ws/docs/{documentId}?token=<jwt>`.
 - The harness verifies snapshot, presence, cursor delivery, simple insert,
   simple delete, concurrent inserts, insert/delete conflict, overlapping
-  deletes, monotonic versions, convergence hashes, and metrics.
+  deletes, monotonic versions, collaborator leave/reconnect, resync from the
+  backend snapshot, convergence hashes, and metrics.
+- After every edit scenario the harness compares Bot A content, Bot B content,
+  backend snapshot content, and the stable content hash.
 
 ## Environment
 
@@ -69,7 +72,7 @@ Checks:
   [PASS] collaborator auth
   [PASS] workspace setup
   [PASS] document sharing
-  [PASS] presence
+  [PASS] presence join
   [PASS] cursor/selection
   [PASS] simple insert
   [PASS] simple delete
@@ -77,6 +80,8 @@ Checks:
   [PASS] insert/delete conflict
   [PASS] overlapping deletes
   [PASS] version handling
+  [PASS] presence leave
+  [PASS] reconnect and resync
   [PASS] divergence detection
   [PASS] metrics
 Final hash: fnv1a32:<bytes>:<hex>
@@ -99,5 +104,7 @@ final hash, server metrics, and client-side latency counters.
 - Verify `workspace.folderId` and `workspace.documentId` are populated.
 - Verify all `checks[].passed` values are `true`.
 - Verify `finalHash` matches the backend hash-check response.
+- Verify the `reconnect and resync` check passed after the collaborator leaves
+  and rejoins the WebSocket room.
 - Verify `serverMetrics.totalOperationsSent` and transform counters increased
   after concurrent/conflict scenarios.

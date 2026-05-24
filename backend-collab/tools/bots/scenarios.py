@@ -64,7 +64,12 @@ class CollaborationBotScenario:
                 )
                 await self._step(
                     "websocket collaboration",
-                    lambda: self._run_websocket_checks(owner, collaborator, artifacts.document_id),
+                    lambda: self._run_websocket_checks(
+                        rest,
+                        owner,
+                        collaborator,
+                        artifacts.document_id,
+                    ),
                 )
                 await self._step(
                     "divergence and metrics",
@@ -179,11 +184,12 @@ class CollaborationBotScenario:
 
     async def _run_websocket_checks(
         self,
+        rest: RestClient,
         owner: AuthenticatedBot,
         collaborator: AuthenticatedBot,
         document_id: str,
     ) -> None:
-        """Connect both bots and run presence, cursor, edit, conflict, and version tests."""
+        """Connect both bots and run presence, edit, conflict, and reconnect tests."""
 
         self.owner_ws = CollaborationWsClient(
             config=self.config,
@@ -202,6 +208,8 @@ class CollaborationBotScenario:
         await self.collaborator_ws.connect()
         ensure(self.owner_ws.snapshot_received, "owner did not receive snapshot")
         ensure(self.collaborator_ws.snapshot_received, "collaborator did not receive snapshot")
+        ensure(self.owner_ws.content == self.collaborator_ws.content, "initial snapshots differ")
+        ensure(self.owner_ws.version == self.collaborator_ws.version, "initial snapshot versions differ")
         ensure(self.owner_ws.can_write and self.collaborator_ws.can_write, "both bots need write access")
         self.report.websocket = {
             "ownerClientId": self.owner_ws.client_id,
@@ -209,15 +217,17 @@ class CollaborationBotScenario:
             "documentId": document_id,
             "connected": True,
         }
+        await self._assert_converged_with_backend(rest, owner, document_id, "initial snapshot")
 
         await self._presence_check()
         await self._cursor_check()
-        await self._simple_insert_check()
-        await self._simple_delete_check()
-        await self._concurrent_insert_check()
-        await self._insert_delete_conflict_check()
-        await self._overlapping_delete_check()
+        await self._simple_insert_check(rest, owner, document_id)
+        await self._simple_delete_check(rest, owner, document_id)
+        await self._concurrent_insert_check(rest, owner, document_id)
+        await self._insert_delete_conflict_check(rest, owner, document_id)
+        await self._overlapping_delete_check(rest, owner, document_id)
         await self._version_check()
+        await self._reconnect_and_resync_check(rest, owner, collaborator, document_id)
 
     async def _presence_check(self) -> None:
         """Verify both bots see each other in room presence broadcasts."""
@@ -232,7 +242,7 @@ class CollaborationBotScenario:
             owner.wait_for_peer_presence(collaborator.client_id),
             collaborator.wait_for_peer_presence(owner.client_id),
         )
-        self.report.add_check("presence", True, "both bots saw each other")
+        self.report.add_check("presence join", True, "both bots saw each other")
 
     async def _cursor_check(self) -> None:
         """Verify bidirectional cursor delivery and valid cursor coordinates."""
@@ -246,32 +256,60 @@ class CollaborationBotScenario:
         ensure(collaborator.remote_cursor_positions_are_valid(), "collaborator saw invalid remote cursor")
         self.report.add_check("cursor/selection", True, "cursor states delivered both ways")
 
-    async def _simple_insert_check(self) -> None:
+    async def _simple_insert_check(
+        self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        document_id: str,
+    ) -> None:
         """Verify one insert ack, broadcast, and convergence."""
 
         owner, _collaborator = self._clients()
         await self._single_operation(
+            rest,
+            owner_bot,
+            document_id,
             owner,
             {"type": "insert", "pos": len(owner.content), "text": "Hello from Bot A.\n"},
             "simple insert",
         )
         ensure("Hello from " in owner.content, "inserted text not present")
 
-    async def _simple_delete_check(self) -> None:
+    async def _simple_delete_check(
+        self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        document_id: str,
+    ) -> None:
         """Verify one delete ack, broadcast, and convergence."""
 
         owner, _collaborator = self._clients()
         pos = owner.content.index("from ")
-        await self._single_operation(owner, {"type": "delete", "pos": pos, "len": 5}, "simple delete")
+        await self._single_operation(
+            rest,
+            owner_bot,
+            document_id,
+            owner,
+            {"type": "delete", "pos": pos, "len": 5},
+            "simple delete",
+        )
         ensure("Hello Bot A." in owner.content, "delete did not remove expected text")
 
-    async def _concurrent_insert_check(self) -> None:
+    async def _concurrent_insert_check(
+        self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        document_id: str,
+    ) -> None:
         """Verify deterministic convergence for same-position concurrent inserts."""
 
-        owner, collaborator = self._clients()
+        owner, _collaborator = self._clients()
         base_version = owner.version
         pos = 0
         await self._concurrent_operations(
+            rest,
+            owner_bot,
+            document_id,
             {"type": "insert", "pos": pos, "text": "[owner-concurrent]"},
             {"type": "insert", "pos": pos, "text": "[collab-concurrent]"},
             base_version=base_version,
@@ -280,36 +318,58 @@ class CollaborationBotScenario:
         ensure("[owner-concurrent]" in owner.content, "owner concurrent insert missing")
         ensure("[collab-concurrent]" in owner.content, "collaborator concurrent insert missing")
 
-    async def _insert_delete_conflict_check(self) -> None:
+    async def _insert_delete_conflict_check(
+        self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        document_id: str,
+    ) -> None:
         """Verify convergence when an insert and delete target nearby text."""
 
         owner, _collaborator = self._clients()
         marker = "\n[conflict:abcdefgh]"
         await self._single_operation(
+            rest,
+            owner_bot,
+            document_id,
             owner,
             {"type": "insert", "pos": len(owner.content), "text": marker},
             "conflict fixture insert",
         )
         start = owner.content.index("abcdefgh")
         await self._concurrent_operations(
+            rest,
+            owner_bot,
+            document_id,
             {"type": "insert", "pos": start + 2, "text": "X"},
             {"type": "delete", "pos": start + 1, "len": 4},
             base_version=owner.version,
             label="insert/delete conflict",
         )
 
-    async def _overlapping_delete_check(self) -> None:
+    async def _overlapping_delete_check(
+        self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        document_id: str,
+    ) -> None:
         """Verify overlapping concurrent deletes converge without invalid operations."""
 
         owner, _collaborator = self._clients()
         marker = "\n[overlap:0123456789]"
         await self._single_operation(
+            rest,
+            owner_bot,
+            document_id,
             owner,
             {"type": "insert", "pos": len(owner.content), "text": marker},
             "overlap fixture insert",
         )
         start = owner.content.index("0123456789")
         await self._concurrent_operations(
+            rest,
+            owner_bot,
+            document_id,
             {"type": "delete", "pos": start + 1, "len": 4},
             {"type": "delete", "pos": start + 3, "len": 4},
             base_version=owner.version,
@@ -331,6 +391,9 @@ class CollaborationBotScenario:
 
     async def _single_operation(
         self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        document_id: str,
         client: CollaborationWsClient,
         op: TextOperation,
         label: str,
@@ -344,11 +407,14 @@ class CollaborationBotScenario:
         target_version = int(ack.get("server_version", ack.get("serverVersion", 0)))
         await asyncio.gather(owner.wait_for_version(target_version), collaborator.wait_for_version(target_version))
         self._record_convergence(started)
-        self._assert_converged(label)
+        await self._assert_converged_with_backend(rest, owner_bot, document_id, label)
         self.report.add_check(label, True, f"server version {target_version}")
 
     async def _concurrent_operations(
         self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        document_id: str,
         owner_op: TextOperation,
         collaborator_op: TextOperation,
         *,
@@ -373,19 +439,71 @@ class CollaborationBotScenario:
         )
         await asyncio.gather(owner.wait_for_version(target_version), collaborator.wait_for_version(target_version))
         self._record_convergence(started)
-        self._assert_converged(label)
+        await self._assert_converged_with_backend(rest, owner_bot, document_id, label)
         self.report.add_check(label, True, f"server version {target_version}")
 
-    def _assert_converged(self, label: str) -> None:
-        """Assert both bot text models and hashes match after a scenario."""
+    async def _assert_converged_with_backend(
+        self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        document_id: str,
+        label: str,
+    ) -> None:
+        """Assert bot text models, hashes, and backend snapshot all match."""
 
         owner, collaborator = self._clients()
+        snapshot = await rest.get_collaboration_snapshot(owner_bot.token, document_id)
+        snapshot_content = str(snapshot.get("content", ""))
+        snapshot_version = int(snapshot.get("version", 0))
+        snapshot_hash = str(snapshot.get("hash", ""))
+        owner_hash = owner.stable_hash()
         ensure(owner.content == collaborator.content, f"{label}: bot contents diverged")
-        ensure(owner.stable_hash() == collaborator.stable_hash(), f"{label}: bot hashes diverged")
+        ensure(owner.content == snapshot_content, f"{label}: backend snapshot content differs")
+        ensure(owner.version == collaborator.version, f"{label}: bot versions diverged")
+        ensure(owner.version == snapshot_version, f"{label}: backend snapshot version differs")
+        ensure(owner_hash == collaborator.stable_hash(), f"{label}: bot hashes diverged")
+        ensure(owner_hash == snapshot_hash, f"{label}: backend snapshot hash differs")
         ensure(owner.remote_cursor_positions_are_valid(), f"{label}: owner cursor positions invalid")
         ensure(
             collaborator.remote_cursor_positions_are_valid(),
             f"{label}: collaborator cursor positions invalid",
+        )
+
+    async def _reconnect_and_resync_check(
+        self,
+        rest: RestClient,
+        owner_bot: AuthenticatedBot,
+        collaborator_bot: AuthenticatedBot,
+        document_id: str,
+    ) -> None:
+        """Verify leave presence, reconnect, and snapshot resynchronization."""
+
+        owner, collaborator = self._clients()
+        old_client_id = collaborator.client_id
+        previous_metrics = collaborator.metrics
+        await collaborator.close()
+        await owner.wait_for_peer_absence(old_client_id)
+        self.report.add_check("presence leave", True, f"{old_client_id} left room")
+
+        replacement = CollaborationWsClient(
+            config=self.config,
+            bot=collaborator_bot,
+            role="collaborator",
+            document_id=document_id,
+        )
+        replacement.metrics.absorb(previous_metrics)
+        self.collaborator_ws = replacement
+        await replacement.connect()
+        await asyncio.gather(
+            owner.wait_for_peer_presence(replacement.client_id),
+            replacement.wait_for_peer_presence(owner.client_id),
+        )
+        await self._assert_converged_with_backend(rest, owner_bot, document_id, "reconnect and resync")
+        self.report.websocket["reconnectedCollaboratorClientId"] = replacement.client_id
+        self.report.add_check(
+            "reconnect and resync",
+            True,
+            f"snapshot version {replacement.version}",
         )
 
     async def _verify_divergence_and_metrics(

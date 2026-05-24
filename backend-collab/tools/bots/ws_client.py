@@ -100,6 +100,9 @@ class CollaborationWsClient:
             with contextlib.suppress(asyncio.CancelledError):
                 await self.receiver_task
 
+        self.websocket = None
+        self.receiver_task = None
+
     async def send_presence(self, status: str = "active") -> None:
         """Send a presence status update to trigger a room presence broadcast."""
 
@@ -187,6 +190,14 @@ class CollaborationWsClient:
         )
         return self.presence[client_id]
 
+    async def wait_for_peer_absence(self, client_id: str) -> None:
+        """Wait until this bot no longer sees another client in room presence."""
+
+        await self.wait_until(
+            lambda: client_id not in self.presence,
+            f"presence removal for {client_id}",
+        )
+
     async def wait_for_cursor(self, client_id: str) -> JsonObject:
         """Wait until this bot receives a cursor state for another client."""
 
@@ -265,6 +276,9 @@ class CollaborationWsClient:
 
         if message_type == "presence":
             self.presence = _by_client_id(message.get("users", []), exclude=self.client_id)
+            for client_id in list(self.cursors):
+                if client_id not in self.presence:
+                    self.cursors.pop(client_id, None)
             return
 
         if message_type == "cursor":
@@ -402,4 +416,3 @@ def _is_noop_ack(message: JsonObject, pending: PendingOperation | None) -> bool:
     )
     server_version = int(message.get("server_version", message.get("serverVersion", 0)))
     return transform_required and server_version == pending.base_version + 1
-

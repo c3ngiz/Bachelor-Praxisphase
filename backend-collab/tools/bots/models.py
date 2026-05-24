@@ -112,6 +112,15 @@ class ClientMetrics:
             "averageConvergenceMs": _round_optional(self.average_convergence_ms),
         }
 
+    def absorb(self, other: "ClientMetrics") -> None:
+        """Merge metrics from a previous socket session for the same logical bot."""
+
+        self.operations_sent += other.operations_sent
+        self.acknowledgements_received += other.acknowledgements_received
+        self.remote_operations_received += other.remote_operations_received
+        self.ack_latencies_ms.extend(other.ack_latencies_ms)
+        self.convergence_latencies_ms.extend(other.convergence_latencies_ms)
+
 
 @dataclass
 class CheckResult:
@@ -190,4 +199,3 @@ def _round_optional(value: float | None) -> float | None:
     """Round optional timing values for readable JSON output."""
 
     return round(value, 2) if value is not None else None
-
