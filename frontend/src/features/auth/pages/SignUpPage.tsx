@@ -22,6 +22,12 @@ interface SignUpFormState {
 type SignUpField = keyof SignUpFormState;
 type SignUpErrors = Partial<Record<SignUpField, string>>;
 
+/**
+ * Validates registration fields before sending a sign-up request.
+ *
+ * @param values - Current sign-up form values.
+ * @returns Field errors keyed by registration field name.
+ */
 function validateSignUpForm(values: SignUpFormState): SignUpErrors {
   const errors: SignUpErrors = {};
 
@@ -45,6 +51,12 @@ function validateSignUpForm(values: SignUpFormState): SignUpErrors {
   return errors;
 }
 
+/**
+ * Renders the registration route and creates a new authenticated session.
+ *
+ * The page performs client-side validation, delegates account creation to the
+ * auth provider, then redirects to the authenticated landing route.
+ */
 export function SignUpPage(): JSX.Element {
   const { error, isLoading, signUp } = useAuth();
   const [values, setValues] = useState<SignUpFormState>({

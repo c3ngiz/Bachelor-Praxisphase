@@ -2,11 +2,20 @@ import { forwardRef, type HTMLAttributes } from 'react';
 
 import { cn } from '../../utils';
 
+/**
+ * Props for the root card container.
+ *
+ * `hoverable` and `selected` provide list-item affordances without changing
+ * the semantic element type.
+ */
 export type CardRootProps = HTMLAttributes<HTMLDivElement> & {
   hoverable?: boolean;
   selected?: boolean;
 };
 
+/**
+ * Props shared by card header, content, and footer sections.
+ */
 export type CardSectionProps = HTMLAttributes<HTMLDivElement>;
 
 const CardRoot = forwardRef<HTMLDivElement, CardRootProps>(function CardRoot(
@@ -60,6 +69,9 @@ const CardFooter = forwardRef<HTMLDivElement, CardSectionProps>(function CardFoo
   );
 });
 
+/**
+ * Compound card component with root, header, content, and footer sections.
+ */
 export const Card = Object.assign(CardRoot, {
   Root: CardRoot,
   Header: CardHeader,
@@ -67,4 +79,7 @@ export const Card = Object.assign(CardRoot, {
   Footer: CardFooter,
 });
 
+/**
+ * Default export for consumers that prefer default compound-component imports.
+ */
 export default Card;

@@ -1,3 +1,9 @@
+/**
+ * Picks a stable editor identity color from a small readable palette.
+ *
+ * @param value - User or client identifier used as the hash input.
+ * @returns Hex color used for cursors and collaborator avatars.
+ */
 export function getEditorUserColor(value: string): string {
   const palette = ['#0f766e', '#7c3aed', '#b45309', '#0369a1', '#be123c', '#15803d'];
   const hash = Array.from(value).reduce((sum, character) => sum + character.charCodeAt(0), 0);
@@ -5,6 +11,13 @@ export function getEditorUserColor(value: string): string {
   return palette[hash % palette.length];
 }
 
+/**
+ * Normalizes backend or legacy color values into a CodeMirror-ready hex color.
+ *
+ * @param value - Hex color or legacy Tailwind background class.
+ * @param fallback - Color returned when the value is missing or unsupported.
+ * @returns Normalized hex color.
+ */
 export function normalizeEditorColor(value: string | null | undefined, fallback: string): string {
   if (!value) {
     return fallback;
@@ -17,6 +30,12 @@ export function normalizeEditorColor(value: string | null | undefined, fallback:
   return tailwindBackgroundColorMap[value] ?? fallback;
 }
 
+/**
+ * Builds initials for compact collaborator avatars.
+ *
+ * @param name - Display name to abbreviate.
+ * @returns Up to two uppercase initials.
+ */
 export function getInitials(name: string): string {
   return name
     .split(/\s+/)

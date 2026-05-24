@@ -3,12 +3,21 @@ import { forwardRef, type ReactNode, type SelectHTMLAttributes } from 'react';
 import { cn } from '../../utils';
 import { Field } from '../Field';
 
+/**
+ * Option descriptor rendered by the shared select field.
+ */
 export type SelectOption = {
   disabled?: boolean;
   label: string;
   value: string;
 };
 
+/**
+ * Props for the shared select field.
+ *
+ * `options` supports data-driven rendering while `children` remains available
+ * for custom option groups or specialized markup.
+ */
 export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   description?: ReactNode;
   error?: ReactNode;
@@ -18,6 +27,12 @@ export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   startAdornment?: ReactNode;
 };
 
+/**
+ * Renders a labeled select with optional placeholder, options, and adornment.
+ *
+ * @param props - Native select props plus field metadata and option descriptors.
+ * @returns Accessible select field.
+ */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   {
     children,
@@ -86,4 +101,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   );
 });
 
+/**
+ * Default export for consumers that prefer default component imports.
+ */
 export default Select;

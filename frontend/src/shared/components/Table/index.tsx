@@ -8,13 +8,36 @@ import {
 
 import { cn } from '../../utils';
 
+/**
+ * Props for the table element.
+ */
 export type TableRootProps = TableHTMLAttributes<HTMLTableElement>;
+
+/**
+ * Props for the scroll wrapper around wide tables.
+ */
 export type TableWrapperProps = HTMLAttributes<HTMLDivElement>;
+
+/**
+ * Props shared by table header and body sections.
+ */
 export type TableSectionProps = HTMLAttributes<HTMLTableSectionElement>;
+
+/**
+ * Props for table rows, including selected-row styling.
+ */
 export type TableRowProps = HTMLAttributes<HTMLTableRowElement> & {
   selected?: boolean;
 };
+
+/**
+ * Props for table header cells.
+ */
 export type TableHeadProps = ThHTMLAttributes<HTMLTableCellElement>;
+
+/**
+ * Props for table body cells.
+ */
 export type TableCellProps = TdHTMLAttributes<HTMLTableCellElement>;
 
 const TableWrapper = forwardRef<HTMLDivElement, TableWrapperProps>(function TableWrapper(
@@ -88,6 +111,9 @@ const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(function Tabl
   return <td ref={ref} className={cn('px-4 py-3 align-middle text-slate-700', className)} {...props} />;
 });
 
+/**
+ * Compound table component with wrapper, section, row, and cell primitives.
+ */
 export const Table = Object.assign(TableRoot, {
   Root: TableRoot,
   Wrapper: TableWrapper,
@@ -98,4 +124,7 @@ export const Table = Object.assign(TableRoot, {
   Cell: TableCell,
 });
 
+/**
+ * Default export for consumers that prefer default compound-component imports.
+ */
 export default Table;

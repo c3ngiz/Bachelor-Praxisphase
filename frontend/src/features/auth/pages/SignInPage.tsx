@@ -19,6 +19,12 @@ interface SignInFormState {
 
 type SignInErrors = Partial<Record<keyof Pick<SignInFormState, 'email' | 'password'>, string>>;
 
+/**
+ * Validates the sign-in form before credentials are sent to the backend.
+ *
+ * @param values - Current form field values.
+ * @returns Field errors keyed by sign-in field name.
+ */
 function validateSignInForm(values: SignInFormState): SignInErrors {
   return {
     email: validateEmail(values.email),
@@ -26,6 +32,12 @@ function validateSignInForm(values: SignInFormState): SignInErrors {
   };
 }
 
+/**
+ * Renders the sign-in route and submits credentials through the auth provider.
+ *
+ * Successful login stores the returned bearer token in the provider layer and
+ * redirects to the authenticated landing route.
+ */
 export function SignInPage(): JSX.Element {
   const { error, isLoading, signIn } = useAuth();
   const [values, setValues] = useState<SignInFormState>({

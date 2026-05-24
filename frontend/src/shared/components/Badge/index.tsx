@@ -2,8 +2,14 @@ import { forwardRef, type HTMLAttributes } from 'react';
 
 import { cn } from '../../utils';
 
+/**
+ * Status color variants supported by compact badge labels.
+ */
 export type BadgeVariant = 'default' | 'success' | 'warning' | 'destructive';
 
+/**
+ * Props for the shared badge component.
+ */
 export type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
   variant?: BadgeVariant;
 };
@@ -15,6 +21,12 @@ const variantClasses: Record<BadgeVariant, string> = {
   destructive: 'border-red-200 bg-red-50 text-red-700',
 };
 
+/**
+ * Renders a compact status or metadata badge.
+ *
+ * @param props - Native span props plus an optional status variant.
+ * @returns A styled inline badge.
+ */
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
   { className, variant = 'default', ...props },
   ref,
@@ -32,4 +44,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
   );
 });
 
+/**
+ * Default export for consumers that prefer default component imports.
+ */
 export default Badge;

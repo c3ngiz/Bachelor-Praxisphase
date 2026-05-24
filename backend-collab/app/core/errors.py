@@ -66,12 +66,16 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AppError)
     async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
+        """Return a domain error using its stable code, message, and HTTP status."""
+
         return JSONResponse(status_code=exc.status_code, content=error_body(exc))
 
     @app.exception_handler(RequestValidationError)
     async def request_validation_handler(
         _request: Request, exc: RequestValidationError
     ) -> JSONResponse:
+        """Normalize FastAPI request validation errors for frontend field rendering."""
+
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=validation_error_body(exc.errors()),
@@ -79,6 +83,8 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ValidationError)
     async def pydantic_validation_handler(_request: Request, exc: ValidationError) -> JSONResponse:
+        """Normalize Pydantic validation errors raised outside FastAPI request parsing."""
+
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=validation_error_body(exc.errors()),
@@ -86,6 +92,8 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(IntegrityError)
     async def integrity_handler(_request: Request, exc: IntegrityError) -> JSONResponse:
+        """Hide database constraint details behind a stable conflict response."""
+
         logger.warning("Database integrity error", exc_info=exc)
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
@@ -97,6 +105,8 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def unhandled_handler(_request: Request, exc: Exception) -> JSONResponse:
+        """Log unexpected errors and return a generic server error response."""
+
         logger.exception("Unhandled request error", exc_info=exc)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

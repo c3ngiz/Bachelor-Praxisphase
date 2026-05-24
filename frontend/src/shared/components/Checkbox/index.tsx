@@ -2,12 +2,24 @@ import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'rea
 
 import { cn } from '../../utils';
 
+/**
+ * Props for the checkbox control.
+ *
+ * Optional label, description, and error text are wired to the checkbox through
+ * generated ids so assistive technology receives the same context as sighted users.
+ */
 export type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
   label?: ReactNode;
   description?: ReactNode;
   error?: ReactNode;
 };
 
+/**
+ * Renders an accessible checkbox with optional supporting text.
+ *
+ * @param props - Native checkbox props plus label, description, and error content.
+ * @returns A checkbox field row.
+ */
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
   { className, description, disabled, error, id, label, ...props },
   ref,
@@ -58,4 +70,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   );
 });
 
+/**
+ * Default export for consumers that prefer default component imports.
+ */
 export default Checkbox;

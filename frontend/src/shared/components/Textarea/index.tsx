@@ -3,12 +3,21 @@ import { forwardRef, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { cn } from '../../utils';
 import { Field } from '../Field';
 
+/**
+ * Props for the shared textarea field.
+ */
 export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   description?: ReactNode;
   error?: ReactNode;
   label?: ReactNode;
 };
 
+/**
+ * Renders a labeled multiline text field with validation messaging.
+ *
+ * @param props - Native textarea props plus optional field metadata.
+ * @returns Accessible textarea field.
+ */
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   { className, description, error, id, label, name, required, ...props },
   ref,
@@ -39,4 +48,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   );
 });
 
+/**
+ * Default export for consumers that prefer default component imports.
+ */
 export default Textarea;

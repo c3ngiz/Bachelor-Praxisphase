@@ -34,6 +34,12 @@ function useFieldContext(component: string): FieldContextValue {
   return context;
 }
 
+/**
+ * Props for the root field provider.
+ *
+ * The root owns the generated ids and validation state shared by the label,
+ * description, error, and control subcomponents.
+ */
 export type FieldRootProps = HTMLAttributes<HTMLDivElement> & {
   error?: ReactNode;
   id?: string;
@@ -64,6 +70,9 @@ const FieldRoot = forwardRef<HTMLDivElement, FieldRootProps>(function FieldRoot(
   );
 });
 
+/**
+ * Props for the field label subcomponent.
+ */
 export type FieldLabelProps = LabelHTMLAttributes<HTMLLabelElement>;
 
 const FieldLabel = forwardRef<HTMLLabelElement, FieldLabelProps>(function FieldLabel(
@@ -80,6 +89,9 @@ const FieldLabel = forwardRef<HTMLLabelElement, FieldLabelProps>(function FieldL
   );
 });
 
+/**
+ * Props for secondary field help text.
+ */
 export type FieldDescriptionProps = HTMLAttributes<HTMLParagraphElement>;
 
 const FieldDescription = forwardRef<HTMLParagraphElement, FieldDescriptionProps>(function FieldDescription(
@@ -91,6 +103,9 @@ const FieldDescription = forwardRef<HTMLParagraphElement, FieldDescriptionProps>
   return <p ref={ref} id={descriptionId} className={cn('m-0 text-xs leading-5 text-slate-500', className)} {...props} />;
 });
 
+/**
+ * Props for field validation text.
+ */
 export type FieldErrorProps = HTMLAttributes<HTMLParagraphElement>;
 
 const FieldError = forwardRef<HTMLParagraphElement, FieldErrorProps>(function FieldError(
@@ -114,6 +129,12 @@ type ControlElementProps = {
   required?: boolean;
 };
 
+/**
+ * Props for the field control slot.
+ *
+ * The child control receives the generated id, required state, and
+ * `aria-describedby` references for description and error text.
+ */
 export type FieldControlProps = {
   children: ReactElement<ControlElementProps>;
 };
@@ -137,6 +158,9 @@ function FieldControl({ children }: FieldControlProps): ReactElement<ControlElem
   });
 }
 
+/**
+ * Compound field component used by form controls to share accessible metadata.
+ */
 export const Field = Object.assign(FieldRoot, {
   Root: FieldRoot,
   Label: FieldLabel,
@@ -145,4 +169,7 @@ export const Field = Object.assign(FieldRoot, {
   Control: FieldControl,
 });
 
+/**
+ * Default export for consumers that prefer default compound-component imports.
+ */
 export default Field;

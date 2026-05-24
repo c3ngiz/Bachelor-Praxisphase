@@ -1,9 +1,18 @@
 import { cn } from '../../../shared/utils';
 
+/**
+ * Props for the password strength indicator shown on the sign-up form.
+ */
 export interface PasswordStrengthIndicatorProps {
   password: string;
 }
 
+/**
+ * Scores password strength from the client-side validation signals displayed to users.
+ *
+ * @param password - Password text currently entered by the user.
+ * @returns Number of strength checks passed, from zero to four.
+ */
 function getPasswordScore(password: string): number {
   const checks = [
     password.length >= 8,
@@ -15,6 +24,15 @@ function getPasswordScore(password: string): number {
   return checks.filter(Boolean).length;
 }
 
+/**
+ * Renders a compact password strength meter for registration.
+ *
+ * The indicator is advisory only; the canonical password rules are still
+ * validated by the form and backend authentication service.
+ *
+ * @param props - Password strength indicator props.
+ * @returns Accessible strength meter and label.
+ */
 export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicatorProps): JSX.Element {
   const score = getPasswordScore(password);
   const label = score <= 1 ? 'Weak' : score <= 3 ? 'Good' : 'Strong';

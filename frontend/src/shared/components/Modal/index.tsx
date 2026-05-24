@@ -30,6 +30,12 @@ type ModalContextValue = {
 
 const ModalContext = createContext<ModalContextValue | null>(null);
 
+/**
+ * Reads modal context and throws a targeted error when subcomponents are misused.
+ *
+ * @param component - Name of the modal subcomponent requesting context.
+ * @returns Current modal state and accessibility ids.
+ */
 function useModalContext(component: string): ModalContextValue {
   const context = useContext(ModalContext);
 
@@ -40,6 +46,12 @@ function useModalContext(component: string): ModalContextValue {
   return context;
 }
 
+/**
+ * Props for the modal root controller.
+ *
+ * Supports controlled and uncontrolled open state while generating dialog title
+ * and description ids for the content subcomponents.
+ */
 export type ModalRootProps = {
   children: ReactNode;
   defaultOpen?: boolean;
@@ -47,6 +59,12 @@ export type ModalRootProps = {
   onOpenChange?: (open: boolean) => void;
 };
 
+/**
+ * Provides modal state and generated accessibility ids to subcomponents.
+ *
+ * @param props - Controlled or uncontrolled modal root props.
+ * @returns Modal context provider.
+ */
 function ModalRoot({ children, defaultOpen = false, open, onOpenChange }: ModalRootProps): JSX.Element {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const descriptionId = useId();
@@ -82,10 +100,19 @@ type TriggerChildProps = {
   onClick?: (event: ReactMouseEvent<HTMLElement>) => void;
 };
 
+/**
+ * Props for the modal trigger slot.
+ */
 export type ModalTriggerProps = {
   children: ReactElement<TriggerChildProps>;
 };
 
+/**
+ * Enhances a single child so click events open the modal.
+ *
+ * @param props - Trigger child element.
+ * @returns Trigger element with open behavior.
+ */
 function ModalTrigger({ children }: ModalTriggerProps): JSX.Element {
   const { setOpen } = useModalContext('Modal.Trigger');
 
@@ -103,6 +130,12 @@ function ModalTrigger({ children }: ModalTriggerProps): JSX.Element {
   });
 }
 
+/**
+ * Returns interactive descendants that should participate in the focus trap.
+ *
+ * @param container - Modal content element.
+ * @returns Focusable child elements in DOM order.
+ */
 function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
   if (!container) {
     return [];
@@ -115,6 +148,9 @@ function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
   ).filter((element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
 }
 
+/**
+ * Props for the modal dialog content.
+ */
 export type ModalContentProps = HTMLAttributes<HTMLDivElement> & {
   closeOnOverlayClick?: boolean;
 };
@@ -229,6 +265,9 @@ const ModalContent = forwardRef<HTMLDivElement, ModalContentProps>(function Moda
   );
 });
 
+/**
+ * Props shared by modal header, body, and footer sections.
+ */
 export type ModalSectionProps = HTMLAttributes<HTMLDivElement>;
 
 const ModalHeader = forwardRef<HTMLDivElement, ModalSectionProps>(function ModalHeader(
@@ -264,6 +303,9 @@ const ModalBody = forwardRef<HTMLDivElement, ModalSectionProps>(function ModalBo
   return <div ref={ref} className={cn('p-5', className)} {...props} />;
 });
 
+/**
+ * Props for the modal title heading.
+ */
 export type ModalTitleProps = HTMLAttributes<HTMLHeadingElement>;
 
 const ModalTitle = forwardRef<HTMLHeadingElement, ModalTitleProps>(function ModalTitle(
@@ -275,6 +317,9 @@ const ModalTitle = forwardRef<HTMLHeadingElement, ModalTitleProps>(function Moda
   return <h2 ref={ref} id={titleId} className={cn('text-lg font-semibold text-slate-950', className)} {...props} />;
 });
 
+/**
+ * Props for the modal description text.
+ */
 export type ModalDescriptionProps = HTMLAttributes<HTMLParagraphElement>;
 
 const ModalDescription = forwardRef<HTMLParagraphElement, ModalDescriptionProps>(function ModalDescription(
@@ -286,6 +331,9 @@ const ModalDescription = forwardRef<HTMLParagraphElement, ModalDescriptionProps>
   return <p ref={ref} id={descriptionId} className={cn('mt-1 text-sm text-slate-500', className)} {...props} />;
 });
 
+/**
+ * Props for controls that close the active modal.
+ */
 export type ModalCloseProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
 const ModalClose = forwardRef<HTMLButtonElement, ModalCloseProps>(function ModalClose(
@@ -314,6 +362,9 @@ const ModalClose = forwardRef<HTMLButtonElement, ModalCloseProps>(function Modal
   );
 });
 
+/**
+ * Compound modal component with accessible trigger, content, sections, and close control.
+ */
 export const Modal = Object.assign(ModalRoot, {
   Root: ModalRoot,
   Trigger: ModalTrigger,
@@ -326,4 +377,7 @@ export const Modal = Object.assign(ModalRoot, {
   Close: ModalClose,
 });
 
+/**
+ * Default export for consumers that prefer default compound-component imports.
+ */
 export default Modal;

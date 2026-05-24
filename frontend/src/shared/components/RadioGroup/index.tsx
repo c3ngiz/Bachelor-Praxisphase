@@ -30,6 +30,12 @@ function useRadioGroupContext(component: string): RadioGroupContextValue {
   return context;
 }
 
+/**
+ * Props for the radio group root.
+ *
+ * The root renders the fieldset/legend structure and shares error and group
+ * name metadata with individual radio items.
+ */
 export type RadioGroupRootProps = FieldsetHTMLAttributes<HTMLFieldSetElement> & {
   description?: ReactNode;
   error?: ReactNode;
@@ -73,6 +79,9 @@ const RadioGroupRoot = forwardRef<HTMLFieldSetElement, RadioGroupRootProps>(func
   );
 });
 
+/**
+ * Props for one labeled radio item.
+ */
 export type RadioGroupItemProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
   description?: ReactNode;
   label: ReactNode;
@@ -123,6 +132,9 @@ const RadioGroupItem = forwardRef<HTMLInputElement, RadioGroupItemProps>(functio
   );
 });
 
+/**
+ * Props for the inline layout wrapper used when radio options should wrap in a row.
+ */
 export type RadioGroupInlineProps = HTMLAttributes<HTMLDivElement>;
 
 const RadioGroupInline = forwardRef<HTMLDivElement, RadioGroupInlineProps>(function RadioGroupInline(
@@ -132,10 +144,16 @@ const RadioGroupInline = forwardRef<HTMLDivElement, RadioGroupInlineProps>(funct
   return <div ref={ref} className={cn('flex flex-wrap gap-2', className)} {...props} />;
 });
 
+/**
+ * Compound radio group component with root, item, and inline layout pieces.
+ */
 export const RadioGroup = Object.assign(RadioGroupRoot, {
   Root: RadioGroupRoot,
   Item: RadioGroupItem,
   Inline: RadioGroupInline,
 });
 
+/**
+ * Default export for consumers that prefer default compound-component imports.
+ */
 export default RadioGroup;

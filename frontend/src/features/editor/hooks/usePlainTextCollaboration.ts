@@ -31,10 +31,15 @@ import type {
 } from '../types/editor.types';
 
 interface QueuedOperation {
+  /** Client-generated operation id used to match server acknowledgements. */
   opId: string;
+  /** Operation still waiting for server sequencing. */
   op: TextOp;
+  /** Timestamp sent to the server for latency diagnostics. */
   clientTs: string;
+  /** Client content hash after the local change, used for divergence checks. */
   clientHash?: string;
+  /** Monotonic clock value captured immediately before WebSocket send. */
   sendStartedAt: number | null;
 }
 
@@ -135,6 +140,12 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     );
   }, [metricsActions]);
 
+  /**
+   * Sends one queued operation when the socket is open and no operation is in flight.
+   *
+   * The WebSocket mode intentionally keeps one client operation in flight so the
+   * base version in each message matches the latest server acknowledgement.
+   */
   const sendNextQueuedOperation = useCallback(() => {
     const websocket = wsRef.current;
 
@@ -166,6 +177,12 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     websocket.send(JSON.stringify(message));
   }, [clientId, documentId, refreshPendingMetrics]);
 
+  /**
+   * Queues a local insert/delete operation for server sequencing.
+   *
+   * Local edits are accepted immediately by CodeMirror; this queue is responsible
+   * for sending the protocol message and tracking pending metrics.
+   */
   const sendLocalOperation = useCallback(
     (op: TextOp, clientHash?: string) => {
       if (!canWrite) {
@@ -213,6 +230,12 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     [localUser],
   );
 
+  /**
+   * Handles the server acknowledgement for the current in-flight operation.
+   *
+   * The acknowledgement advances the local server version, records latency and
+   * transform metrics, clears the in-flight slot, and then sends the next queued op.
+   */
   const handleAck = useCallback(
     (message: Extract<ServerMessage, { type: 'ack' }>) => {
       versionRef.current = Math.max(versionRef.current, message.server_version);
@@ -240,6 +263,14 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     [metricsActions, refreshPendingMetrics, sendNextQueuedOperation],
   );
 
+  /**
+   * Applies server-broadcast operations over local pending operations.
+   *
+   * This is the client-side half of the OT-light protocol. A remote operation is
+   * transformed over local pending operations before CodeMirror sees it, while
+   * local pending operations are also transformed over the remote operation so
+   * their future server submission remains in the correct coordinate space.
+   */
   const handleRemoteOperation = useCallback(
     (message: Extract<ServerMessage, { type: 'broadcast_op' }>) => {
       const remoteIdentity: OperationIdentity = {
@@ -304,6 +335,9 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     let reconnectAttempt = 0;
     let reconnectTimeoutId: number | null = null;
 
+    /**
+     * Schedules exponential reconnect attempts while the component remains mounted.
+     */
     const scheduleReconnect = (): void => {
       if (!shouldReconnect || reconnectTimeoutId !== null) {
         return;
@@ -319,6 +353,9 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
       }, delayMs);
     };
 
+    /**
+     * Opens the document WebSocket and wires protocol message handlers.
+     */
     const connect = (): void => {
       if (!shouldReconnect) {
         return;
@@ -452,6 +489,9 @@ function useWebSocketPlainTextEditor(documentId: string): PlainTextEditorState {
     latestContentRef.current = nextContent;
   }, []);
 
+  /**
+   * Replaces local WebSocket state with a server-owned snapshot after divergence.
+   */
   const handleResyncSnapshot = useCallback(
     (snapshot: CollaborationSnapshot) => {
       versionRef.current = snapshot.version;
@@ -558,6 +598,12 @@ function usePollingPlainTextEditor(
   const dirtyRef = useRef(false);
   const saveInFlightRef = useRef(false);
 
+  /**
+   * Applies a REST/GraphQL content payload to polling or subscription state.
+   *
+   * Remote updates are held as conflicts when the local editor has unsaved
+   * changes, preventing an autosave from overwriting a newer backend revision.
+   */
   const applyContentResult = useCallback(
     (result: DocumentContentResult, source: 'initial' | 'remote' | 'save') => {
       const isNewRemoteRevision = result.revision > revisionRef.current;
@@ -647,6 +693,12 @@ function usePollingPlainTextEditor(
     };
   }, [applyContentResult, documentId, metricsActions]);
 
+  /**
+   * Saves the current plain-text projection through the document content API.
+   *
+   * The save converts text back to the simple TipTap JSON shape and uses the
+   * tracked revision for optimistic conflict detection.
+   */
   const saveNow = useCallback(async () => {
     if (!canWriteRef.current || saveInFlightRef.current || conflict) {
       return;
@@ -688,6 +740,12 @@ function usePollingPlainTextEditor(
     }
   }, [applyContentResult, conflict, documentId, title]);
 
+  /**
+   * Applies a local operation in non-WebSocket modes and marks the content dirty.
+   *
+   * Polling and subscription modes do not use server-sequenced OT; they rely on
+   * autosave and backend revision checks to guard concurrent writes.
+   */
   const sendLocalOperation = useCallback((op: TextOp) => {
     if (!canWriteRef.current) {
       return;
@@ -809,6 +867,13 @@ function usePollingPlainTextEditor(
   };
 }
 
+/**
+ * Builds the authenticated WebSocket URL for one document collaboration room.
+ *
+ * @param documentId - Workspace document identifier.
+ * @param token - Bearer token passed as the WebSocket query parameter.
+ * @returns Fully qualified document-room WebSocket URL.
+ */
 function buildDocumentSocketUrl(documentId: string, token: string): string {
   const baseUrl = new URL(env.collaborationUrl);
   baseUrl.pathname = `/ws/docs/${encodeURIComponent(documentId)}`;
@@ -816,10 +881,22 @@ function buildDocumentSocketUrl(documentId: string, token: string): string {
   return baseUrl.toString();
 }
 
+/**
+ * Creates a client or operation identifier that is stable enough for one browser session.
+ *
+ * @returns Random identifier from `crypto.randomUUID` when available.
+ */
 function createClientId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+/**
+ * Returns pending operations in server-submission order.
+ *
+ * @param inFlight - Operation already sent and awaiting acknowledgement.
+ * @param queued - Operations waiting behind the in-flight operation.
+ * @returns Combined pending queue.
+ */
 function getPendingOperations(
   inFlight: QueuedOperation | null,
   queued: QueuedOperation[],
@@ -827,12 +904,25 @@ function getPendingOperations(
   return inFlight ? [inFlight, ...queued] : queued;
 }
 
+/**
+ * Inserts or replaces one remote cursor by client id.
+ *
+ * @param cursors - Current remote cursor list.
+ * @param cursor - New cursor state from the server.
+ * @returns Updated cursor list.
+ */
 function upsertCursor(cursors: CursorState[], cursor: CursorState): CursorState[] {
   const next = cursors.filter((item) => item.client_id !== cursor.client_id);
   next.push(cursor);
   return next;
 }
 
+/**
+ * Converts backend or legacy cursor colors into supported editor hex colors.
+ *
+ * @param cursor - Cursor state received from presence.
+ * @returns Cursor state with a normalized color.
+ */
 function normalizeCursorColor(cursor: CursorState): CursorState {
   return {
     ...cursor,

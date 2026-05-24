@@ -2,9 +2,22 @@ import { forwardRef, type HTMLAttributes } from 'react';
 
 import { cn } from '../../utils';
 
+/**
+ * Supported avatar dimensions used by profile, workspace, and editor identity UI.
+ */
 export type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
+
+/**
+ * Visual avatar shape variants.
+ */
 export type AvatarShape = 'circle' | 'rounded';
 
+/**
+ * Props for the shared avatar component.
+ *
+ * The component renders an image when `src` is provided and falls back to
+ * initials or another short label when the user has no avatar image.
+ */
 export type AvatarProps = HTMLAttributes<HTMLDivElement> & {
   alt?: string;
   fallback: string;
@@ -25,6 +38,12 @@ const shapeClasses: Record<AvatarShape, string> = {
   rounded: 'rounded-lg',
 };
 
+/**
+ * Renders a deterministic user avatar shell with optional image content.
+ *
+ * @param props - Avatar props including fallback text, image source, size, and shape.
+ * @returns Avatar element suitable for user summaries and collaborator lists.
+ */
 export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(function Avatar(
   { alt, className, fallback, shape = 'circle', size = 'md', src, ...props },
   ref,
@@ -46,4 +65,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(function Avatar(
   );
 });
 
+/**
+ * Default export for consumers that prefer default component imports.
+ */
 export default Avatar;

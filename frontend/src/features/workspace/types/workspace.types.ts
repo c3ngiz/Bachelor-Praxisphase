@@ -1,5 +1,8 @@
 import type { EntityId, Timestamped } from '../../../shared/types';
 
+/**
+ * Re-exported shared identifier type used by workspace API contracts.
+ */
 export type { EntityId };
 
 /** Item categories rendered by the workspace explorer. */

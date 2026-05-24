@@ -17,6 +17,13 @@ import type {
   TextOp,
 } from '../types/editor.types';
 
+/**
+ * Props accepted by the CodeMirror plain-text editor surface.
+ *
+ * The surface is intentionally controlled by the collaboration hook: it receives
+ * snapshot serials, remote operations, cursor state, and command callbacks
+ * without owning transport or persistence state itself.
+ */
 export interface PlainTextEditorSurfaceProps {
   /** Whether the editor should accept local text changes. */
   canWrite: boolean;
@@ -224,6 +231,16 @@ export function PlainTextEditorSurface({
   );
 }
 
+/**
+ * Emits OT operations for a CodeMirror document change.
+ *
+ * CodeMirror reports offsets in UTF-16 code units, while the backend protocol
+ * uses Unicode code-point offsets. This helper converts offsets before sending
+ * insert/delete operations and attaches the latest client hash for divergence checks.
+ *
+ * @param update - CodeMirror view update containing the document changes.
+ * @param sendLocalOperation - Transport callback that queues local operations.
+ */
 function emitLocalOperations(
   update: ViewUpdate,
   sendLocalOperation: PlainTextEditorState['sendLocalOperation'],
@@ -252,6 +269,12 @@ function emitLocalOperations(
   });
 }
 
+/**
+ * Sends the current CodeMirror cursor/selection through the collaboration hook.
+ *
+ * @param update - CodeMirror view update containing the current selection.
+ * @param sendCursor - Transport callback for cursor presence messages.
+ */
 function emitCursor(
   update: ViewUpdate,
   sendCursor: PlainTextEditorState['sendCursor'],
@@ -266,6 +289,12 @@ function emitCursor(
   });
 }
 
+/**
+ * Applies a server-accepted remote operation to the CodeMirror document.
+ *
+ * @param view - Active CodeMirror editor view.
+ * @param op - Remote insert/delete operation using code-point offsets.
+ */
 function applyRemoteOperation(view: EditorView, op: TextOp): void {
   const content = view.state.doc.toString();
   const from = codePointOffsetToCodeUnitOffset(content, op.pos);

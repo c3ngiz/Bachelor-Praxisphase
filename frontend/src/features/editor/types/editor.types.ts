@@ -13,6 +13,9 @@ export type TextOp = CollaborationTextOperation;
 /** Remote cursor and selection state used by the editor UI. */
 export type CursorState = CollaborationCursorState;
 
+/**
+ * Client-to-server messages supported by the plain-text collaboration WebSocket.
+ */
 export type ClientMessage =
   | { type: 'join'; client_id: string }
   | {
@@ -29,6 +32,9 @@ export type ClientMessage =
   | { type: 'presence'; client_id: string; status: 'active' | 'idle' | 'away'; ts: string }
   | { type: 'ping'; ping_id: string; client_ts: string };
 
+/**
+ * Server-to-client messages emitted by the plain-text collaboration WebSocket.
+ */
 export type ServerMessage =
   | {
       type: 'snapshot';
@@ -64,6 +70,9 @@ export type ServerMessage =
   | { type: 'error'; code: string; message: string; recoverable: boolean }
   | { type: 'pong'; ping_id: string; client_ts: string; server_ts: string };
 
+/**
+ * Transport lifecycle state shown by the editor shell and sidebar.
+ */
 export type PlainTextConnectionStatus =
   | 'loading'
   | 'connecting'
@@ -81,6 +90,9 @@ export type PlainTextSaveStatus =
   | 'conflict'
   | 'error';
 
+/**
+ * Remote operation queued for application to the local CodeMirror document.
+ */
 export interface RemoteOperationEvent {
   id: string;
   op: TextOp;
@@ -88,6 +100,9 @@ export interface RemoteOperationEvent {
   receivedAt: number;
 }
 
+/**
+ * Round-trip latency sample recorded when the backend acknowledges an operation.
+ */
 export interface PlainTextLatencySample {
   opId: string;
   latencyMs: number;
@@ -107,6 +122,13 @@ export interface PlainTextConflict {
   updatedAt: string;
 }
 
+/**
+ * Complete state contract consumed by the plain-text editor layout.
+ *
+ * The state includes document metadata, transport status, local content,
+ * collaborator presence, divergence status, metrics, and all command handlers
+ * required by the CodeMirror surface and sidebar.
+ */
 export interface PlainTextEditorState {
   clientId: string;
   content: string;
@@ -134,6 +156,9 @@ export interface PlainTextEditorState {
   sendLocalOperation: (op: TextOp, clientHash?: string) => void;
 }
 
+/**
+ * Document metadata returned before or alongside editor content.
+ */
 export interface DocumentEditorLoadResult {
   document: DocumentItem;
   canWrite: boolean;
@@ -158,7 +183,11 @@ export interface DocumentContentResult extends DocumentEditorLoadResult {
   textContent: string;
 }
 
+/**
+ * Options accepted by document load APIs.
+ */
 export interface GetDocumentMetadataOptions {
+  /** Whether loading the document should update backend last-opened metadata. */
   touch?: boolean;
 }
 
@@ -186,16 +215,46 @@ export interface DocumentContentSubscriptionHandlers {
   onNext: (content: DocumentContentResult) => void;
 }
 
+/**
+ * Contract implemented by REST and GraphQL document editor clients.
+ */
 export interface EditorClient {
+  /**
+   * Load document metadata and permission state without requiring content.
+   *
+   * @param documentId - Workspace document identifier.
+   * @param options - Optional metadata loading behavior.
+   * @returns Document metadata, permission state, and revision.
+   */
   getDocumentMetadata(
     documentId: EntityId,
     options?: GetDocumentMetadataOptions,
   ): Promise<DocumentEditorLoadResult>;
+  /**
+   * Load document metadata and JSON/plain-text content.
+   *
+   * @param documentId - Workspace document identifier.
+   * @param options - Optional content loading behavior.
+   * @returns Normalized document content payload.
+   */
   getDocumentContent(
     documentId: EntityId,
     options?: GetDocumentMetadataOptions,
   ): Promise<DocumentContentResult>;
+  /**
+   * Save JSON document content using optimistic revision metadata.
+   *
+   * @param input - Content save request.
+   * @returns Updated document content and revision.
+   */
   updateDocumentContent(input: UpdateDocumentContentInput): Promise<DocumentContentResult>;
+  /**
+   * Subscribe to remote document-content changes when the client supports it.
+   *
+   * @param documentId - Workspace document identifier.
+   * @param handlers - Subscription lifecycle and payload handlers.
+   * @returns Unsubscribe callback.
+   */
   subscribeToDocumentContent?(
     documentId: EntityId,
     handlers: DocumentContentSubscriptionHandlers,

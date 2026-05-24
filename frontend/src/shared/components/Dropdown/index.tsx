@@ -35,6 +35,12 @@ type DropdownContextValue = {
 
 const DropdownContext = createContext<DropdownContextValue | null>(null);
 
+/**
+ * Reads the dropdown context and reports component misuse with a targeted error.
+ *
+ * @param component - Name of the dropdown subcomponent requesting context.
+ * @returns Current dropdown state and refs.
+ */
 function useDropdownContext(component: string): DropdownContextValue {
   const context = useContext(DropdownContext);
 
@@ -45,6 +51,12 @@ function useDropdownContext(component: string): DropdownContextValue {
   return context;
 }
 
+/**
+ * Props for the dropdown root controller.
+ *
+ * Supports controlled and uncontrolled open state. The root also owns trigger
+ * and content refs used for outside-click dismissal and positioning.
+ */
 export type DropdownRootProps = {
   children: ReactNode;
   defaultOpen?: boolean;
@@ -52,6 +64,12 @@ export type DropdownRootProps = {
   onOpenChange?: (open: boolean) => void;
 };
 
+/**
+ * Provides dropdown state and dismissal behavior to trigger/content/items.
+ *
+ * @param props - Controlled or uncontrolled dropdown root props.
+ * @returns Dropdown context provider.
+ */
 function DropdownRoot({ children, defaultOpen = false, open, onOpenChange }: DropdownRootProps): JSX.Element {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const contentId = useId();
@@ -124,10 +142,21 @@ type TriggerChildProps = {
   'aria-haspopup'?: 'menu';
 };
 
+/**
+ * Props for the dropdown trigger slot.
+ *
+ * The single child receives menu ARIA attributes and keyboard/click handlers.
+ */
 export type DropdownTriggerProps = {
   children: ReactElement<TriggerChildProps>;
 };
 
+/**
+ * Enhances a trigger element so it opens and describes the dropdown menu.
+ *
+ * @param props - Trigger child element.
+ * @returns Wrapped trigger element.
+ */
 function DropdownTrigger({ children }: DropdownTriggerProps): JSX.Element {
   const { contentId, open, setOpen, triggerRef } = useDropdownContext('Dropdown.Trigger');
 
@@ -163,11 +192,20 @@ function DropdownTrigger({ children }: DropdownTriggerProps): JSX.Element {
   );
 }
 
+/**
+ * Props for the dropdown content popover.
+ */
 export type DropdownContentProps = HTMLAttributes<HTMLDivElement> & {
   align?: DropdownAlign;
   offset?: number;
 };
 
+/**
+ * Returns focusable menu items in DOM order for roving keyboard navigation.
+ *
+ * @param container - Dropdown content element.
+ * @returns Enabled menu item elements.
+ */
 function getMenuItems(container: HTMLDivElement | null): HTMLElement[] {
   if (!container) {
     return [];
@@ -176,6 +214,14 @@ function getMenuItems(container: HTMLDivElement | null): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])'));
 }
 
+/**
+ * Computes fixed-position menu coordinates from the trigger rectangle.
+ *
+ * @param trigger - Trigger wrapper element.
+ * @param align - Desired horizontal alignment.
+ * @param offset - Vertical spacing from trigger to menu.
+ * @returns Inline style used by the portal-rendered menu.
+ */
 function getContentStyle(trigger: HTMLSpanElement, align: DropdownAlign, offset: number): CSSProperties {
   const rect = trigger.getBoundingClientRect();
   const style: CSSProperties = {
@@ -306,6 +352,9 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(functio
   );
 });
 
+/**
+ * Props for a dropdown menu item.
+ */
 export type DropdownItemProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   closeOnSelect?: boolean;
 };
@@ -339,6 +388,9 @@ const DropdownItem = forwardRef<HTMLButtonElement, DropdownItemProps>(function D
   );
 });
 
+/**
+ * Compound dropdown component for accessible command menus.
+ */
 export const Dropdown = Object.assign(DropdownRoot, {
   Root: DropdownRoot,
   Trigger: DropdownTrigger,
@@ -346,4 +398,7 @@ export const Dropdown = Object.assign(DropdownRoot, {
   Item: DropdownItem,
 });
 
+/**
+ * Default export for consumers that prefer default compound-component imports.
+ */
 export default Dropdown;

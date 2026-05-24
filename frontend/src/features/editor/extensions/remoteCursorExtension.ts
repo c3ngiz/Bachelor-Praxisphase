@@ -4,8 +4,17 @@ import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemir
 import { codePointOffsetToCodeUnitOffset } from '../utils/otTransform';
 import type { CursorState } from '../types/editor.types';
 
+/**
+ * CodeMirror state effect used to replace rendered remote cursor decorations.
+ */
 export const setRemoteCursorsEffect = StateEffect.define<CursorState[]>();
 
+/**
+ * CodeMirror field that renders collaborator cursors and selections.
+ *
+ * Decorations are rebuilt from server cursor state and mapped through local
+ * document changes between cursor updates.
+ */
 export const remoteCursorField = StateField.define<DecorationSet>({
   create() {
     return Decoration.none;
@@ -24,6 +33,13 @@ export const remoteCursorField = StateField.define<DecorationSet>({
   },
 });
 
+/**
+ * Converts remote cursor state into CodeMirror selection marks and cursor widgets.
+ *
+ * @param content - Current editor text.
+ * @param cursors - Remote cursor states received from collaboration presence.
+ * @returns Decoration set rendered by CodeMirror.
+ */
 function buildRemoteCursorDecorations(content: string, cursors: CursorState[]): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   const ranges: Array<{ from: number; to: number; decoration: Decoration }> = [];
@@ -65,6 +81,9 @@ function buildRemoteCursorDecorations(content: string, cursors: CursorState[]): 
   return builder.finish();
 }
 
+/**
+ * Widget that draws one collaborator cursor and label inside CodeMirror.
+ */
 class RemoteCursorWidget extends WidgetType {
   constructor(private readonly cursor: CursorState) {
     super();
@@ -86,6 +105,13 @@ class RemoteCursorWidget extends WidgetType {
   }
 }
 
+/**
+ * Converts a hex color into an alpha RGBA value for remote selection backgrounds.
+ *
+ * @param color - Hex color string provided by the collaborator identity.
+ * @param alpha - Selection background opacity.
+ * @returns CSS rgba color string.
+ */
 function hexToRgba(color: string, alpha: number): string {
   const normalized = color.replace('#', '');
 

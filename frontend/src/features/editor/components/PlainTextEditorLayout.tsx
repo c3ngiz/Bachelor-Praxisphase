@@ -7,10 +7,22 @@ import { DivergenceStatusBadge } from './DivergenceStatusBadge';
 import { PlainTextContextSidebar } from './PlainTextContextSidebar';
 import { PlainTextEditorSurface } from './PlainTextEditorSurface';
 
+/**
+ * Props accepted by the plain-text editor layout.
+ */
 export interface PlainTextEditorLayoutProps {
   state: PlainTextEditorState;
 }
 
+/**
+ * Renders the complete collaborative plain-text editor workspace.
+ *
+ * The layout combines the sidebar, status header, permission/conflict notices,
+ * and the CodeMirror editing surface.
+ *
+ * @param props - Layout props containing the editor state.
+ * @returns Plain-text editor screen.
+ */
 export function PlainTextEditorLayout({ state }: PlainTextEditorLayoutProps): JSX.Element {
   return (
     <section
@@ -218,6 +230,12 @@ function formatSyncMode(syncMode: PlainTextEditorState['syncMode']): string {
   }
 }
 
+/**
+ * Formats the current transport connection state for toolbar badges.
+ *
+ * @param status - Editor connection status.
+ * @returns Human-readable connection label.
+ */
 function formatConnectionStatus(status: PlainTextEditorState['status']): string {
   switch (status) {
     case 'loading':

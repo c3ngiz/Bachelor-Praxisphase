@@ -21,10 +21,22 @@ import { CollaborationMetricsPanel } from './CollaborationMetricsPanel';
 import { DivergenceStatusBadge } from './DivergenceStatusBadge';
 import { ResyncDocumentButton } from './ResyncDocumentButton';
 
+/**
+ * Props accepted by the plain-text editor context sidebar.
+ */
 export interface PlainTextContextSidebarProps {
   state: PlainTextEditorState;
 }
 
+/**
+ * Renders collaboration context for the active plain-text document.
+ *
+ * The sidebar summarizes document access, connected collaborators, save state,
+ * OT metrics, divergence checks, and manual resync controls.
+ *
+ * @param props - Sidebar props containing the editor state.
+ * @returns Editor context sidebar.
+ */
 export function PlainTextContextSidebar({ state }: PlainTextContextSidebarProps): JSX.Element {
   const accessLabel = state.document ? getPermissionLabel(state.document.permission) : 'Loading';
   const activePeopleCount = 1 + state.remoteCursors.length;
@@ -228,6 +240,12 @@ function CollapsibleSection({ children, icon: Icon, title }: CollapsibleSectionP
   );
 }
 
+/**
+ * Renders the transport status badge for the sidebar summary.
+ *
+ * @param props - Current plain-text connection status.
+ * @returns Status badge element.
+ */
 function StatusBadge({ status }: { status: PlainTextConnectionStatus }): JSX.Element {
   const variant =
     status === 'connected' ? 'success' : status === 'error' ? 'destructive' : 'default';
@@ -240,6 +258,12 @@ function StatusBadge({ status }: { status: PlainTextConnectionStatus }): JSX.Ele
   );
 }
 
+/**
+ * Formats the connection state for compact status badges.
+ *
+ * @param status - Current collaboration transport status.
+ * @returns Human-readable status label.
+ */
 function formatStatus(status: PlainTextConnectionStatus): string {
   switch (status) {
     case 'loading':
@@ -297,6 +321,12 @@ function formatSaveStatus(status: PlainTextEditorState['saveStatus']): string {
   }
 }
 
+/**
+ * Maps save states to badge variants used in the sidebar summary.
+ *
+ * @param status - Current editor save status.
+ * @returns Badge variant name.
+ */
 function getSaveStatusVariant(
   status: PlainTextEditorState['saveStatus'],
 ): 'default' | 'success' | 'warning' | 'destructive' {

@@ -2,9 +2,22 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
 import { cn } from '../../utils';
 
+/**
+ * Semantic visual variants supported by the shared button.
+ */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+
+/**
+ * Size options for text and icon-only buttons.
+ */
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
+/**
+ * Props for the shared button component.
+ *
+ * `loading` disables interaction and exposes `aria-busy`; `iconOnly` switches
+ * to square dimensions for toolbar and menu buttons.
+ */
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children?: ReactNode;
   variant?: ButtonVariant;
@@ -45,6 +58,12 @@ function ButtonSpinner(): JSX.Element {
   );
 }
 
+/**
+ * Renders the standard application button with variant, size, and loading states.
+ *
+ * @param props - Native button props plus design-system button options.
+ * @returns A styled button element.
+ */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     children,
@@ -83,4 +102,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   );
 });
 
+/**
+ * Default export for consumers that prefer default component imports.
+ */
 export default Button;

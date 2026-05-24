@@ -1,3 +1,6 @@
+/**
+ * Minimum password length enforced by the frontend validation helpers.
+ */
 export const minPasswordLength = 8;
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -3,6 +3,12 @@ import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '../../utils';
 import { Field } from '../Field';
 
+/**
+ * Props for the shared text input field.
+ *
+ * The component composes `Field` so labels, descriptions, and errors are
+ * connected to the input through generated accessible ids.
+ */
 export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   description?: ReactNode;
   endAdornment?: ReactNode;
@@ -11,6 +17,12 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   startAdornment?: ReactNode;
 };
 
+/**
+ * Renders a labeled input with optional adornments and validation state.
+ *
+ * @param props - Native input props plus field label, description, error, and adornments.
+ * @returns Accessible text input field.
+ */
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { className, description, endAdornment, error, id, label, name, required, startAdornment, ...props },
   ref,
@@ -53,4 +65,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   );
 });
 
+/**
+ * Default export for consumers that prefer default component imports.
+ */
 export default Input;
